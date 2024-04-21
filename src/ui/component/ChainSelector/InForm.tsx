@@ -76,7 +76,8 @@ export const ChainRender = ({
         size="small"
         showCustomRPCToolTip
       />
-      <span className="name">{CHAINS[chain].name}</span>
+      {/*<span className="name">{CHAINS[chain].name}</span>*/}
+      <span className="name">CONCHA</span>
       {/* {!readonly && <img className="down" src={ImgArrowDown} alt="" />} */}
       {!readonly && <RcImgArrowDown className="down" />}
     </ChainWrapper>

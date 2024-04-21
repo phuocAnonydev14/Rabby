@@ -9,6 +9,7 @@ import { useDebounce } from 'react-use';
 import { Input, Form, Skeleton, message, Button, InputProps } from 'antd';
 import abiCoderInst, { AbiCoder } from 'web3-eth-abi';
 import { isValidAddress, intToHex, zeroAddress } from 'ethereumjs-util';
+import { ethers } from 'ethers';
 
 import styled from 'styled-components';
 import {
@@ -555,6 +556,7 @@ const SendToken = () => {
       data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
       isSend: true,
     };
+
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
     }
@@ -681,6 +683,8 @@ const SendToken = () => {
     }
   ) => {
     const { token, isInitFromCache } = opts || {};
+    console.log('to, amount, ...restForm ne', to, amount, restForm);
+    console.log('opts ne', opts);
     if (changedValues && changedValues.to) {
       setTemporaryGrant(false);
     }
@@ -702,18 +706,20 @@ const SendToken = () => {
     if (!/^\d*(\.\d*)?$/.test(amount)) {
       resultAmount = cacheAmount;
     }
+    const conchaBalance = currentAccount
+      ? await wallet.getConchaBalance(currentAccount.address)
+      : 0;
+    console.log('concha balance ne', conchaBalance);
 
     if (amount !== cacheAmount) {
       if (showGasReserved && Number(resultAmount) > 0) {
         setShowGasReserved(false);
       } else if (isNativeToken && !isGnosisSafe) {
-        const gasCostTokenAmount = await calcGasCost();
+        const gasCostTokenAmount = await wallet.getConchaGasPrice();
+        const gasString = ethers.utils.formatEther(gasCostTokenAmount);
+        console.log('gas string ne', gasString);
         if (
-          new BigNumber(targetToken.raw_amount_hex_str || 0)
-            .div(10 ** targetToken.decimals)
-            .minus(amount)
-            .minus(gasCostTokenAmount)
-            .lt(0)
+          new BigNumber(conchaBalance || 0).minus(amount).minus(gasString).lt(0)
         ) {
           setBalanceWarn(t('page.sendToken.balanceWarn.gasFeeReservation'));
         } else {
@@ -721,13 +727,15 @@ const SendToken = () => {
         }
       }
     }
-
     if (
       new BigNumber(resultAmount || 0).isGreaterThan(
-        new BigNumber(targetToken.raw_amount_hex_str || 0).div(
-          10 ** targetToken.decimals
-        )
+        new BigNumber(conchaBalance || 0)
       )
+      // new BigNumber(resultAmount || 0).isGreaterThan(
+      //   new BigNumber(targetToken.raw_amount_hex_str || 0).div(
+      //     10 ** targetToken.decimals
+      //   )
+      // )
     ) {
       // Insufficient balance
       setBalanceError(t('page.sendToken.balanceError.insufficientBalance'));
@@ -1154,10 +1162,12 @@ const SendToken = () => {
             </div>
             <ChainSelectorInForm
               value={chain}
-              onChange={handleChainChanged}
+              onChange={() => {
+                return;
+              }}
               disabledTips={'Not supported'}
               supportChains={undefined}
-              readonly={!!safeInfo}
+              readonly={true}
             />
             <div className={clsx('section-title mt-[10px]')}>
               {t('page.sendToken.sectionFrom.title')}

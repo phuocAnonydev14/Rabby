@@ -293,27 +293,27 @@ export default ({
 
   if (isGnosis) {
     pickedPanelKeys = [
-      'swap',
+      // 'swap',
       'send',
-      'receive',
+      // 'receive',
       'nft',
       // 'queue',
       'transactions',
-      'gasTopUp',
-      'security',
-      'feedback',
+      // 'gasTopUp',
+      // 'security',
+      // 'feedback',
       'more',
     ];
   } else {
     pickedPanelKeys = [
-      'swap',
+      // 'swap',
       'send',
-      'receive',
+      // 'receive',
       'nft',
       'transactions',
-      'gasTopUp',
-      'security',
-      'feedback',
+      // 'gasTopUp',
+      // 'security',
+      // 'feedback',
       'more',
     ];
   }

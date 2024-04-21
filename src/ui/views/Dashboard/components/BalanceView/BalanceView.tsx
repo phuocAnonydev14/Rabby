@@ -44,6 +44,7 @@ const BalanceView = ({ currentAccount, accountBalanceUpdateNonce = 0 }) => {
     accountBalanceUpdateNonce,
     isShowTestnet
   );
+
   const {
     result: curveData,
     refresh: refreshCurve,

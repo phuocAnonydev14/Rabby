@@ -1054,6 +1054,14 @@ export class WalletController extends BaseController {
     return this.getTotalBalanceCached([address], address, force);
   };
 
+  getConchaBalance = async (address: string) => {
+    return preferenceService.getConchaBalance(address);
+  };
+
+  getConchaGasPrice = async () => {
+    return preferenceService.getConchaGasPrice();
+  };
+
   getAddressCacheBalance = (address: string | undefined, isTestnet = false) => {
     if (!address) return null;
     if (isTestnet) {

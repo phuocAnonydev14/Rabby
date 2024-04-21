@@ -20,6 +20,8 @@ import semver from 'semver-compare';
 import { syncStateToUI } from '../utils/broadcastToUI';
 import { BROADCAST_TO_UI_EVENTS } from '@/utils/broadcastToUI';
 import dayjs from 'dayjs';
+import { ethers } from 'ethers';
+import { CONCHA_RPC } from 'background/utils/conts';
 
 const version = process.env.release || '0';
 
@@ -124,6 +126,7 @@ class PreferenceService {
   popupOpen = false;
   hasOtherProvider = false;
   currentCoboSafeAddress?: Account | null;
+  provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
 
   init = async () => {
     const defaultLang = 'en';
@@ -399,6 +402,7 @@ class PreferenceService {
   };
 
   getCurrentAccount = (): Account | undefined | null => {
+    console.log('this store ne', this.store);
     const account = cloneDeep(this.store.currentAccount);
     if (!account) return account;
     return {
@@ -463,6 +467,16 @@ class PreferenceService {
   getAddressBalance = (address: string): TotalBalanceResponse | null => {
     const balanceMap = this.store.balanceMap || {};
     return balanceMap[address.toLowerCase()] || null;
+  };
+
+  getConchaBalance = async (address: string): Promise<string> => {
+    const balance = await this.provider.getBalance(address);
+    console.log('balance ne', ethers.utils.formatEther(balance));
+    return ethers.utils.formatEther(balance);
+  };
+
+  getConchaGasPrice = async (): Promise<ethers.BigNumber> => {
+    return this.provider.getGasPrice();
   };
 
   getTestnetAddressBalance = (address: string): TotalBalanceResponse | null => {

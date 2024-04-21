@@ -195,15 +195,15 @@ const TokenSelector = ({
     [isLoading, isSwapType, t, isSearchAddr, chainServerId]
   );
 
-  useEffect(() => {
-    if (query && isSwapType && displayList.length === 0) {
-      stats.report('swapTokenSearchFailure', {
-        chainId: chainServerId,
-        searchType: type === 'swapFrom' ? 'fromToken' : 'toToken',
-        keyword: query,
-      });
-    }
-  }, [type, query, isSwapType, displayList, query, chainServerId]);
+  // useEffect(() => {
+  //   if (query && isSwapType && displayList.length === 0) {
+  //     stats.report('swapTokenSearchFailure', {
+  //       chainId: chainServerId,
+  //       searchType: type === 'swapFrom' ? 'fromToken' : 'toToken',
+  //       keyword: query,
+  //     });
+  //   }
+  // }, [type, query, isSwapType, displayList, query, chainServerId]);
 
   return (
     <Drawer
@@ -231,36 +231,36 @@ const TokenSelector = ({
           onBlur={handleInputBlur}
         />
       </div>
-      <div className="filters-wrapper">
-        {chainItem && (
-          <>
-            <div className="filter-item__chain">
-              <img
-                className="filter-item__chain-logo"
-                src={chainItem.logo}
-                alt={chainItem.name}
-              />
-              <span className="ml-[4px]">{chainItem.name}</span>
-              <div
-                className="py-4 cursor-pointer"
-                onClick={() => {
-                  onRemoveChainFilter?.({ chainServerId, chainItem });
-                  onSearch({
-                    chainItem: null,
-                    chainServerId: '',
-                    keyword: query,
-                  });
-                }}
-              >
-                <ThemeIcon
-                  className="filter-item__chain-close w-[12px] h-[12px] ml-[6px]"
-                  src={RcIconChainFilterClose}
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      {/*<div className="filters-wrapper">*/}
+      {/*  {chainItem && (*/}
+      {/*    <>*/}
+      {/*      <div className="filter-item__chain">*/}
+      {/*        <img*/}
+      {/*          className="filter-item__chain-logo"*/}
+      {/*          src={chainItem.logo}*/}
+      {/*          alt={chainItem.name}*/}
+      {/*        />*/}
+      {/*        <span className="ml-[4px]">{chainItem.name}</span>*/}
+      {/*        <div*/}
+      {/*          className="py-4 cursor-pointer"*/}
+      {/*          onClick={() => {*/}
+      {/*            onRemoveChainFilter?.({ chainServerId, chainItem });*/}
+      {/*            onSearch({*/}
+      {/*              chainItem: null,*/}
+      {/*              chainServerId: '',*/}
+      {/*              keyword: query,*/}
+      {/*            });*/}
+      {/*          }}*/}
+      {/*        >*/}
+      {/*          <ThemeIcon*/}
+      {/*            className="filter-item__chain-close w-[12px] h-[12px] ml-[6px]"*/}
+      {/*            src={RcIconChainFilterClose}*/}
+      {/*          />*/}
+      {/*        </div>*/}
+      {/*      </div>*/}
+      {/*    </>*/}
+      {/*  )}*/}
+      {/*</div>*/}
       <ul className={clsx('token-list', { empty: isEmpty })}>
         <li className="token-list__header">
           <div>

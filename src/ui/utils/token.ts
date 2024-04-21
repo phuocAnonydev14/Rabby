@@ -5,7 +5,7 @@ import { AbstractPortfolioToken } from './portfolio/types';
 
 export const geTokenDecimals = async (
   id: string,
-  provider: providers.JsonRpcProvider
+  provider: providers.Web3Provider
 ) => {
   try {
     const contract = new Contract(
@@ -57,7 +57,7 @@ export const geTokenDecimals = async (
 
 export const getTokenName = async (
   id: string,
-  provider: providers.JsonRpcProvider
+  provider: providers.Web3Provider
 ) => {
   try {
     const contract = new Contract(

@@ -54,6 +54,7 @@ import { formatTxMetaForRpcResult } from 'background/utils/tx';
 import { findChainByEnum } from '@/utils/chain';
 import eventBus from '@/eventBus';
 import { StatsData } from '../../service/notification';
+import { CONCHA_RPC } from 'background/utils/conts';
 
 const reportSignText = (params: {
   method: string;
@@ -180,6 +181,7 @@ class ProviderController extends BaseController {
       params,
       chainId: chainServerId,
     });
+    console.log('params ne', params);
     if (cache) return cache;
     const chain = Object.values(CHAINS).find(
       (item) => item.serverId === chainServerId
@@ -390,9 +392,10 @@ class ProviderController extends BaseController {
       buildinProvider.currentProvider.currentAccountType = approvalRes!.account!.type;
       buildinProvider.currentProvider.currentAccountBrand = approvalRes!.account!.brandName;
       try {
-        const provider = new ethers.providers.Web3Provider(
-          buildinProvider.currentProvider
-        );
+        // const provider = new ethers.providers.Web3Provider(
+        //   buildinProvider.currentProvider
+        // );
+        const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
         opts = {
           provider,
         };

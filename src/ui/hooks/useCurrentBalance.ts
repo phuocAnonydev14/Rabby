@@ -112,10 +112,11 @@ export default function useCurrentBalance(
     if (!account || noNeedBalance) return;
     setBalanceLoading(true);
     const cacheData = await wallet.getAddressCacheBalance(account);
+    const conchaBalance = await wallet.getConchaBalance(account);
     const apiLevel = await wallet.getAPIConfig([], 'ApiLevel', false);
     if (cacheData) {
       setBalanceFromCache(true);
-      setBalance(cacheData.total_usd_value);
+      setBalance(+conchaBalance);
       const chanList = cacheData.chain_list
         .filter((item) => item.born_at !== null)
         .map(formatChain);
@@ -152,18 +153,22 @@ export default function useCurrentBalance(
   };
 
   useEffect(() => {
-    getCurrentBalance();
-    if (!noNeedBalance) {
-      wallet.getAddressCacheBalance(account).then((cache) => {
-        setChainBalances(
-          cache
-            ? cache.chain_list
-                .filter((item) => item.born_at !== null)
-                .map(formatChain)
-            : []
-        );
-      });
-    }
+    // getCurrentBalance();
+    // if (!noNeedBalance) {
+    //   wallet.getAddressCacheBalance(account).then((cache) => {
+    //     setChainBalances(
+    //       cache
+    //         ? cache.chain_list
+    //             .filter((item) => item.born_at !== null)
+    //             .map(formatChain)
+    //         : []
+    //     );
+    //   });
+    // }
+    wallet.getConchaBalance(account as string).then((balance) => {
+      setBalance(+balance);
+    });
+
     return () => {
       isCanceled = true;
     };
