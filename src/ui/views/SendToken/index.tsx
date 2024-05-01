@@ -519,11 +519,12 @@ const SendToken = () => {
   }, [isNativeToken, addressType]);
 
   const handleSubmit = async ({
-    to,
-    amount,
-    messageDataForSendToEoa,
-    messageDataForContractCall,
-  }: FormSendToken) => {
+                                to,
+                                amount,
+                                messageDataForSendToEoa,
+                                messageDataForContractCall,
+                              }: FormSendToken) => {
+    alert('come hereeeee');
     setIsSubmitLoading(true);
     const chain = Object.values(CHAINS).find(
       (item) => item.serverId === currentToken.chain
@@ -1412,7 +1413,7 @@ const SendToken = () => {
           )}
           <div className="btn-wrapper w-[100%] px-[20px] flex justify-center">
             <Button
-              disabled={!canSubmit}
+              // disabled={!canSubmit}
               type="primary"
               htmlType="submit"
               size="large"

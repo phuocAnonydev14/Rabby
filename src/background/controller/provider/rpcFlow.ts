@@ -152,7 +152,7 @@ const flowContext = flow
       mapMethod,
     } = ctx;
     const [approvalType, condition, options = {}] =
-      Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
+    Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
     let windowHeight = 800;
     if ('height' in options) {
       windowHeight = options.height;
@@ -225,7 +225,7 @@ const flowContext = flow
     const { approvalRes, mapMethod, request } = ctx;
     // process request
     const [approvalType] =
-      Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
+    Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
     const { uiRequestComponent, ...rest } = approvalRes || {};
     const {
       session: { origin },
@@ -332,6 +332,8 @@ function reportStatsData() {
 }
 
 export default (request: ProviderRequest) => {
+  alert('come to request');
+  console.log(request);
   const ctx: any = { request: { ...request, requestedApproval: false } };
   notificationService.setStatsData();
   return flowContext(ctx).finally(() => {
