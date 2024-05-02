@@ -1048,46 +1048,51 @@ const GasSelectPanel = ({
       title={disabled ? t('page.signTx.gasNotRequireForSafeTransaction') : null}
     >
       <CardBody $disabled={disabled}>
-        {gasList.map((item, idx) => (
-          <div
-            key={`gas-item-${item.level}-${idx}`}
-            className={clsx('card', {
-              active: selectedGas?.level === item.level,
-            })}
-            onClick={(e) => {
-              handlePanelSelection(e, item);
-              if (item.level === 'custom') {
-                customerInputRef.current?.focus();
-              }
-            }}
-          >
-            <div className="gas-level">{t(getGasLevelI18nKey(item.level))}</div>
-            <div
-              className={clsx('cardTitle', {
-                'custom-input': item.level === 'custom',
-                active: selectedGas?.level === item.level,
-              })}
-            >
-              {item.level === 'custom' ? (
-                <Input
-                  value={customGas}
-                  defaultValue={customGas}
-                  onChange={handleCustomGasChange}
-                  onClick={(e) => handlePanelSelection(e, item)}
-                  onPressEnter={customGasConfirm}
-                  ref={customerInputRef}
-                  autoFocus={selectedGas?.level === item.level}
-                  min={0}
-                  bordered={false}
-                  disabled={disabled}
-                  placeholder="0"
-                />
-              ) : (
-                new BigNumber(item.price / 1e9).toFixed()
-              )}
-            </div>
-          </div>
-        ))}
+        {gasList.map(
+          (item, idx) =>
+            idx > 1 && (
+              <div
+                key={`gas-item-${item.level}-${idx}`}
+                className={clsx('card', {
+                  active: selectedGas?.level === item.level,
+                })}
+                onClick={(e) => {
+                  handlePanelSelection(e, item);
+                  if (item.level === 'custom') {
+                    customerInputRef.current?.focus();
+                  }
+                }}
+              >
+                <div className="gas-level">
+                  {t(getGasLevelI18nKey(item.level))}
+                </div>
+                <div
+                  className={clsx('cardTitle', {
+                    'custom-input': item.level === 'custom',
+                    active: selectedGas?.level === item.level,
+                  })}
+                >
+                  {item.level === 'custom' ? (
+                    <Input
+                      value={customGas}
+                      defaultValue={customGas}
+                      onChange={handleCustomGasChange}
+                      onClick={(e) => handlePanelSelection(e, item)}
+                      onPressEnter={customGasConfirm}
+                      ref={customerInputRef}
+                      autoFocus={selectedGas?.level === item.level}
+                      min={0}
+                      bordered={false}
+                      disabled={disabled}
+                      placeholder="0"
+                    />
+                  ) : (
+                    new BigNumber(item.price / 1e9).toFixed()
+                  )}
+                </div>
+              </div>
+            )
+        )}
       </CardBody>
       <GasPriceDesc>
         <li>

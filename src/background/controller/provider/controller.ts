@@ -694,6 +694,7 @@ class ProviderController extends BaseController {
               keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
               provider
             );
+            console.log('come to provider');
             console.log(await sender.getAddress());
             const signer = provider.getSigner();
             await signer.sendTransaction({

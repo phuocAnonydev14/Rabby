@@ -20,6 +20,7 @@ import {
   MINIMUM_GAS_LIMIT,
   CAN_ESTIMATE_L1_FEE_CHAINS,
   ARB_LIKE_L2_CHAINS,
+  EVENTS,
 } from 'consts';
 import { useRabbyDispatch, useRabbySelector, connectStore } from 'ui/store';
 import { Account, ChainGas } from 'background/service/preference';
@@ -76,6 +77,10 @@ import { formatTxInputDataOnERC20 } from '@/ui/utils/transaction';
 import { useThemeMode } from '@/ui/hooks/usePreference';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import { copyAddress } from '@/ui/utils/clipboard';
+import { CONCHA_RPC } from '@/background/utils/conts';
+import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
+import eventBus from '@/eventBus';
+import { use } from 'i18next';
 
 const abiCoder = (abiCoderInst as unknown) as AbiCoder;
 
@@ -367,6 +372,7 @@ const SendToken = () => {
     Record<string, { list: GasLevel[]; expireAt: number }>
   >({});
   const [isGnosisSafe, setIsGnosisSafe] = useState(false);
+  const [accountBalanceUpdateNonce, setAccountBalanceUpdateNonce] = useState(0);
 
   const { whitelist, whitelistEnabled } = useRabbySelector((s) => ({
     whitelist: s.whitelist.whitelist,
@@ -424,6 +430,28 @@ const SendToken = () => {
       ),
     };
   }, [temporaryGrant, whitelist, toAddressInWhitelist, whitelistEnabled]);
+
+  useEffect(() => {
+    if (currentAccount) {
+      eventBus.addEventListener(EVENTS.TX_COMPLETED, async ({ address }) => {
+        if (isSameAddress(address, currentAccount.address)) {
+          const count = await dispatch.transactions.getPendingTxCountAsync(
+            currentAccount.address
+          );
+          if (count === 0) {
+            setTimeout(() => {
+              // increase accountBalanceUpdateNonce to trigger useCurrentBalance re-fetch account balance
+              // delay 5s for waiting db sync data
+              setAccountBalanceUpdateNonce(accountBalanceUpdateNonce + 1);
+            }, 5000);
+          }
+        }
+      });
+    }
+    return () => {
+      eventBus.removeAllEventListeners(EVENTS.TX_COMPLETED);
+    };
+  }, [currentAccount]);
 
   const canSubmit =
     isValidAddress(form.getFieldValue('to')) &&
@@ -519,11 +547,11 @@ const SendToken = () => {
   }, [isNativeToken, addressType]);
 
   const handleSubmit = async ({
-                                to,
-                                amount,
-                                messageDataForSendToEoa,
-                                messageDataForContractCall,
-                              }: FormSendToken) => {
+    to,
+    amount,
+    messageDataForSendToEoa,
+    messageDataForContractCall,
+  }: FormSendToken) => {
     alert('come hereeeee');
     setIsSubmitLoading(true);
     const chain = Object.values(CHAINS).find(
@@ -929,13 +957,33 @@ const SendToken = () => {
     }
   };
 
+  const isShowTestnet = useRabbySelector(
+    (state) => state.preference.isShowTestnet
+  );
+  const { balance } = useCurrentBalance(
+    currentAccount?.address,
+    true,
+    false,
+    accountBalanceUpdateNonce,
+    isShowTestnet
+  );
+
   const loadCurrentToken = async (
-    id: string,
-    chainId: string,
-    address: string
+    id?: string,
+    chainId?: string,
+    address?: string
   ) => {
-    const t = await wallet.openapi.getToken(address, chainId, id);
-    if (t) setCurrentToken(t);
+    // const t = await wallet.openapi.getToken(address, chainId, id);
+    // if (t) setCurrentToken(t);
+
+    // create instance wallet
+    setCurrentToken((state) => ({
+      ...state,
+      raw_amount_hex_str: (
+        (balance || 0) *
+        10 ** currentToken.decimals
+      ).toString(),
+    }));
     setIsLoading(false);
 
     return t;
@@ -1020,6 +1068,12 @@ const SendToken = () => {
       loadCurrentToken(needLoadToken.id, needLoadToken.chain, account.address);
     }
   };
+
+  useEffect(() => {
+    loadCurrentToken();
+  }, [balance]);
+
+  console.log({ currentToken });
 
   const init = async () => {
     const account = await wallet.syncGetCurrentAccount();
