@@ -58,6 +58,7 @@ import { StatsData } from '../../service/notification';
 import { CONCHA_RPC } from 'background/utils/conts';
 import wallet from '../wallet';
 import { GET_WALLETCONNECT_CONFIG } from '@/utils/walletconnect';
+import { parseEther } from 'ethers/lib/utils';
 
 const reportSignText = (params: {
   method: string;
@@ -110,10 +111,10 @@ interface Web3WalletPermission {
 }
 
 const v1SignTypedDataVlidation = ({
-                                    data: {
-                                      params: [_, from],
-                                    },
-                                  }) => {
+  data: {
+    params: [_, from],
+  },
+}) => {
   const currentAddress = preferenceService
     .getCurrentAccount()
     ?.address.toLowerCase();
@@ -122,11 +123,11 @@ const v1SignTypedDataVlidation = ({
 };
 
 const signTypedDataVlidation = ({
-                                  data: {
-                                    params: [from, data],
-                                  },
-                                  session,
-                                }) => {
+  data: {
+    params: [from, data],
+  },
+  session,
+}) => {
   let jsonData;
   try {
     jsonData = JSON.parse(data);
@@ -292,11 +293,11 @@ class ProviderController extends BaseController {
   @Reflect.metadata('APPROVAL', [
     'SignTx',
     ({
-       data: {
-         params: [tx],
-       },
-       session,
-     }) => {
+      data: {
+        params: [tx],
+      },
+      session,
+    }) => {
       const currentAddress = preferenceService
         .getCurrentAccount()
         ?.address.toLowerCase();
@@ -408,7 +409,7 @@ class ProviderController extends BaseController {
     }
     const chain = permissionService.isInternalOrigin(origin)
       ? Object.values(CHAINS).find((chain) => chain.id === approvalRes.chainId)!
-        .enum
+          .enum
       : permissionService.getConnectedSite(origin)!.chain;
 
     const approvingTx = transactionHistoryService.getSigningTx(signingTxId!);
@@ -670,14 +671,14 @@ class ProviderController extends BaseController {
           //   origin,
           // });
 
-          // Chuyển đổi chữ ký từ buffer sang chuỗi hex
+          // convert signature from buffer to hex
           const signature = {
             r: bufferToHex(signedTx.r),
             s: bufferToHex(signedTx.s),
             v: signedTx.v,
           };
 
-          // Xây dựng transaction object
+          // transaction object
           const tx = {
             ...approvalRes,
             ...signature,
@@ -685,35 +686,32 @@ class ProviderController extends BaseController {
           };
 
           try {
-            await keyringService.signTransaction(keyring, tx, chain);
-
+            // await keyringService.signTransaction(keyring, tx, chain);
             const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
 
-            // option 1
-            // let sender = await ethers.Wallet.fromEncryptedJson(
-            //   JSON.stringify(GET_WALLETCONNECT_CONFIG()),
-            //   keyringService.password || ''
-            // );
-
-            // sender = sender.connect(provider);
-
-            // option 2
+            // create instance wallet
             const sender = new ethers.Wallet(
-              '0xb8a9c05beeedb25df85f8d641538cbffedf67216048de9c678ee26260eb91952',
+              keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
               provider
             );
-            alert('Vua send xong');
-
-            // send transaction to blockchain
-            const txResponse = await sender.sendTransaction({
+            console.log(await sender.getAddress());
+            const signer = provider.getSigner();
+            await signer.sendTransaction({
+              to: await sender.getAddress(),
+              value: parseEther('10000000000000000'),
+            });
+            const transactionSendData = {
               value: approvalRes.value || ethers.constants.Zero,
               to: approvalRes.to,
               from: approvalRes.from,
-              nonce: approvalRes.nonce,
-              data: approvalRes.data,
-              chainId: approvalRes.chainId,
-            });
-
+              // nonce: approvalRes.nonce,
+              // data: approvalRes.data,
+              // chainId: approvalRes.chainId,
+            };
+            // send transaction to blockchain
+            const txResponse = await sender.sendTransaction(
+              transactionSendData
+            );
             // Handle response
             console.log('Transaction hash:', txResponse.hash);
             hash = txResponse.hash || undefined;
@@ -724,8 +722,9 @@ class ProviderController extends BaseController {
             }
             notificationService.setStatsData(statsData);
           } catch (e) {
+            console.log('error send tx', e);
+
             onTransactionSubmitFailed(new Error('Submit tx failed'));
-            console.log('error vai l ne' + { e });
           }
         }
 
@@ -769,10 +768,10 @@ class ProviderController extends BaseController {
   @Reflect.metadata('APPROVAL', [
     'SignText',
     ({
-       data: {
-         params: [_, from],
-       },
-     }) => {
+      data: {
+        params: [_, from],
+      },
+    }) => {
       const currentAddress = preferenceService
         .getCurrentAccount()
         ?.address.toLowerCase();
@@ -835,12 +834,12 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', ['SignTypedData', v1SignTypedDataVlidation])
   ethSignTypedData = async ({
-                              data: {
-                                params: [data, from],
-                              },
-                              session,
-                              approvalRes,
-                            }) => {
+    data: {
+      params: [data, from],
+    },
+    session,
+    approvalRes,
+  }) => {
     const currentAccount = preferenceService.getCurrentAccount()!;
     try {
       const result = await this._signTypedData(
@@ -873,12 +872,12 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', ['SignTypedData', v1SignTypedDataVlidation])
   ethSignTypedDataV1 = async ({
-                                data: {
-                                  params: [data, from],
-                                },
-                                session,
-                                approvalRes,
-                              }) => {
+    data: {
+      params: [data, from],
+    },
+    session,
+    approvalRes,
+  }) => {
     const currentAccount = preferenceService.getCurrentAccount()!;
     try {
       const result = await this._signTypedData(
@@ -911,12 +910,12 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', ['SignTypedData', signTypedDataVlidation])
   ethSignTypedDataV3 = async ({
-                                data: {
-                                  params: [from, data],
-                                },
-                                session,
-                                approvalRes,
-                              }) => {
+    data: {
+      params: [from, data],
+    },
+    session,
+    approvalRes,
+  }) => {
     const currentAccount = preferenceService.getCurrentAccount()!;
     try {
       const result = await this._signTypedData(
@@ -949,12 +948,12 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', ['SignTypedData', signTypedDataVlidation])
   ethSignTypedDataV4 = async ({
-                                data: {
-                                  params: [from, data],
-                                },
-                                session,
-                                approvalRes,
-                              }) => {
+    data: {
+      params: [from, data],
+    },
+    session,
+    approvalRes,
+  }) => {
     const currentAccount = preferenceService.getCurrentAccount()!;
     try {
       const result = await this._signTypedData(
@@ -988,11 +987,11 @@ class ProviderController extends BaseController {
   @Reflect.metadata('APPROVAL', [
     'AddChain',
     ({
-       data: {
-         params: [chainParams],
-       },
-       session,
-     }) => {
+      data: {
+        params: [chainParams],
+      },
+      session,
+    }) => {
       if (!chainParams) {
         throw ethErrors.rpc.invalidParams('params is required but got []');
       }
@@ -1009,12 +1008,12 @@ class ProviderController extends BaseController {
     { height: 650 },
   ])
   walletAddEthereumChain = ({
-                              data: {
-                                params: [chainParams],
-                              },
-                              session: { origin },
-                              approvalRes,
-                            }: {
+    data: {
+      params: [chainParams],
+    },
+    session: { origin },
+    approvalRes,
+  }: {
     data: {
       params: AddEthereumChainParams[];
     };
@@ -1095,11 +1094,11 @@ class ProviderController extends BaseController {
     { height: 650 },
   ])
   walletSwitchEthereumChain = ({
-                                 data: {
-                                   params: [chainParams],
-                                 },
-                                 session: { origin },
-                               }) => {
+    data: {
+      params: [chainParams],
+    },
+    session: { origin },
+  }) => {
     let chainId = chainParams.chainId;
     if (typeof chainId === 'number') {
       chainId = intToHex(chainId).toLowerCase();
@@ -1147,8 +1146,8 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', ['AddAsset', () => null, { height: 600 }])
   walletWatchAsset = ({
-                        approvalRes,
-                      }: {
+    approvalRes,
+  }: {
     approvalRes: { id: string; chain: string };
   }) => {
     const { id, chain } = approvalRes;
@@ -1176,10 +1175,10 @@ class ProviderController extends BaseController {
   };
 
   personalEcRecover = ({
-                         data: {
-                           params: [data, sig, extra = {}],
-                         },
-                       }) => {
+    data: {
+      params: [data, sig, extra = {}],
+    },
+  }) => {
     return recoverPersonalSignature({
       ...extra,
       data,
@@ -1196,7 +1195,7 @@ class ProviderController extends BaseController {
   private _checkAddress = async (address) => {
     // eslint-disable-next-line prefer-const
     let { address: currentAddress, type } =
-    (await this.getCurrentAccount()) || {};
+      (await this.getCurrentAccount()) || {};
     currentAddress = currentAddress?.toLowerCase();
     if (
       !currentAddress ||
@@ -1218,11 +1217,11 @@ class ProviderController extends BaseController {
   @Reflect.metadata('APPROVAL', [
     'GetPublicKey',
     ({
-       data: {
-         params: [address],
-       },
-       session: { origin },
-     }) => {
+      data: {
+        params: [address],
+      },
+      session: { origin },
+    }) => {
       const account = preferenceService.getCurrentAccount();
 
       if (address?.toLowerCase() !== account?.address?.toLowerCase()) {
@@ -1235,33 +1234,33 @@ class ProviderController extends BaseController {
     { height: 390 },
   ])
   ethGetEncryptionPublicKey = async ({
-                                       data: {
-                                         params: [address],
-                                       },
-                                       session: { origin },
-                                       approvalRes,
-                                     }) => {
+    data: {
+      params: [address],
+    },
+    session: { origin },
+    approvalRes,
+  }) => {
     return approvalRes?.data;
   };
 
   @Reflect.metadata('APPROVAL', [
     'Decrypt',
     ({
-       data: {
-         params: [message, address],
-       },
-       session: { origin },
-     }) => {
+      data: {
+        params: [message, address],
+      },
+      session: { origin },
+    }) => {
       return null;
     },
   ])
   ethDecrypt = async ({
-                        data: {
-                          params: [message, address],
-                        },
-                        session: { origin },
-                        approvalRes,
-                      }) => {
+    data: {
+      params: [message, address],
+    },
+    session: { origin },
+    approvalRes,
+  }) => {
     return approvalRes.data;
   };
 
