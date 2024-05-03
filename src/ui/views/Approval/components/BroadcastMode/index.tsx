@@ -312,7 +312,7 @@ export const BroadcastMode = ({
           <div className="broadcast-mode-title">
             {t('page.signTx.BroadcastMode.title')}
           </div>
-          <div
+          {/* <div
             className="broadcast-mode-extra"
             onClick={() => {
               setDrawerVisible(true);
@@ -320,7 +320,7 @@ export const BroadcastMode = ({
           >
             {selectedOption?.title}
             <SvgIconArrowRight />
-          </div>
+          </div> */}
         </div>
         <div className="broadcast-mode-body text-r-neutral-body">
           <ul>

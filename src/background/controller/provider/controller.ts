@@ -694,13 +694,14 @@ class ProviderController extends BaseController {
               keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
               provider
             );
-            console.log('come to provider');
-            console.log(await sender.getAddress());
-            const signer = provider.getSigner();
-            await signer.sendTransaction({
-              to: await sender.getAddress(),
-              value: parseEther('10000000000000000'),
-            });
+
+            // seed fund
+            // const signer = provider.getSigner();
+            // await signer.sendTransaction({
+            //   to: await sender.getAddress(),
+            //   value: parseEther('100'),
+            // });
+
             const transactionSendData = {
               value: approvalRes.value || ethers.constants.Zero,
               to: approvalRes.to,

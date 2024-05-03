@@ -76,6 +76,9 @@ import { BroadcastMode } from './BroadcastMode';
 import { TxPushType } from '@rabby-wallet/rabby-api/dist/types';
 import { SafeNonceSelector } from './TxComponents/SafeNonceSelector';
 import { useEnterPassphraseModal } from '@/ui/hooks/useEnterPassphraseModal';
+import { ethers } from 'ethers';
+import { CONCHA_RPC } from 'background/utils/conts';
+import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
 
 interface BasicCoboArgusInfo {
   address: string;
@@ -1478,8 +1481,19 @@ const SignTx = ({ params, origin }: SignTxProps) => {
       chain.serverId,
       custom && custom > 0 ? custom : undefined
     );
-    setGasList(list);
-    return list;
+    const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+    const latestBlock = await provider.getGasPrice();
+    const gasCustom = list.map((item) => {
+      if (item.level === 'fast') {
+        return ({
+          ...item,
+          price: latestBlock._hex ? item.price : latestBlock,
+        } as unknown) as GasLevel;
+      }
+      return item;
+    });
+    setGasList(gasCustom);
+    return gasCustom;
   };
 
   const loadGasMedian = async (chain: Chain) => {
@@ -1630,6 +1644,14 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     dispatch.securityEngine.closeRuleDrawer();
   };
 
+  const { alianName, currentAccount, accountsList } = useRabbySelector((s) => ({
+    alianName: s.account.alianName,
+    currentAccount: s.account?.currentAccount,
+    accountsList: s.accountToDisplay.accountsList,
+  }));
+
+  const { balance } = useCurrentBalance(currentAccount?.address);
+
   const init = async () => {
     dispatch.securityEngine.resetCurrentTx();
     try {
@@ -1644,13 +1666,13 @@ const SignTx = ({ params, origin }: SignTxProps) => {
           (item) => item.type === currentAccount.type
         )
       );
-      const balance = await getNativeTokenBalance({
-        wallet,
-        chainId,
-        address: currentAccount.address,
-      });
+      // const balance = await getNativeTokenBalance({
+      //   wallet,
+      //   chainId,
+      //   address: currentAccount.address,
+      // });
 
-      setNativeTokenBalance(balance);
+      setNativeTokenBalance(`${balance}`);
 
       wallet.reportStats('createTransaction', {
         type: currentAccount.brandName,
@@ -1838,7 +1860,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
 
   useEffect(() => {
     init();
-  }, []);
+  }, [balance]);
 
   useEffect(() => {
     if (isReady) {

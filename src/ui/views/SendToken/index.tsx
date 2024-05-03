@@ -552,7 +552,6 @@ const SendToken = () => {
     messageDataForSendToEoa,
     messageDataForContractCall,
   }: FormSendToken) => {
-    alert('come hereeeee');
     setIsSubmitLoading(true);
     const chain = Object.values(CHAINS).find(
       (item) => item.serverId === currentToken.chain

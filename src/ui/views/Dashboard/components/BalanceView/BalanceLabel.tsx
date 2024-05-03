@@ -16,7 +16,7 @@ interface Props {
   balance: number;
 }
 export const BalanceLabel: React.FC<Props> = ({ isCache, balance }) => {
-  const account = useRabbySelector((state) => state.account.currentAccount);
+  const account = useRabbySelector((state) => state?.account?.currentAccount);
   if (!account) return <></>;
   const splitBalance = splitNumberByStep((balance || 0).toFixed(2)).replace(
     '$',
@@ -96,7 +96,7 @@ export const BalanceLabel: React.FC<Props> = ({ isCache, balance }) => {
           *****
         </span>
       ) : (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <img
             src={tokenLogo}
             className={clsx('rounded-full', {

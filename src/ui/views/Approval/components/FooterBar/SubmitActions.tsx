@@ -71,7 +71,7 @@ export const SubmitActions: React.FC<Props> = ({
         >
           <div>
             <Button
-              disabled={disabledProcess}
+              // disabled={disabledProcess}
               type="primary"
               className={clsx(
                 'w-[246px] h-[48px] rounded-[8px]',

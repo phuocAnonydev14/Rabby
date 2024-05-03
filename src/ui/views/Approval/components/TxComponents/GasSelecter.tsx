@@ -805,7 +805,7 @@ const GasSelector = ({
               disabled ? t('page.signTx.gasNotRequireForSafeTransaction') : null
             }
           >
-            <CardBody $disabled={disabled}>
+            <CardBody className="justify-start" $disabled={disabled}>
               {gasList.map((item, idx) => (
                 <div
                   key={`gas-item-${item.level}-${idx}`}
@@ -837,7 +837,7 @@ const GasSelector = ({
                         disabled={disabled}
                       />
                     ) : (
-                      new BigNumber(item.price / 1e9).toFixed()
+                      new BigNumber(item.price / 1e9).toFixed(3)
                     )}
                   </div>
                 </div>
@@ -1047,7 +1047,7 @@ const GasSelectPanel = ({
       overlayClassName="rectangle"
       title={disabled ? t('page.signTx.gasNotRequireForSafeTransaction') : null}
     >
-      <CardBody $disabled={disabled}>
+      <CardBody className="justify-start" $disabled={disabled}>
         {gasList.map(
           (item, idx) =>
             idx > 1 && (
@@ -1099,16 +1099,16 @@ const GasSelectPanel = ({
           {t('page.signTx.myNativeTokenBalance', {
             symbol: chain.nativeTokenSymbol,
             amount: formatTokenAmount(
-              new BigNumber(nativeTokenBalance).div(1e18).toFixed()
+              new BigNumber(nativeTokenBalance).toFixed()
             ),
           })}
         </li>
-        {gasPriceMedian !== null && (
+        {/* {gasPriceMedian !== null && (
           <li>
             {t('page.signTx.gasPriceMedian')}
             {new BigNumber(gasPriceMedian).div(1e9).toFixed()} Gwei
           </li>
-        )}
+        )} */}
       </GasPriceDesc>
     </Tooltip>
   );
