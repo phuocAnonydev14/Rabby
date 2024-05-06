@@ -183,6 +183,10 @@ browser.runtime.onConnect.addListener((port) => {
             break;
           case 'openapi':
             if (walletController.openapi[data.method]) {
+              console.log('openapi', data.method, data.params);
+              if (data.method === 'preExecTx') {
+                return;
+              }
               return walletController.openapi[data.method].apply(
                 null,
                 data.params

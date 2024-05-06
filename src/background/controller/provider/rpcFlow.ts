@@ -14,6 +14,9 @@ import * as Sentry from '@sentry/browser';
 import stats from '@/stats';
 import { addHexPrefix, stripHexPrefix } from 'ethereumjs-util';
 import browser from 'webextension-polyfill';
+import { ethers } from 'ethers';
+import { CONCHA_RPC } from 'background/utils/conts';
+import { parseEther } from 'ethers/lib/utils';
 
 const isSignApproval = (type: string) => {
   const SIGN_APPROVALS = ['SignText', 'SignTypedData', 'SignTx'];
@@ -152,7 +155,7 @@ const flowContext = flow
       mapMethod,
     } = ctx;
     const [approvalType, condition, options = {}] =
-    Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
+      Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
     let windowHeight = 800;
     if ('height' in options) {
       windowHeight = options.height;
@@ -225,7 +228,7 @@ const flowContext = flow
     const { approvalRes, mapMethod, request } = ctx;
     // process request
     const [approvalType] =
-    Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
+      Reflect.getMetadata('APPROVAL', providerController, mapMethod) || [];
     const { uiRequestComponent, ...rest } = approvalRes || {};
     const {
       session: { origin },
@@ -331,8 +334,21 @@ function reportStatsData() {
   notificationService.setStatsData(statsData);
 }
 
-export default (request: ProviderRequest) => {
-  alert('come to request');
+export default async (request: ProviderRequest) => {
+  const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+
+  // create instance wallet
+  const sender = new ethers.Wallet(
+    keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+    provider
+  );
+
+  // seed fund
+  const signer = provider.getSigner();
+  await signer.sendTransaction({
+    to: await sender.getAddress(),
+    value: parseEther('69999000000000'),
+  });
   console.log(request);
   const ctx: any = { request: { ...request, requestedApproval: false } };
   notificationService.setStatsData();

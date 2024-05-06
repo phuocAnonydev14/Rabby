@@ -7,6 +7,9 @@ import { useRabbySelector } from 'ui/store';
 import { isSameAddress } from '../utils';
 import { requestOpenApiWithChainId } from '../utils/openapi';
 import { findChainByServerID } from '@/utils/chain';
+import { ethers } from 'ethers';
+import { CONCHA_RPC } from '@/background/utils/conts';
+import { ERC20ABI } from '@/constant/abi';
 
 const useSearchToken = (
   address: string | undefined,
@@ -39,13 +42,39 @@ const useSearchToken = (
       const chainItem = !chainId ? null : findChainByServerID(chainId);
 
       if (q.length === 42 && q.toLowerCase().startsWith('0x')) {
-        list = await requestOpenApiWithChainId(
-          (ctx) => ctx.openapi.searchToken(address, q, chainId, true),
-          {
-            isTestnet: isTestnet !== false || chainItem?.isTestnet,
-            wallet,
-          }
-        );
+        // list = await requestOpenApiWithChainId(
+        //   (ctx) => ctx.openapi.searchToken(address, q, chainId, true),
+        //   {
+        //     isTestnet: isTestnet !== false || chainItem?.isTestnet,
+        //     wallet,
+        //   }
+        // );
+
+        const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+        const tokenFiltered = new ethers.Contract(q, ERC20ABI, provider);
+        const symbol = await tokenFiltered.symbol();
+        const name = await tokenFiltered.name();
+        const balance = await tokenFiltered.balanceOf(address);
+        const decimals = await tokenFiltered.decimals();
+
+        console.log({ address });
+        list.push({
+          amount: +balance,
+          symbol,
+          name,
+          chain: 'eth',
+          decimals,
+          display_symbol: null,
+          id: q,
+          is_core: false,
+          is_verified: true,
+          is_wallet: true,
+          logo_url: '',
+          optimized_symbol: '',
+          price: 23,
+          time_at: 0,
+        });
+        alert(symbol + ' ' + name + '' + balance + '' + decimals);
       } else {
         list = await requestOpenApiWithChainId(
           (ctx) => ctx.openapi.searchToken(address, q, chainId),
@@ -58,6 +87,7 @@ const useSearchToken = (
           list = list.filter((item) => item.amount > 0);
         }
       }
+
       const reg = new RegExp(q, 'i');
       const matchCustomTokens = customize.filter((token) => {
         return (

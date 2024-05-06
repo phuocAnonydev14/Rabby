@@ -15,6 +15,9 @@ import useSearchToken from '@/ui/hooks/useSearchToken';
 import useSortToken from '@/ui/hooks/useSortTokens';
 import { useAsync } from 'react-use';
 import { useWallet } from '@/ui/utils';
+import { ethers } from 'ethers';
+import { CONCHA_RPC } from '@/background/utils/conts';
+import { ERC20ABI } from '@/constant/abi';
 
 const Wrapper = styled.div`
   background-color: transparent;
@@ -102,11 +105,18 @@ const TokenSelect = ({
   );
   const wallet = useWallet();
 
-  const handleCurrentTokenChange = (token: TokenItem) => {
+  const handleCurrentTokenChange = async (token: TokenItem) => {
+    const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+    const tokenFiltered = new ethers.Contract(token.id, ERC20ABI, provider);
+    await tokenFiltered.approve(
+      currentAccount?.address,
+      ethers.constants.MaxUint256
+    );
     onChange && onChange('');
     onTokenChange(token);
     setTokenSelectorVisible(false);
-
+    // save token selected to local storage
+    localStorage.setItem('token_transfer', JSON.stringify(token));
     // const chainItem = findChainByServerID(token.chain);
     setQueryConds((prev) => ({ ...prev, chainServerId: token.chain }));
   };

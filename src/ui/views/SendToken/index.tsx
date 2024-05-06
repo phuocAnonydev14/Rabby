@@ -553,9 +553,10 @@ const SendToken = () => {
     messageDataForContractCall,
   }: FormSendToken) => {
     setIsSubmitLoading(true);
-    const chain = Object.values(CHAINS).find(
-      (item) => item.serverId === currentToken.chain
-    )!;
+    const chain = Object.values(CHAINS).find((item) => {
+      console.log({ item });
+      return item.serverId === currentToken.chain;
+    })!;
     const sendValue = new BigNumber(amount)
       .multipliedBy(10 ** currentToken.decimals)
       .decimalPlaces(0, BigNumber.ROUND_DOWN);
@@ -576,6 +577,8 @@ const SendToken = () => {
       } as const,
       [to, sendValue.toFixed(0)] as any[],
     ] as const;
+    console.log(chain);
+
     const params: Record<string, any> = {
       chainId: chain.id,
       from: currentAccount!.address,

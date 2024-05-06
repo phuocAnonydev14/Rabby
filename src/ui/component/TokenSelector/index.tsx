@@ -80,6 +80,7 @@ const TokenSelector = ({
 
   useDebounce(
     () => {
+      console.log('chainSearchCtx', chainSearchCtx, query);
       onSearch({ ...chainSearchCtx, keyword: query });
     },
     150,
@@ -267,10 +268,11 @@ const TokenSelector = ({
             {/* ASSET / AMOUNT */}
             {t('component.TokenSelector.listTableHead.assetAmount.title')}
           </div>
-          <div>
-            {/* PRICE */}
-            {t('component.TokenSelector.listTableHead.price.title')}
-          </div>
+          <div>Amount</div>
+          {/* {/* <div> */}
+          {/* PRICE */}
+          {/* {t('component.TokenSelector.listTableHead.price.title')} */}
+          {/* </div>  */}
           <div>
             {/* USD VALUE */}
             {t('component.TokenSelector.listTableHead.usdValue.title')}
@@ -303,12 +305,12 @@ const TokenSelector = ({
                     onClick={() => !disabled && onConfirm(token)}
                   >
                     <div>
-                      <TokenWithChain
+                      {/* <TokenWithChain
                         token={token}
                         width="24px"
                         height="24px"
                         hideConer
-                      />
+                      /> */}
                       <div className="flex flex-col gap-4">
                         <span
                           className="symbol text-13 text-r-neutral-title-1 font-medium"
@@ -321,8 +323,15 @@ const TokenSelector = ({
                         </span>
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-4">
+                    <div>
+                      <span
+                        className="symbol text-13 text-r-neutral-title-1 font-medium"
+                        title={token.amount.toString()}
+                      >
+                        {formatTokenAmount(token.amount)}
+                      </span>
+                    </div>
+                    {/* <div className="flex flex-col gap-4">
                       <div>{formatUsdValue(token.price)}</div>
                       <div>
                         {isNil(token.price_24h_change) ? null : (
@@ -337,7 +346,7 @@ const TokenSelector = ({
                           </div>
                         )}
                       </div>
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-col text-right items-end">
                       <div

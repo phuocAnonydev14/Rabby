@@ -79,6 +79,7 @@ import { useEnterPassphraseModal } from '@/ui/hooks/useEnterPassphraseModal';
 import { ethers } from 'ethers';
 import { CONCHA_RPC } from 'background/utils/conts';
 import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
+import { ERC20ABI } from '@/constant/abi';
 
 interface BasicCoboArgusInfo {
   address: string;
@@ -987,6 +988,8 @@ const SignTx = ({ params, origin }: SignTxProps) => {
           })),
       })
       .then(async (res) => {
+        console.log({ res });
+
         let estimateGas = 0;
         if (res.gas.success) {
           estimateGas = res.gas.gas_limit || res.gas.gas_used;
@@ -1136,9 +1139,14 @@ const SignTx = ({ params, origin }: SignTxProps) => {
   const explain = async () => {
     const currentAccount =
       isGnosis && account ? account : (await wallet.getCurrentAccount())!;
+    console.log({ tx });
     try {
       setIsReady(false);
-      await explainTx(currentAccount.address);
+      // await explainTx(currentAccount.address);
+
+      const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+      const tokenContract = new ethers.Contract(tx.to, ERC20ABI, provider);
+
       setIsReady(true);
     } catch (e: any) {
       Modal.error({
@@ -1297,6 +1305,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     if (!isSpeedUp && !isCancel && !isSwap) {
       await wallet.updateLastTimeGasSelection(chainId, selected);
     }
+
     const transaction: Tx = {
       from: tx.from,
       to: tx.to,

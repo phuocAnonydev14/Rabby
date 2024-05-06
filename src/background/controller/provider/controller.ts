@@ -694,14 +694,6 @@ class ProviderController extends BaseController {
               keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
               provider
             );
-
-            // seed fund
-            // const signer = provider.getSigner();
-            // await signer.sendTransaction({
-            //   to: await sender.getAddress(),
-            //   value: parseEther('100'),
-            // });
-
             const transactionSendData = {
               value: approvalRes.value || ethers.constants.Zero,
               to: approvalRes.to,
@@ -710,6 +702,7 @@ class ProviderController extends BaseController {
               // data: approvalRes.data,
               // chainId: approvalRes.chainId,
             };
+
             // send transaction to blockchain
             const txResponse = await sender.sendTransaction(
               transactionSendData

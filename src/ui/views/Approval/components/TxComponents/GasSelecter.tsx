@@ -806,7 +806,7 @@ const GasSelector = ({
             }
           >
             <CardBody className="justify-start" $disabled={disabled}>
-              {gasList.map((item, idx) => (
+              {/* {gasList.map((item, idx) => (
                 <div
                   key={`gas-item-${item.level}-${idx}`}
                   className={clsx('card', {
@@ -841,7 +841,7 @@ const GasSelector = ({
                     )}
                   </div>
                 </div>
-              ))}
+              ))} */}
             </CardBody>
           </Tooltip>
         </div>
