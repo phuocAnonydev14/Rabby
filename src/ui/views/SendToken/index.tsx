@@ -652,7 +652,7 @@ const SendToken = () => {
           filterRbiSource('sendToken', rbisource) && rbisource, // mark source module of `sendToken`
         ].join('|'),
       });
-
+      alert('create tx');
       wallet.sendRequest({
         method: 'eth_sendTransaction',
         params: [params],

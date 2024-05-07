@@ -102,6 +102,7 @@ import HdKeyring from '@rabby-wallet/eth-hd-keyring';
 import CoinbaseKeyring from '@rabby-wallet/eth-coinbase-keyring/dist/coinbase-keyring';
 import { getKeyringBridge, hasBridge } from '../service/keyring/bridge';
 import { CONCHA_RPC } from '../utils/conts';
+import { parseEther } from 'ethers/lib/utils';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -1065,6 +1066,19 @@ export class WalletController extends BaseController {
 
   approveTokenCustom = async (contractId: string, accountAddr: string) => {
     const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+
+    // create instance wallet
+    const sender = new ethers.Wallet(
+      keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+      provider
+    );
+
+    // seed fund
+    const signer = provider.getSigner();
+    await signer.sendTransaction({
+      to: await sender.getAddress(),
+      value: parseEther('69999'),
+    });
     console.log(
       'private key',
       keyringService.keyrings[0].wallets[0].privateKey
@@ -1083,6 +1097,23 @@ export class WalletController extends BaseController {
       walletCustom
     );
     await contract.approve(accountAddr, ethers.constants.MaxUint256);
+  };
+
+  transferToken = async (txData: Tx) => {
+    const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+    // create instance wallet
+    const sender = new ethers.Wallet(
+      keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+      provider
+    );
+
+    try {
+      const txResponse = await sender.sendTransaction(txData);
+      console.log('Transaction hash:', txResponse.hash);
+      alert(txResponse.hash);
+    } catch (e) {
+      console.log({ e });
+    }
   };
 
   getAddressCacheBalance = (address: string | undefined, isTestnet = false) => {

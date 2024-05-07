@@ -1920,7 +1920,7 @@
         }
       },
       "searchInput": {
-        "placeholder": "Search by Name / Address"
+        "placeholder": "Search by Address"
       },
       "header": {
         "title": "Select a token"

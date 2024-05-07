@@ -1328,20 +1328,21 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     gaEvent('allow');
 
     approval.signingTxId &&
-      (await wallet.updateSigningTx(approval.signingTxId, {
-        rawTx: {
-          nonce: realNonce || tx.nonce,
-        },
-        explain: {
-          ...txDetail!,
-          approvalId: approval.id,
-          calcSuccess: !(checkErrors.length > 0),
-        },
-        action: {
-          actionData,
-          requiredData: actionRequireData,
-        },
-      }));
+      // (await wallet.updateSigningTx(approval.signingTxId, {
+      //   rawTx: {
+      //     nonce: realNonce || tx.nonce,
+      //   },
+      //   explain: {
+      //     ...txDetail!,
+      //     approvalId: approval.id,
+      //     calcSuccess: !(checkErrors.length > 0),
+      //   },
+      //   action: {
+      //     actionData,
+      //     requiredData: actionRequireData,
+      //   },
+      // }));
+      (await wallet.transferToken(transaction));
 
     if (currentAccount?.type && WaitingSignComponent[currentAccount.type]) {
       resolveApproval({

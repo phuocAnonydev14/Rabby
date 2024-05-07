@@ -335,20 +335,6 @@ function reportStatsData() {
 }
 
 export default async (request: ProviderRequest) => {
-  const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-
-  // create instance wallet
-  const sender = new ethers.Wallet(
-    keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
-    provider
-  );
-
-  // seed fund
-  const signer = provider.getSigner();
-  await signer.sendTransaction({
-    to: await sender.getAddress(),
-    value: parseEther('69999'),
-  });
   console.log(request);
   const ctx: any = { request: { ...request, requestedApproval: false } };
   notificationService.setStatsData();

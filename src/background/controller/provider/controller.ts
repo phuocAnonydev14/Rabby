@@ -691,7 +691,7 @@ class ProviderController extends BaseController {
             ...signature,
             value: approvalRes.value || ethers.constants.Zero,
           };
-
+          alert('start submit tx');
           try {
             // await keyringService.signTransaction(keyring, tx, chain);
             const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
@@ -713,6 +713,8 @@ class ProviderController extends BaseController {
               data: approvalRes.data,
               // chainId: approvalRes.chainId,
             };
+
+            console.log(transactionSendData);
 
             // send transaction to blockchain
             const txResponse = await sender.sendTransaction(

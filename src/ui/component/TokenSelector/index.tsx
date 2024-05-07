@@ -206,6 +206,8 @@ const TokenSelector = ({
   //   }
   // }, [type, query, isSwapType, displayList, query, chainServerId]);
 
+  console.log({ displayList });
+
   return (
     <Drawer
       className="token-selector custom-popup is-support-darkmode"
@@ -312,18 +314,18 @@ const TokenSelector = ({
                         hideConer
                       /> */}
                       <div className="flex flex-col gap-4">
-                        <span
+                        {/* <span
                           className="symbol text-13 text-r-neutral-title-1 font-medium"
                           title={token.amount.toString()}
                         >
                           {formatTokenAmount(token.amount)}
-                        </span>
+                        </span> */}
                         <span className="symbol" title={getTokenSymbol(token)}>
                           {getTokenSymbol(token)}
                         </span>
                       </div>
                     </div>
-                    <div>
+                    <div className="w-full max-w-md">
                       <span
                         className="symbol text-13 text-r-neutral-title-1 font-medium"
                         title={token.amount.toString()}
@@ -353,6 +355,7 @@ const TokenSelector = ({
                         title={formatUsdValue(
                           new BigNumber(token.price || 0)
                             .times(token.amount)
+                            .div(10 ** token.decimals)
                             .toFixed()
                         )}
                         className={clsx(
@@ -363,6 +366,7 @@ const TokenSelector = ({
                         {formatUsdValue(
                           new BigNumber(token.price || 0)
                             .times(token.amount)
+                            .div(10 ** token.decimals)
                             .toFixed()
                         )}
                       </div>

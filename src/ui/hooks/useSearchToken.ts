@@ -7,7 +7,7 @@ import { useRabbySelector } from 'ui/store';
 import { isSameAddress } from '../utils';
 import { requestOpenApiWithChainId } from '../utils/openapi';
 import { findChainByServerID } from '@/utils/chain';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { CONCHA_RPC } from '@/background/utils/conts';
 import { ERC20ABI } from '@/constant/abi';
 
@@ -59,7 +59,7 @@ const useSearchToken = (
 
         console.log({ address });
         list.push({
-          amount: +balance,
+          amount: +balance / 10 ** decimals,
           symbol,
           name,
           chain: 'eth',
