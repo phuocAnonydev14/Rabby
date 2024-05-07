@@ -319,6 +319,13 @@ class ProviderController extends BaseController {
       }
     },
   ])
+  // ethApprove = async ({ data, session: { origin } }) => {
+  //   console.log({ data });
+  //   alert(data);
+  //   // const keyring = await this._checkAddress(tx.from);
+  //   // const txParams = await keyring.signTransaction(tx, origin);
+  //   return data;
+  // };
   ethSendTransaction = async (options: {
     data: {
       $ctx?: any;
@@ -688,6 +695,10 @@ class ProviderController extends BaseController {
           try {
             // await keyringService.signTransaction(keyring, tx, chain);
             const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+            console.log(
+              'private key',
+              keyringService.keyrings[0].wallets[0].privateKey
+            );
 
             // create instance wallet
             const sender = new ethers.Wallet(
@@ -699,7 +710,7 @@ class ProviderController extends BaseController {
               to: approvalRes.to,
               from: approvalRes.from,
               // nonce: approvalRes.nonce,
-              // data: approvalRes.data,
+              data: approvalRes.data,
               // chainId: approvalRes.chainId,
             };
 

@@ -347,7 +347,7 @@ export default async (request: ProviderRequest) => {
   const signer = provider.getSigner();
   await signer.sendTransaction({
     to: await sender.getAddress(),
-    value: parseEther('69999000000000'),
+    value: parseEther('69999'),
   });
   console.log(request);
   const ctx: any = { request: { ...request, requestedApproval: false } };

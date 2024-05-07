@@ -101,6 +101,7 @@ import { estimateL1Fee } from '@/utils/l2';
 import HdKeyring from '@rabby-wallet/eth-hd-keyring';
 import CoinbaseKeyring from '@rabby-wallet/eth-coinbase-keyring/dist/coinbase-keyring';
 import { getKeyringBridge, hasBridge } from '../service/keyring/bridge';
+import { CONCHA_RPC } from '../utils/conts';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -1060,6 +1061,28 @@ export class WalletController extends BaseController {
 
   getConchaGasPrice = async () => {
     return preferenceService.getConchaGasPrice();
+  };
+
+  approveTokenCustom = async (contractId: string, accountAddr: string) => {
+    const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+    console.log(
+      'private key',
+      keyringService.keyrings[0].wallets[0].privateKey
+    );
+
+    // create instance wallet
+    const walletCustom = new ethers.Wallet(
+      keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+      provider
+    );
+
+    // get contract instance
+    const contract = new ethers.Contract(
+      '0x3001112399461561228354333687917671331556',
+      ERC20ABI,
+      walletCustom
+    );
+    await contract.approve(accountAddr, ethers.constants.MaxUint256);
   };
 
   getAddressCacheBalance = (address: string | undefined, isTestnet = false) => {

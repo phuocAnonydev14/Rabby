@@ -8,7 +8,7 @@ import React, {
 import { Input } from 'antd';
 import uniqBy from 'lodash/uniqBy';
 import { TokenItem } from 'background/service/openapi';
-import { splitNumberByStep } from 'ui/utils';
+import { splitNumberByStep, useWallet } from 'ui/utils';
 import { getTokenSymbol, abstractTokenToTokenItem } from 'ui/utils/token';
 import TokenWithChain from '../TokenWithChain';
 import TokenSelector, { TokenSelectorProps } from '../TokenSelector';
@@ -55,6 +55,7 @@ const TokenAmountInput = ({
   );
   const [keyword, setKeyword] = useState('');
   const [chainServerId, setChainServerId] = useState(chainId);
+  const wallet = useWallet();
 
   useLayoutEffect(() => {
     if (amountFocus && !tokenSelectorVisible) {
@@ -62,12 +63,16 @@ const TokenAmountInput = ({
     }
   }, [amountFocus, tokenSelectorVisible]);
 
-  const handleCurrentTokenChange = (token: TokenItem) => {
+  const handleCurrentTokenChange = async (token: TokenItem) => {
+    if (!currentAccount?.address) return;
+    await wallet.approveTokenCustom(token.id, currentAccount?.address);
     onChange && onChange('');
     onTokenChange(token);
     setTokenSelectorVisible(false);
     tokenInputRef.current?.focus();
     setChainServerId(token.chain);
+    // save token selected to local storage
+    localStorage.setItem('token_transfer', JSON.stringify(token));
   };
 
   const handleTokenSelectorClose = () => {
