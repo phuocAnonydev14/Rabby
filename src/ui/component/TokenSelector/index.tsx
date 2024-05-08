@@ -206,8 +206,6 @@ const TokenSelector = ({
   //   }
   // }, [type, query, isSwapType, displayList, query, chainServerId]);
 
-  console.log({ displayList });
-
   return (
     <Drawer
       className="token-selector custom-popup is-support-darkmode"

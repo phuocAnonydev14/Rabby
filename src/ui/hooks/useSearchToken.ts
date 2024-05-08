@@ -37,7 +37,7 @@ const useSearchToken = (
       q: string;
       chainId?: string;
     }) => {
-      let list: TokenItem[] = [];
+      const list: TokenItem[] = [];
       setIsLoading(true);
       const chainItem = !chainId ? null : findChainByServerID(chainId);
 
@@ -76,16 +76,26 @@ const useSearchToken = (
         });
         alert(symbol + ' ' + name + '' + balance + '' + decimals);
       } else {
-        list = await requestOpenApiWithChainId(
-          (ctx) => ctx.openapi.searchToken(address, q, chainId),
-          {
-            isTestnet: isTestnet !== false || chainItem?.isTestnet,
-            wallet,
+        let isExistedSearchEth = false;
+        ['e', 't', 'h'].forEach((key) => {
+          if (q.includes(key)) isExistedSearchEth = true;
+        });
+        if (isExistedSearchEth) {
+          const conChaToken = await wallet.getCurrentToken(undefined, address);
+          if (conChaToken) {
+            list.push(conChaToken);
           }
-        );
-        if (withBalance) {
-          list = list.filter((item) => item.amount > 0);
         }
+        // list = await requestOpenApiWithChainId(
+        //   (ctx) => ctx.openapi.searchToken(address, q, chainId),
+        //   {
+        //     isTestnet: isTestnet !== false || chainItem?.isTestnet,
+        //     wallet,
+        //   }
+        // );
+        // if (withBalance) {
+        //   list = list.filter((item) => item.amount > 0);
+        // }
       }
 
       const reg = new RegExp(q, 'i');

@@ -344,413 +344,67 @@ class ProviderController extends BaseController {
       session: { origin },
       approvalRes,
     } = cloneDeep(options);
-    const keyring = await this._checkAddress(txParams.from);
-    const isSend = !!txParams.isSend;
-    const isSpeedUp = !!txParams.isSpeedUp;
-    const isCancel = !!txParams.isCancel;
-    const extra = approvalRes.extra;
-    const signingTxId = approvalRes.signingTxId;
-    const isCoboSafe = !!txParams.isCoboSafe;
-    const pushType = approvalRes.pushType || 'default';
-    const lowGasDeadline = approvalRes.lowGasDeadline;
-    const preReqId = approvalRes.reqId;
 
-    let signedTransactionSuccess = false;
-    delete txParams.isSend;
-    delete txParams.isSwap;
-    delete txParams.swapPreferMEVGuarded;
-    delete approvalRes.isSend;
-    delete approvalRes.isSwap;
-    delete approvalRes.address;
-    delete approvalRes.type;
-    delete approvalRes.uiRequestComponent;
-    delete approvalRes.traceId;
-    delete approvalRes.extra;
-    delete approvalRes.$ctx;
-    delete approvalRes.signingTxId;
-    delete approvalRes.pushType;
-    delete approvalRes.lowGasDeadline;
-    delete approvalRes.reqId;
-    delete txParams.isCoboSafe;
+    // const res = await openapiService.submitTx({
+    //   tx: {
+    //     ...approvalRes,
+    //     r: bufferToHex(signedTx.r),
+    //     s: bufferToHex(signedTx.s),
+    //     v: bufferToHex(signedTx.v),
+    //     value: approvalRes.value || '0x0',
+    //   },
+    //   push_type: pushType,
+    //   low_gas_deadline: lowGasDeadline,
+    //   req_id: preReqId || '',
+    //   origin,
+    // });
 
-    let is1559 = is1559Tx(approvalRes);
-    if (
-      is1559 &&
-      approvalRes.maxFeePerGas === approvalRes.maxPriorityFeePerGas
-    ) {
-      // fallback to legacy transaction if maxFeePerGas is equal to maxPriorityFeePerGas
-      approvalRes.gasPrice = approvalRes.maxFeePerGas;
-      delete approvalRes.maxFeePerGas;
-      delete approvalRes.maxPriorityFeePerGas;
-      is1559 = false;
-    }
-    const common = Common.custom(
-      { chainId: approvalRes.chainId },
-      { hardfork: Hardfork.London }
-    );
-    const txData = { ...approvalRes, gasLimit: approvalRes.gas };
-    if (is1559) {
-      txData.type = '0x2';
-    }
-    const tx = TransactionFactory.fromTxData(txData, {
-      common,
-    });
-    const currentAccount = preferenceService.getCurrentAccount()!;
-    let opts;
-    opts = extra;
-    if (currentAccount.type === KEYRING_TYPE.GnosisKeyring) {
-      buildinProvider.currentProvider.currentAccount = approvalRes!.account!.address;
-      buildinProvider.currentProvider.currentAccountType = approvalRes!.account!.type;
-      buildinProvider.currentProvider.currentAccountBrand = approvalRes!.account!.brandName;
-      try {
-        // const provider = new ethers.providers.Web3Provider(
-        //   buildinProvider.currentProvider
-        // );
-        const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-        opts = {
-          provider,
-        };
-      } catch (e) {
-        console.log(e);
-      }
-    }
-    const chain = permissionService.isInternalOrigin(origin)
-      ? Object.values(CHAINS).find((chain) => chain.id === approvalRes.chainId)!
-          .enum
-      : permissionService.getConnectedSite(origin)!.chain;
-
-    const approvingTx = transactionHistoryService.getSigningTx(signingTxId!);
-    if (!approvingTx?.rawTx || !approvingTx?.explain) {
-      throw new Error(`approvingTx not found: ${signingTxId}`);
-    }
-    transactionHistoryService.updateSigningTx(signingTxId!, {
-      isSubmitted: true,
-    });
-
-    const { explain: cacheExplain, rawTx, action } = approvingTx;
-
-    const chainItem = findChainByEnum(chain);
-
-    // wait ui
-    if (
-      currentAccount.type === KEYRING_TYPE.SimpleKeyring ||
-      currentAccount.type === KEYRING_TYPE.HdKeyring
-    ) {
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    const statsData: StatsData = {
-      signed: false,
-      signedSuccess: false,
-      submit: false,
-      submitSuccess: false,
-      type: currentAccount.brandName,
-      chainId: chainItem?.serverId || '',
-      category: KEYRING_CATEGORY_MAP[currentAccount.type],
-      preExecSuccess: cacheExplain
-        ? cacheExplain.pre_exec.success && cacheExplain.calcSuccess
-        : true,
-      createBy: options?.data?.$ctx?.ga ? 'rabby' : 'dapp',
-      source: options?.data?.$ctx?.ga?.source || '',
-      trigger: options?.data?.$ctx?.ga?.trigger || '',
-      reported: false,
+    // convert signature from buffer to hex
+    const signature = {
+      // r: bufferToHex(signedTx.r),
+      // s: bufferToHex(signedTx.s),
+      // v: signedTx.v,
     };
 
+    // transaction object
+    const tx = {
+      ...approvalRes,
+      ...signature,
+      value: approvalRes.value || ethers.constants.Zero,
+    };
     try {
-      const signedTx = await keyringService.signTransaction(
-        keyring,
-        tx,
-        txParams.from,
-        opts
+      // await keyringService.signTransaction(keyring, tx, chain);
+      const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+
+      const currentAcc = await wallet.getCurrentAccount();
+      const currentKeyRing = await keyringService.getKeyringForAccount(
+        currentAcc?.address || ''
       );
-      if (
-        currentAccount.type === KEYRING_TYPE.GnosisKeyring ||
-        currentAccount.type === KEYRING_TYPE.CoboArgusKeyring
-      ) {
-        signedTransactionSuccess = true;
-        statsData.signed = true;
-        statsData.signedSuccess = true;
-        return;
-      }
 
-      const onTransactionCreated = (info: {
-        hash?: string;
-        reqId?: string;
-        pushType?: TxPushType;
-      }) => {
-        const { hash, reqId, pushType = 'default' } = info;
-        if (
-          options?.data?.$ctx?.stats?.afterSign?.length &&
-          Array.isArray(options?.data?.$ctx?.stats?.afterSign)
-        ) {
-          options.data.$ctx.stats.afterSign.forEach(({ name, params }) => {
-            if (name && params) {
-              stats.report(name, params);
-            }
-          });
-        }
-
-        const { r, s, v, ...other } = approvalRes;
-
-        if (hash) {
-          swapService.postSwap(chain, hash, other);
-        }
-
-        statsData.submit = true;
-        statsData.submitSuccess = true;
-        if (isSend) {
-          pageStateCacheService.clear();
-        }
-        transactionHistoryService.addTx({
-          tx: {
-            rawTx: {
-              ...rawTx,
-              ...approvalRes,
-              r: bufferToHex(signedTx.r),
-              s: bufferToHex(signedTx.s),
-              v: bufferToHex(signedTx.v),
-            },
-            createdAt: Date.now(),
-            isCompleted: false,
-            hash,
-            failed: false,
-            reqId,
-            pushType,
-          },
-          explain: cacheExplain,
-          actionData: action,
-          origin,
-          $ctx: options?.data?.$ctx,
-          isDropFailed: true,
-        });
-        transactionHistoryService.removeSigningTx(signingTxId!);
-        if (hash) {
-          transactionWatchService.addTx(
-            `${txParams.from}_${approvalRes.nonce}_${chain}`,
-            {
-              nonce: approvalRes.nonce,
-              hash,
-              chain,
-            }
-          );
-        }
-        if (reqId && !hash) {
-          transactionBroadcastWatchService.addTx(reqId, {
-            reqId,
-            address: txParams.from,
-            chainId: CHAINS[chain].id,
-            nonce: approvalRes.nonce,
-          });
-        }
-
-        if (isCoboSafe) {
-          preferenceService.resetCurrentCoboSafeAddress();
-        }
+      // create instance wallet
+      const sender = new ethers.Wallet(
+        currentKeyRing?.wallets[0]?.privateKey || '',
+        provider
+      );
+      const transactionSendData = {
+        value: approvalRes.value || ethers.constants.Zero,
+        to: approvalRes.to,
+        from: approvalRes.from,
+        // nonce: approvalRes.nonce,
+        data: approvalRes.data,
+        // chainId: approvalRes.chainId,
       };
-      const onTransactionSubmitFailed = (e: any) => {
-        if (
-          options?.data?.$ctx?.stats?.afterSign?.length &&
-          Array.isArray(options?.data?.$ctx?.stats?.afterSign)
-        ) {
-          options.data.$ctx.stats.afterSign.forEach(({ name, params }) => {
-            if (name && params) {
-              stats.report(name, params);
-            }
-          });
-        }
+      console.log(transactionSendData);
 
-        stats.report('submitTransaction', {
-          type: currentAccount.brandName,
-          chainId: chainItem?.serverId || '',
-          category: KEYRING_CATEGORY_MAP[currentAccount.type],
-          success: false,
-          preExecSuccess: cacheExplain
-            ? cacheExplain.pre_exec.success && cacheExplain.calcSuccess
-            : true,
-          createBy: options?.data?.$ctx?.ga ? 'rabby' : 'dapp',
-          source: options?.data?.$ctx?.ga?.source || '',
-          trigger: options?.data?.$ctx?.ga?.trigger || '',
-        });
-        if (!isSpeedUp && !isCancel) {
-          transactionHistoryService.addSubmitFailedTransaction(
-            {
-              rawTx: approvalRes,
-              createdAt: Date.now(),
-              isCompleted: true,
-              hash: '',
-              failed: false,
-              isSubmitFailed: true,
-            },
-            cacheExplain,
-            origin
-          );
-        }
-        const errMsg = e.message || JSON.stringify(e);
-        if (notificationService.statsData?.signMethod) {
-          statsData.signMethod = notificationService.statsData?.signMethod;
-        }
-        notificationService.setStatsData(statsData);
-        throw new Error(errMsg);
-      };
-
-      if (typeof signedTx === 'string') {
-        onTransactionCreated({
-          hash: signedTx,
-          pushType: 'default',
-        });
-        if (
-          currentAccount.type === KEYRING_TYPE.WalletConnectKeyring ||
-          currentAccount.type === KEYRING_TYPE.CoinbaseKeyring
-        ) {
-          statsData.signed = true;
-          statsData.signedSuccess = true;
-        }
-        if (notificationService.statsData?.signMethod) {
-          statsData.signMethod = notificationService.statsData?.signMethod;
-        }
-        notificationService.setStatsData(statsData);
-        return signedTx;
-      }
-
-      const buildTx = TransactionFactory.fromTxData({
-        ...approvalRes,
-        r: addHexPrefix(signedTx.r),
-        s: addHexPrefix(signedTx.s),
-        v: addHexPrefix(signedTx.v),
-        type: is1559 ? '0x2' : '0x0',
-      });
-
-      // Report address type(not sensitive information) to sentry when tx signature is invalid
-      if (!buildTx.verifySignature()) {
-        if (!buildTx.v) {
-          Sentry.captureException(new Error(`v missed, ${keyring.type}`));
-        } else if (!buildTx.s) {
-          Sentry.captureException(new Error(`s missed, ${keyring.type}`));
-        } else if (!buildTx.r) {
-          Sentry.captureException(new Error(`r missed, ${keyring.type}`));
-        } else {
-          Sentry.captureException(
-            new Error(`invalid signature, ${keyring.type}`)
-          );
-        }
-      }
-      signedTransactionSuccess = true;
-      statsData.signed = true;
-      statsData.signedSuccess = true;
-      eventBus.emit(EVENTS.broadcastToUI, {
-        method: EVENTS.TX_SUBMITTING,
-      });
-      try {
-        validateGasPriceRange(approvalRes);
-        let hash: string | undefined = undefined;
-        let reqId: string | undefined = undefined;
-        if (RPCService.hasCustomRPC(chain)) {
-          const txData: any = {
-            ...approvalRes,
-            gasLimit: approvalRes.gas,
-            r: addHexPrefix(signedTx.r),
-            s: addHexPrefix(signedTx.s),
-            v: addHexPrefix(signedTx.v),
-          };
-          if (is1559) {
-            txData.type = '0x2';
-          }
-          const tx = TransactionFactory.fromTxData(txData);
-          const rawTx = bufferToHex(tx.serialize());
-          hash = await RPCService.requestCustomRPC(
-            chain,
-            'eth_sendRawTransaction',
-            [rawTx]
-          );
-
-          onTransactionCreated({ hash, reqId, pushType });
-        } else {
-          // const res = await openapiService.submitTx({
-          //   tx: {
-          //     ...approvalRes,
-          //     r: bufferToHex(signedTx.r),
-          //     s: bufferToHex(signedTx.s),
-          //     v: bufferToHex(signedTx.v),
-          //     value: approvalRes.value || '0x0',
-          //   },
-          //   push_type: pushType,
-          //   low_gas_deadline: lowGasDeadline,
-          //   req_id: preReqId || '',
-          //   origin,
-          // });
-
-          // convert signature from buffer to hex
-          const signature = {
-            r: bufferToHex(signedTx.r),
-            s: bufferToHex(signedTx.s),
-            v: signedTx.v,
-          };
-
-          // transaction object
-          const tx = {
-            ...approvalRes,
-            ...signature,
-            value: approvalRes.value || ethers.constants.Zero,
-          };
-          alert('start submit tx');
-          try {
-            // await keyringService.signTransaction(keyring, tx, chain);
-            const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-            console.log(
-              'private key',
-              keyringService.keyrings[0].wallets[0].privateKey
-            );
-
-            // create instance wallet
-            const sender = new ethers.Wallet(
-              keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
-              provider
-            );
-            const transactionSendData = {
-              value: approvalRes.value || ethers.constants.Zero,
-              to: approvalRes.to,
-              from: approvalRes.from,
-              // nonce: approvalRes.nonce,
-              data: approvalRes.data,
-              // chainId: approvalRes.chainId,
-            };
-
-            console.log(transactionSendData);
-
-            // send transaction to blockchain
-            const txResponse = await sender.sendTransaction(
-              transactionSendData
-            );
-            // Handle response
-            console.log('Transaction hash:', txResponse.hash);
-            hash = txResponse.hash || undefined;
-            reqId = undefined;
-            onTransactionCreated({ hash, reqId, pushType });
-            if (notificationService.statsData?.signMethod) {
-              statsData.signMethod = notificationService.statsData?.signMethod;
-            }
-            notificationService.setStatsData(statsData);
-          } catch (e) {
-            console.log('error send tx', e);
-
-            onTransactionSubmitFailed(new Error('Submit tx failed'));
-          }
-        }
-
-        return hash;
-      } catch (e: any) {
-        console.log('submit tx failed', e);
-        onTransactionSubmitFailed(e);
-      }
+      // send transaction to blockchain
+      const txResponse = await sender.sendTransaction(transactionSendData);
+      return txResponse.hash;
+      // Handle response
+      console.log('Transaction hash:', txResponse.hash);
     } catch (e) {
-      if (!signedTransactionSuccess) {
-        statsData.signed = true;
-        statsData.signedSuccess = false;
-      }
-      if (notificationService.statsData?.signMethod) {
-        statsData.signMethod = notificationService.statsData?.signMethod;
-      }
-      notificationService.setStatsData(statsData);
-      throw typeof e === 'object' ? e : new Error(e);
+      console.log('error send tx', e);
+
+      // onTransactionSubmitFailed(new Error('Submit tx failed'));
     }
   };
   @Reflect.metadata('SAFE', true)

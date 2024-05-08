@@ -1060,6 +1060,66 @@ export class WalletController extends BaseController {
     return preferenceService.getConchaBalance(address);
   };
 
+  getCurrentToken = async (
+    contractAddr: string | undefined,
+    userAddr: string
+  ) => {
+    try {
+      // native token
+      if (!contractAddr) {
+        const chain = CHAINS[CHAINS_ENUM.ETH];
+        const conchaBalance = await this.getConchaBalance(userAddr);
+        return {
+          id: chain.nativeTokenAddress,
+          decimals: chain.nativeTokenDecimals,
+          logo_url: chain.nativeTokenLogo,
+          symbol: chain.nativeTokenSymbol,
+          display_symbol: chain.nativeTokenSymbol,
+          optimized_symbol: chain.nativeTokenSymbol,
+          is_core: true,
+          is_verified: true,
+          is_wallet: true,
+          amount: +conchaBalance || 0,
+          price: 0,
+          name: chain.nativeTokenSymbol,
+          chain: chain.serverId,
+          time_at: 0,
+          raw_amount_hex_str: ((+conchaBalance || 0) * 10 ** 18).toString(),
+        };
+      }
+      // handle token
+      const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+      const tokenFiltered = new ethers.Contract(
+        contractAddr,
+        ERC20ABI,
+        provider
+      );
+      const symbol = await tokenFiltered.symbol();
+      const name = await tokenFiltered.name();
+      const balance = await tokenFiltered.balanceOf(userAddr);
+      const decimals = await tokenFiltered.decimals();
+
+      return {
+        amount: +balance / 10 ** decimals,
+        symbol,
+        name,
+        chain: 'eth',
+        decimals,
+        display_symbol: null,
+        id: contractAddr,
+        is_core: false,
+        is_verified: true,
+        is_wallet: true,
+        logo_url: '',
+        optimized_symbol: '',
+        price: 23,
+        time_at: 0,
+      };
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   getConchaGasPrice = async () => {
     return preferenceService.getConchaGasPrice();
   };
@@ -1067,9 +1127,13 @@ export class WalletController extends BaseController {
   approveTokenCustom = async (contractId: string, accountAddr: string) => {
     const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
 
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
     // create instance wallet
     const sender = new ethers.Wallet(
-      keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+      currentKeyRing?.wallets[0]?.privateKey || '',
       provider
     );
 
@@ -1102,15 +1166,20 @@ export class WalletController extends BaseController {
   transferToken = async (txData: Tx) => {
     const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
     // create instance wallet
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
+
+    // create instance wallet
     const sender = new ethers.Wallet(
-      keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+      currentKeyRing?.wallets[0]?.privateKey || '',
       provider
     );
 
     try {
       const txResponse = await sender.sendTransaction(txData);
       console.log('Transaction hash:', txResponse.hash);
-      alert(txResponse.hash);
     } catch (e) {
       console.log({ e });
     }

@@ -67,7 +67,8 @@ const TokenAmountInput = ({
     if (!currentAccount?.address) return;
     await wallet.approveTokenCustom(token.id, currentAccount?.address);
     onChange && onChange('');
-    onTokenChange(token);
+    console.log({ token });
+    onTokenChange({ ...token, raw_amount_hex_str: `${token.amount}` });
     setTokenSelectorVisible(false);
     tokenInputRef.current?.focus();
     setChainServerId(token.chain);

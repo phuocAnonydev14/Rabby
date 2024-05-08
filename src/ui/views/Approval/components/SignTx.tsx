@@ -167,20 +167,18 @@ export const TxTypeComponent = ({
   engineResults: Result[];
 }) => {
   if (!isReady) return <Loading />;
-  if (actionData && actionRequireData) {
-    return (
-      <Actions
-        data={actionData}
-        requireData={actionRequireData}
-        chain={chain}
-        engineResults={engineResults}
-        txDetail={txDetail}
-        raw={raw}
-        onChange={onChange}
-        isSpeedUp={isSpeedUp}
-      />
-    );
-  }
+  return (
+    <Actions
+      data={actionData}
+      requireData={actionRequireData}
+      chain={chain}
+      engineResults={engineResults}
+      txDetail={txDetail}
+      raw={raw}
+      onChange={onChange}
+      isSpeedUp={isSpeedUp}
+    />
+  );
   return <></>;
 };
 
@@ -1236,7 +1234,6 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     }
 
     const approval = await getApproval();
-
     wallet.sendRequest({
       $ctx: params.$ctx,
       method: 'eth_sendTransaction',
@@ -1328,21 +1325,21 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     gaEvent('allow');
 
     approval.signingTxId &&
-      // (await wallet.updateSigningTx(approval.signingTxId, {
-      //   rawTx: {
-      //     nonce: realNonce || tx.nonce,
-      //   },
-      //   explain: {
-      //     ...txDetail!,
-      //     approvalId: approval.id,
-      //     calcSuccess: !(checkErrors.length > 0),
-      //   },
-      //   action: {
-      //     actionData,
-      //     requiredData: actionRequireData,
-      //   },
-      // }));
-      (await wallet.transferToken(transaction));
+      (await wallet.updateSigningTx(approval.signingTxId, {
+        rawTx: {
+          nonce: realNonce || tx.nonce,
+        },
+        explain: {
+          ...txDetail!,
+          approvalId: approval.id,
+          calcSuccess: !(checkErrors.length > 0),
+        },
+        action: {
+          actionData,
+          requiredData: actionRequireData,
+        },
+      }));
+    // (await wallet.transferToken(transaction));
 
     if (currentAccount?.type && WaitingSignComponent[currentAccount.type]) {
       resolveApproval({
@@ -1375,8 +1372,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
       type: currentAccount.brandName,
       chainId: chain.serverId,
       category: KEYRING_CATEGORY_MAP[currentAccount.type],
-      preExecSuccess:
-        checkErrors.length > 0 || !txDetail?.pre_exec.success ? false : true,
+      preExecSuccess: !(checkErrors.length > 0 || !txDetail?.pre_exec.success),
       createBy: params?.$ctx?.ga ? 'rabby' : 'dapp',
       source: params?.$ctx?.ga?.source || '',
       trigger: params?.$ctx?.ga?.trigger || '',
@@ -1772,6 +1768,16 @@ const SignTx = ({ params, origin }: SignTxProps) => {
         });
       }
       setInited(true);
+      const nativeToken = await wallet.getCurrentToken(
+        undefined,
+        currentAccount.address
+      );
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      setTxDetail((state) => ({
+        ...state,
+        native_token: nativeToken,
+      }));
     } catch (e) {
       Modal.error({
         className: 'modal-support-darkmode',
@@ -1906,6 +1912,8 @@ const SignTx = ({ params, origin }: SignTxProps) => {
       }
     }
   }, [scrollInfo, scrollRefSize]);
+
+  console.log({ txDetail });
 
   return (
     <>
@@ -2071,14 +2079,14 @@ const SignTx = ({ params, origin }: SignTxProps) => {
                 : cantProcessReason
             }
             disabledProcess={
-              !isReady ||
-              (selectedGas ? selectedGas.price < 0 : true) ||
-              (isGnosisAccount ? !safeInfo : false) ||
-              (isCoboArugsAccount ? !coboArgusInfo : false) ||
-              (isLedger && !hasConnectedLedgerHID) ||
-              !canProcess ||
-              !!checkErrors.find((item) => item.level === 'forbidden') ||
-              hasUnProcessSecurityResult ||
+              !isReady || // explain: just our system is ready
+              (selectedGas ? selectedGas.price < 0 : true) || // if gas is not selected
+              (isGnosisAccount ? !safeInfo : false) || // if gnosis safe is not selected
+              (isCoboArugsAccount ? !coboArgusInfo : false) || // if cobo argus is not selected
+              (isLedger && !hasConnectedLedgerHID) || // if ledger is not connected
+              !canProcess || // if tx is not ready to process => may be some errors
+              !!checkErrors.find((item) => item.level === 'forbidden') || // if tx is not ready to process => may be some errors
+              hasUnProcessSecurityResult || // if tx is not ready to process => may be some errors
               (isGnosisAccount &&
                 new BigNumber(realNonce || 0).isLessThan(safeInfo?.nonce || 0))
             }

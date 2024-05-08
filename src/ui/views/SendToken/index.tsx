@@ -652,7 +652,6 @@ const SendToken = () => {
           filterRbiSource('sendToken', rbisource) && rbisource, // mark source module of `sendToken`
         ].join('|'),
       });
-      alert('create tx');
       wallet.sendRequest({
         method: 'eth_sendTransaction',
         params: [params],
@@ -977,15 +976,12 @@ const SendToken = () => {
   ) => {
     // const t = await wallet.openapi.getToken(address, chainId, id);
     // if (t) setCurrentToken(t);
-
-    // create instance wallet
-    setCurrentToken((state) => ({
-      ...state,
-      raw_amount_hex_str: (
-        (balance || 0) *
-        10 ** currentToken.decimals
-      ).toString(),
-    }));
+    if (!currentAccount?.address) return;
+    const tokenInfo = await wallet.getCurrentToken(
+      address,
+      currentAccount?.address
+    );
+    if (tokenInfo) setCurrentToken(tokenInfo);
     setIsLoading(false);
 
     return t;
@@ -1124,7 +1120,7 @@ const SendToken = () => {
     setTokenAmountForGas(gasTokenAmount.toFixed());
     if (updateTokenAmount) {
       const values = form.getFieldsValue();
-      const diffValue = new BigNumber(currentToken.raw_amount_hex_str || 0)
+      const diffValue = new BigNumber(currentToken.amount || 0)
         .div(10 ** currentToken.decimals)
         .minus(gasTokenAmount);
       if (diffValue.lt(0)) {
@@ -1342,15 +1338,15 @@ const SendToken = () => {
                     <span
                       className="truncate max-w-[80px]"
                       title={formatTokenAmount(
-                        new BigNumber(currentToken.raw_amount_hex_str || 0)
-                          .div(10 ** currentToken.decimals)
+                        new BigNumber(currentToken.amount || 0)
+                          // .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4
                       )}
                     >
                       {formatTokenAmount(
-                        new BigNumber(currentToken.raw_amount_hex_str || 0)
-                          .div(10 ** currentToken.decimals)
+                        new BigNumber(currentToken.amount || 0)
+                          // .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4
                       )}
