@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Input } from 'antd';
+import { Input, message } from 'antd';
 import uniqBy from 'lodash/uniqBy';
 import { TokenItem } from 'background/service/openapi';
 import { splitNumberByStep, useWallet } from 'ui/utils';
@@ -64,16 +64,22 @@ const TokenAmountInput = ({
   }, [amountFocus, tokenSelectorVisible]);
 
   const handleCurrentTokenChange = async (token: TokenItem) => {
-    if (!currentAccount?.address) return;
-    await wallet.approveTokenCustom(token.id, currentAccount?.address);
-    onChange && onChange('');
-    console.log({ token });
-    onTokenChange({ ...token, raw_amount_hex_str: `${token.amount}` });
-    setTokenSelectorVisible(false);
-    tokenInputRef.current?.focus();
-    setChainServerId(token.chain);
-    // save token selected to local storage
-    localStorage.setItem('token_transfer', JSON.stringify(token));
+    try {
+      if (!currentAccount?.address) return;
+      token.id &&
+        (await wallet.approveTokenCustom(token.id, currentAccount?.address));
+      onChange && onChange('');
+      console.log({ token });
+      onTokenChange({ ...token, raw_amount_hex_str: `${token.amount}` });
+      setTokenSelectorVisible(false);
+      tokenInputRef.current?.focus();
+      setChainServerId(token.chain);
+      // save token selected to local storage
+      localStorage.setItem('token_transfer', JSON.stringify(token));
+    } catch (e) {
+      console.error(e);
+      message.error(e.message);
+    }
   };
 
   const handleTokenSelectorClose = () => {

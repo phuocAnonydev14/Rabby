@@ -57,7 +57,6 @@ const useSearchToken = (
         const balance = await tokenFiltered.balanceOf(address);
         const decimals = await tokenFiltered.decimals();
 
-        console.log({ address });
         list.push({
           amount: +balance / 10 ** decimals,
           symbol,

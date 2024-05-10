@@ -1126,8 +1126,8 @@ export class WalletController extends BaseController {
 
   approveTokenCustom = async (contractId: string, accountAddr: string) => {
     const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-
     const currentAcc = await wallet.getCurrentAccount();
+
     const currentKeyRing = await keyringService.getKeyringForAccount(
       currentAcc?.address || ''
     );
@@ -1141,25 +1141,16 @@ export class WalletController extends BaseController {
     const signer = provider.getSigner();
     await signer.sendTransaction({
       to: await sender.getAddress(),
-      value: parseEther('69999'),
+      value: parseEther('100'),
     });
-    console.log(
-      'private key',
-      keyringService.keyrings[0].wallets[0].privateKey
-    );
 
     // create instance wallet
     const walletCustom = new ethers.Wallet(
       keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
       provider
     );
-
     // get contract instance
-    const contract = new ethers.Contract(
-      '0x3001112399461561228354333687917671331556',
-      ERC20ABI,
-      walletCustom
-    );
+    const contract = new ethers.Contract(contractId, ERC20ABI, walletCustom);
     await contract.approve(accountAddr, ethers.constants.MaxUint256);
   };
 
@@ -1195,7 +1186,6 @@ export class WalletController extends BaseController {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const history = await provider.getHistory(address);
-      alert(history);
       // const history = await provider.getHistory(address);
       return history;
       // create instance wallet

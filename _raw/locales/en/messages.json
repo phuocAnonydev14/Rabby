@@ -1910,7 +1910,7 @@
     "TokenSelector": {
       "listTableHead": {
         "assetAmount": {
-          "title": "ASSET / AMOUNT"
+          "title": "ASSET"
         },
         "price": {
           "title": "PRICE"

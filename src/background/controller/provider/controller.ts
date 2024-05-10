@@ -337,14 +337,6 @@ class ProviderController extends BaseController {
     result: any;
   }) => {
     if (options.pushed) return options.result;
-    const {
-      data: {
-        params: [txParams],
-      },
-      session: { origin },
-      approvalRes,
-    } = cloneDeep(options);
-
     const onTransactionSubmitFailed = (e: any) => {
       if (
         options?.data?.$ctx?.stats?.afterSign?.length &&
@@ -357,34 +349,91 @@ class ProviderController extends BaseController {
         });
       }
     };
-    // const res = await openapiService.submitTx({
-    //   tx: {
-    //     ...approvalRes,
-    //     r: bufferToHex(signedTx.r),
-    //     s: bufferToHex(signedTx.s),
-    //     v: bufferToHex(signedTx.v),
-    //     value: approvalRes.value || '0x0',
-    //   },
-    //   push_type: pushType,
-    //   low_gas_deadline: lowGasDeadline,
-    //   req_id: preReqId || '',
-    //   origin,
+    const {
+      data: {
+        params: [txParams],
+      },
+      session: { origin },
+      approvalRes,
+    } = cloneDeep(options);
+    // const keyring = await this._checkAddress(txParams.from);
+    // const txData = { ...approvalRes, gasLimit: approvalRes.gas };
+    // const common = Common.custom(
+    //   { chainId: approvalRes.chainId },
+    //   { hardfork: Hardfork.London }
+    // );
+    // const tx1 = TransactionFactory.fromTxData(txData, {
+    //   common,
+    // });
+    // const extra = approvalRes.extra;
+    // const opts = extra;
+    // const signedTx = await keyringService.signTransaction(
+    //   keyring,
+    //   tx1,
+    //   txParams.from,
+    //   opts
+    // );
+    let signedTransactionSuccess = false;
+    // const currentAccount = preferenceService.getCurrentAccount()!;
+    // if (
+    //   currentAccount.type === KEYRING_TYPE.GnosisKeyring ||
+    //   currentAccount.type === KEYRING_TYPE.CoboArgusKeyring
+    // ) {
+    //   signedTransactionSuccess = true;
+    //   return;
+    // }
+    // const is1559 = is1559Tx(approvalRes);
+    // const buildTx = TransactionFactory.fromTxData({
+    //   ...approvalRes,
+    //   r: addHexPrefix(signedTx.r),
+    //   s: addHexPrefix(signedTx.s),
+    //   v: addHexPrefix(signedTx.v),
+    //   type: is1559 ? '0x2' : '0x0',
     // });
 
-    // convert signature from buffer to hex
-    const signature = {
-      // r: bufferToHex(signedTx.r),
-      // s: bufferToHex(signedTx.s),
-      // v: signedTx.v,
-    };
-
-    // transaction object
-    const tx = {
-      ...approvalRes,
-      ...signature,
-      value: approvalRes.value || ethers.constants.Zero,
-    };
     try {
+      // Report address type(not sensitive information) to sentry when tx signature is invalid
+      // if (!buildTx.verifySignature()) {
+      //   if (!buildTx.v) {
+      //     Sentry.captureException(new Error(`v missed, ${keyring.type}`));
+      //   } else if (!buildTx.s) {
+      //     Sentry.captureException(new Error(`s missed, ${keyring.type}`));
+      //   } else if (!buildTx.r) {
+      //     Sentry.captureException(new Error(`r missed, ${keyring.type}`));
+      //   } else {
+      //     Sentry.captureException(
+      //       new Error(`invalid signature, ${keyring.type}`)
+      //     );
+      //   }
+      // }
+
+      // const res = await openapiService.submitTx({
+      //   tx: {
+      //     ...approvalRes,
+      //     r: bufferToHex(signedTx.r),
+      //     s: bufferToHex(signedTx.s),
+      //     v: bufferToHex(signedTx.v),
+      //     value: approvalRes.value || '0x0',
+      //   },
+      //   push_type: pushType,
+      //   low_gas_deadline: lowGasDeadline,
+      //   req_id: preReqId || '',
+      //   origin,
+      // });
+
+      // convert signature from buffer to hex
+      const signature = {
+        // r: bufferToHex(signedTx.r),
+        // s: bufferToHex(signedTx.s),
+        // v: signedTx.v,
+      };
+
+      // transaction object
+      const tx = {
+        ...approvalRes,
+        ...signature,
+        value: approvalRes.value || ethers.constants.Zero,
+      };
       // await keyringService.signTransaction(keyring, tx, chain);
       const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
 
@@ -420,15 +469,19 @@ class ProviderController extends BaseController {
         id: Math.random() * 100,
       });
       localStorage.setItem('transactions', JSON.stringify(transactionArrays));
-
+      eventBus.emit(EVENTS.broadcastToUI, {
+        method: EVENTS.TX_COMPLETED,
+      });
       // send transaction to blockchain
       const txResponse = await sender.sendTransaction(transactionSendData);
       return txResponse.hash;
-      // Handle response
-      console.log('Transaction hash:', txResponse.hash);
     } catch (e) {
       console.log('error send tx', e);
       onTransactionSubmitFailed(new Error('Submit tx failed'));
+      eventBus.emit(EVENTS.broadcastToUI, {
+        method: EVENTS.COMMON_HARDWARE.REJECTED,
+      });
+      throw typeof e === 'object' ? e : new Error(e);
     }
   };
   @Reflect.metadata('SAFE', true)
