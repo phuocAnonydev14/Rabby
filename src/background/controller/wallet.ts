@@ -1185,6 +1185,26 @@ export class WalletController extends BaseController {
     }
   };
 
+  getTxHistories = async (address: string) => {
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
+      const currentAcc = await wallet.getCurrentAccount();
+      const currentKeyRing = await keyringService.getKeyringForAccount(
+        currentAcc?.address || ''
+      );
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const history = await provider.getHistory(address);
+      alert(history);
+      // const history = await provider.getHistory(address);
+      return history;
+      // create instance wallet
+    } catch (e) {
+      console.log({ e });
+      return e;
+    }
+  };
+
   getAddressCacheBalance = (address: string | undefined, isTestnet = false) => {
     if (!address) return null;
     if (isTestnet) {

@@ -245,9 +245,9 @@ export const HistoryItem = ({
   const { t } = useTranslation();
   const account = useRabbySelector((state) => state.account.currentAccount);
 
-  if (!chainItem) {
-    return null;
-  }
+  // if (!chainItem) {
+  //   return null;
+  // }
 
   return (
     <div className={clsx('txs-history-card')}>
@@ -279,14 +279,14 @@ export const HistoryItem = ({
                 isTestnet={isTestnet}
               />
             )} */}
-            {addressType === AddressType.EOA && !data.is_scam && (
-              <ViewMessageTriggerForEoa
-                userAddress={account?.address || ''}
-                txInputData={data.tx?.message || ''}
-                chainItem={chainItem}
-                onViewInputData={onViewInputData}
-              />
-            )}
+            {/*{addressType === AddressType.EOA && !data.is_scam && (*/}
+            {/*  <ViewMessageTriggerForEoa*/}
+            {/*    userAddress={account?.address || ''}*/}
+            {/*    txInputData={data.tx?.message || ''}*/}
+            {/*    chainItem={chainItem}*/}
+            {/*    onViewInputData={onViewInputData}*/}
+            {/*  />*/}
+            {/*)}*/}
           </div>
         </div>
       </div>
@@ -296,13 +296,13 @@ export const HistoryItem = ({
           (isScam || isFailed) && 'opacity-50'
         )}
       >
-        <TxInterAddressExplain
-          data={data}
-          projectDict={projectDict}
-          tokenDict={tokenDict}
-          cateDict={cateDict}
-        />
-        <TokenChange data={data} tokenDict={tokenDict} />
+        {/*<TxInterAddressExplain*/}
+        {/*  data={data}*/}
+        {/*  projectDict={projectDict}*/}
+        {/*  tokenDict={tokenDict}*/}
+        {/*  cateDict={cateDict}*/}
+        {/*/>*/}
+        {/*<TokenChange data={data} tokenDict={tokenDict} />*/}
       </div>
       {(data.tx && data.tx?.eth_gas_fee) || isFailed ? (
         <div

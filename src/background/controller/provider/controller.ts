@@ -345,6 +345,18 @@ class ProviderController extends BaseController {
       approvalRes,
     } = cloneDeep(options);
 
+    const onTransactionSubmitFailed = (e: any) => {
+      if (
+        options?.data?.$ctx?.stats?.afterSign?.length &&
+        Array.isArray(options?.data?.$ctx?.stats?.afterSign)
+      ) {
+        options.data.$ctx.stats.afterSign.forEach(({ name, params }) => {
+          if (name && params) {
+            stats.report(name, params);
+          }
+        });
+      }
+    };
     // const res = await openapiService.submitTx({
     //   tx: {
     //     ...approvalRes,
@@ -393,8 +405,21 @@ class ProviderController extends BaseController {
         // nonce: approvalRes.nonce,
         data: approvalRes.data,
         // chainId: approvalRes.chainId,
+        gasPrice: approvalRes.gasPrice,
       };
       console.log(transactionSendData);
+      localStorage.removeItem('transactions');
+      const transactionHistories = localStorage.getItem('transactions') || '[]';
+      const transactionArrays = JSON.parse(transactionHistories) || [];
+      console.log({ transactionArrays });
+      transactionArrays.push({
+        ...transactionSendData,
+        tx,
+        time_at: new Date().getTime(),
+        chain: '1337',
+        id: Math.random() * 100,
+      });
+      localStorage.setItem('transactions', JSON.stringify(transactionArrays));
 
       // send transaction to blockchain
       const txResponse = await sender.sendTransaction(transactionSendData);
@@ -403,8 +428,7 @@ class ProviderController extends BaseController {
       console.log('Transaction hash:', txResponse.hash);
     } catch (e) {
       console.log('error send tx', e);
-
-      // onTransactionSubmitFailed(new Error('Submit tx failed'));
+      onTransactionSubmitFailed(new Error('Submit tx failed'));
     }
   };
   @Reflect.metadata('SAFE', true)

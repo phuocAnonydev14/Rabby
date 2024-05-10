@@ -26,13 +26,17 @@ export const HistoryList = ({
   const ref = useRef<HTMLDivElement | null>(null);
   const [account] = useAccount();
 
-  const getAllTxHistory = (
+  const getAllTxHistory = async (
     params: Parameters<typeof wallet.openapi.getAllTxHistory>[0]
   ) => {
     const getHistory = isMainnet
       ? wallet.openapi.getAllTxHistory
       : wallet.testnetOpenapi.getAllTxHistory;
 
+    const transactionHistories = localStorage.getItem('transactions') || '[]';
+    const transactionArrays = JSON.parse(transactionHistories);
+    console.log({ transactionArrays });
+    return transactionArrays;
     return getHistory(params).then((res) => {
       if (res.history_list) {
         res.history_list = res.history_list.filter((item) => {
@@ -65,21 +69,22 @@ export const HistoryList = ({
           page_count: PAGE_COUNT,
         });
 
-    const { project_dict, cate_dict, history_list: list } = res;
-    const displayList = list
-      .map((item) => ({
-        ...item,
-        projectDict: project_dict,
-        cateDict: cate_dict,
-        tokenDict: 'token_dict' in res ? res.token_dict : undefined,
-        tokenUUIDDict:
-          'token_uuid_dict' in res ? res.token_uuid_dict : undefined,
-      }))
-      .sort((v1, v2) => v2.time_at - v1.time_at);
-    return {
-      last: last(displayList)?.time_at,
-      list: displayList,
-    };
+    // const { project_dict, cate_dict, history_list: list } = res;
+    // const displayList = list
+    //   .map((item) => ({
+    //     ...item,
+    //     projectDict: project_dict,
+    //     cateDict: cate_dict,
+    //     tokenDict: 'token_dict' in res ? res.token_dict : undefined,
+    //     tokenUUIDDict:
+    //       'token_uuid_dict' in res ? res.token_uuid_dict : undefined,
+    //   }))
+    //   .sort((v1, v2) => v2.time_at - v1.time_at);
+    // return {
+    //   last: last(displayList)?.time_at,
+    //   list: displayList,
+    // };
+    return { list: res, last: [] };
   };
 
   const { data, loading, loadingMore, loadMore } = useInfiniteScroll(
@@ -94,6 +99,8 @@ export const HistoryList = ({
   );
 
   const isEmpty = (data?.list?.length || 0) <= 0 && !loading;
+
+  console.log({ data });
 
   const [
     focusingHistoryItem,
