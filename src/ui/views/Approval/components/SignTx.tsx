@@ -167,20 +167,20 @@ export const TxTypeComponent = ({
   engineResults: Result[];
 }) => {
   if (!isReady) return <Loading />;
-  if (actionData && actionRequireData) {
-    return (
-      <Actions
-        data={actionData}
-        requireData={actionRequireData}
-        chain={chain}
-        engineResults={engineResults}
-        txDetail={txDetail}
-        raw={raw}
-        onChange={onChange}
-        isSpeedUp={isSpeedUp}
-      />
-    );
-  }
+  // if (actionData && actionRequireData) {
+  return (
+    <Actions
+      data={actionData}
+      requireData={actionRequireData}
+      chain={chain}
+      engineResults={engineResults}
+      txDetail={txDetail}
+      raw={raw}
+      onChange={onChange}
+      isSpeedUp={isSpeedUp}
+    />
+  );
+  // }
   return <></>;
 };
 
@@ -919,7 +919,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     gasUsed,
     gasPrice: selectedGas?.price || 0,
     chainId,
-    nativeTokenPrice: txDetail?.native_token.price || 0,
+    nativeTokenPrice: txDetail?.native_token?.price || 0,
     tx,
     wallet,
     gasLimit,
@@ -988,8 +988,6 @@ const SignTx = ({ params, origin }: SignTxProps) => {
           })),
       })
       .then(async (res) => {
-        console.log({ res });
-
         let estimateGas = 0;
         if (res.gas.success) {
           estimateGas = res.gas.gas_limit || res.gas.gas_used;
@@ -1058,6 +1056,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
             block,
           });
         }
+
         setTxDetail(res);
 
         setPreprocessSuccess(res.pre_exec.success);
@@ -1139,10 +1138,67 @@ const SignTx = ({ params, origin }: SignTxProps) => {
   const explain = async () => {
     const currentAccount =
       isGnosis && account ? account : (await wallet.getCurrentAccount())!;
-    console.log({ tx });
     try {
       setIsReady(false);
-      await explainTx(currentAccount.address);
+      const token = JSON.parse(localStorage.getItem('token_transfer') || '{}');
+      console.log({ token });
+
+      if (token?.symbol === 'ETH') {
+        await explainTx(currentAccount.address);
+      } else {
+        // const res = {
+        //   balance_change: {
+        //     success: false,
+        //     error: {
+        //       code: 2001,
+        //       msg: 'Insufficient eth balance for transfer',
+        //     },
+        //     send_token_list: [],
+        //     receive_token_list: [],
+        //     send_nft_list: [],
+        //     receive_nft_list: [],
+        //     usd_value_change: 0,
+        //   },
+        //   is_gnosis: false,
+        //   pre_exec: {
+        //     success: false,
+        //     error: {
+        //       code: 2001,
+        //       msg: 'Insufficient eth balance for transfer',
+        //     },
+        //   },
+        //   pre_exec_version: 'v2', // Add missing property
+        //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        //   // @ts-ignore
+        //   gas: {
+        //     success: false,
+        //     error: {
+        //       code: 2001,
+        //       msg: 'Insufficient eth balance for transfer',
+        //     },
+        //     gas_used: 0,
+        //     gas_limit: 0,
+        //   }, // Add missing property
+        //   trace_id: '', // Add missing property
+        //   tx_hash: '', // Add missing property
+        //   tx_type: '', // Add missing property
+        // };
+        // setTxDetail(res as any);
+
+        console.log({ currentAccount });
+        const amount = localStorage.getItem('token_transfer_amount');
+        const to = localStorage.getItem('token_transfer_to') || '';
+
+        setActionData({
+          send: { to, token: { ...token, amount: amount || 0 } },
+        });
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        setActionRequireData({
+          ...actionRequireData,
+          eoa: { bornAt: 0, id: tx.to } as never,
+        });
+      }
 
       const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
       const tokenContract = new ethers.Contract(tx.to, ERC20ABI, provider);
@@ -1966,7 +2022,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
                     gasUsed,
                     gasPrice: price,
                     chainId,
-                    nativeTokenPrice: txDetail?.native_token.price || 0,
+                    nativeTokenPrice: txDetail?.native_token?.price || 0,
                     tx,
                     wallet,
                     gasLimit,

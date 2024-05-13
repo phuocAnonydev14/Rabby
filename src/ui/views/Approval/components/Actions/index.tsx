@@ -97,6 +97,7 @@ const Actions = ({
   onChange(tx: Record<string, any>): void;
   isSpeedUp: boolean;
 }) => {
+
   const actionName = useMemo(() => {
     return getActionTypeText(data);
   }, [data]);

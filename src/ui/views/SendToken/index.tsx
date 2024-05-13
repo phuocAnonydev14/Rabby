@@ -553,6 +553,10 @@ const SendToken = () => {
     messageDataForContractCall,
   }: FormSendToken) => {
     setIsSubmitLoading(true);
+    localStorage.setItem('token_transfer', JSON.stringify(currentToken));
+    localStorage.setItem('token_transfer_amount', amount);
+    localStorage.setItem('token_transfer_to', form.getFieldValue('to'));
+
     const chain = Object.values(CHAINS).find((item) => {
       console.log({ item });
       return item.serverId === currentToken.chain;

@@ -323,7 +323,7 @@ const TokenSelector = ({
                         </span>
                       </div>
                     </div>
-                    <div className="w-full max-w-md">
+                    <div className="max-w-md">
                       <span
                         className="symbol text-13 text-r-neutral-title-1 font-medium"
                         title={token.amount.toString()}

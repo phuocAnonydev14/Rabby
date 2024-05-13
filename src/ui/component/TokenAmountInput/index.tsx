@@ -66,8 +66,10 @@ const TokenAmountInput = ({
   const handleCurrentTokenChange = async (token: TokenItem) => {
     try {
       if (!currentAccount?.address) return;
-      token.id &&
-        (await wallet.approveTokenCustom(token.id, currentAccount?.address));
+      console.log({ token });
+
+      // token.symbol !== 'ETH' &&
+      await wallet.approveTokenCustom(token.id, currentAccount?.address);
       onChange && onChange('');
       console.log({ token });
       onTokenChange({ ...token, raw_amount_hex_str: `${token.amount}` });
@@ -75,7 +77,6 @@ const TokenAmountInput = ({
       tokenInputRef.current?.focus();
       setChainServerId(token.chain);
       // save token selected to local storage
-      localStorage.setItem('token_transfer', JSON.stringify(token));
     } catch (e) {
       console.error(e);
       message.error(e.message);

@@ -1127,7 +1127,6 @@ export class WalletController extends BaseController {
   approveTokenCustom = async (contractId: string, accountAddr: string) => {
     const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
     const currentAcc = await wallet.getCurrentAccount();
-
     const currentKeyRing = await keyringService.getKeyringForAccount(
       currentAcc?.address || ''
     );
@@ -1144,9 +1143,11 @@ export class WalletController extends BaseController {
       value: parseEther('100'),
     });
 
+    console.log({ currentKeyRing });
+
     // create instance wallet
     const walletCustom = new ethers.Wallet(
-      keyringService.keyrings[0]?.wallets[0]?.privateKey || '',
+      currentKeyRing?.wallets[0]?.privateKey || '',
       provider
     );
     // get contract instance
