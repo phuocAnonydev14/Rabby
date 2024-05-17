@@ -606,7 +606,7 @@ const Connect = ({ params: { icon, origin } }: ConnectProps) => {
       onCancel: handleCancel,
       displayBlockedRequestApproval,
     });
-    activePopup('CancelConnect');
+    activePopup('CancelConnect ');
   };
 
   return (
