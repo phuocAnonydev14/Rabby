@@ -14,10 +14,8 @@ import { Loading } from './Loading';
 const PAGE_COUNT = 10;
 
 export const HistoryList = ({
-  isMainnet = true,
   isFilterScam = false,
 }: {
-  isMainnet?: boolean;
   isFilterScam?: boolean;
 }) => {
   const wallet = useWallet();
@@ -26,17 +24,11 @@ export const HistoryList = ({
   const ref = useRef<HTMLDivElement | null>(null);
   const [account] = useAccount();
 
-  const getAllTxHistory = async (
+  const getAllTxHistory = (
     params: Parameters<typeof wallet.openapi.getAllTxHistory>[0]
   ) => {
-    const getHistory = isMainnet
-      ? wallet.openapi.getAllTxHistory
-      : wallet.testnetOpenapi.getAllTxHistory;
+    const getHistory = wallet.openapi.getAllTxHistory;
 
-    const transactionHistories = localStorage.getItem('transactions') || '[]';
-    const transactionArrays = JSON.parse(transactionHistories);
-    console.log({ transactionArrays });
-    return transactionArrays;
     return getHistory(params).then((res) => {
       if (res.history_list) {
         res.history_list = res.history_list.filter((item) => {
@@ -55,9 +47,7 @@ export const HistoryList = ({
         list: [],
       };
     }
-    const getHistory = isMainnet
-      ? wallet.openapi.listTxHisotry
-      : wallet.testnetOpenapi.listTxHisotry;
+    const getHistory = wallet.openapi.listTxHisotry;
 
     const res = isFilterScam
       ? await getAllTxHistory({
@@ -69,22 +59,21 @@ export const HistoryList = ({
           page_count: PAGE_COUNT,
         });
 
-    // const { project_dict, cate_dict, history_list: list } = res;
-    // const displayList = list
-    //   .map((item) => ({
-    //     ...item,
-    //     projectDict: project_dict,
-    //     cateDict: cate_dict,
-    //     tokenDict: 'token_dict' in res ? res.token_dict : undefined,
-    //     tokenUUIDDict:
-    //       'token_uuid_dict' in res ? res.token_uuid_dict : undefined,
-    //   }))
-    //   .sort((v1, v2) => v2.time_at - v1.time_at);
-    // return {
-    //   last: last(displayList)?.time_at,
-    //   list: displayList,
-    // };
-    return { list: res, last: [] };
+    const { project_dict, cate_dict, history_list: list } = res;
+    const displayList = list
+      .map((item) => ({
+        ...item,
+        projectDict: project_dict,
+        cateDict: cate_dict,
+        tokenDict: 'token_dict' in res ? res.token_dict : undefined,
+        tokenUUIDDict:
+          'token_uuid_dict' in res ? res.token_uuid_dict : undefined,
+      }))
+      .sort((v1, v2) => v2.time_at - v1.time_at);
+    return {
+      last: last(displayList)?.time_at,
+      list: displayList,
+    };
   };
 
   const { data, loading, loadingMore, loadMore } = useInfiniteScroll(
@@ -99,8 +88,6 @@ export const HistoryList = ({
   );
 
   const isEmpty = (data?.list?.length || 0) <= 0 && !loading;
-
-  console.log({ data });
 
   const [
     focusingHistoryItem,
@@ -165,7 +152,6 @@ export const HistoryList = ({
                     tokenDict={item.tokenDict || item.tokenUUIDDict || {}}
                     key={item.id}
                     onViewInputData={setFocusingHistoryItem}
-                    isTestnet={!isMainnet}
                   />
                 );
               }}

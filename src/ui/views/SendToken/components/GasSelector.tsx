@@ -9,6 +9,8 @@ import { formatTokenAmount } from 'ui/utils/number';
 import styled from 'styled-components';
 import { BigNumber } from 'bignumber.js';
 import { getGasLevelI18nKey } from '@/ui/utils/trans';
+import { findChain } from '@/utils/chain';
+import { INPUT_NUMBER_RE, filterNumber } from '@/constant/regexp';
 
 interface GasSelectorProps {
   chainId: number;
@@ -47,7 +49,9 @@ const GasSelector = ({
   const { t } = useTranslation();
   const customerInputRef = useRef<Input>(null);
   const [customGas, setCustomGas] = useState<string | number>('0');
-  const chain = Object.values(CHAINS).find((item) => item.id === chainId)!;
+  const chain = findChain({
+    id: chainId,
+  });
   const [selectedGas, setSelectedGas] = useState(gas);
 
   const handleConfirmGas = () => {
@@ -68,8 +72,8 @@ const GasSelector = ({
 
   const handleCustomGasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
-    if (/^\d*(\.\d*)?$/.test(e.target.value)) {
-      setCustomGas(e.target.value);
+    if (INPUT_NUMBER_RE.test(e.target.value)) {
+      setCustomGas(filterNumber(e.target.value));
     }
   };
 
@@ -158,7 +162,7 @@ const GasSelector = ({
                 .times(MINIMUM_GAS_LIMIT)
                 .div(1e18)
                 .toFixed()
-            )} ${chain.nativeTokenSymbol}`}
+            )} ${chain?.nativeTokenSymbol}`}
           </p>
         </div>
         <div className="card-container">

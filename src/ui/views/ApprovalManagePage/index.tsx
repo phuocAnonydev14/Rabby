@@ -27,6 +27,7 @@ import { ReactComponent as RcIconCheckboxChecked } from './icons/check-checked.s
 import { ReactComponent as RcIconCheckboxIndeterminate } from './icons/check-indeterminate.svg';
 import { ReactComponent as RcIconCheckboxUnchecked } from './icons/check-unchecked.svg';
 import { ReactComponent as RcIconExternal } from './icons/icon-share-cc.svg';
+import { ReactComponent as RcIconEmpty } from '@/ui/assets/dashboard/asset-empty.svg';
 
 import { useApprovalsPage, useTableScrollableHeight } from './useApprovalsPage';
 import {
@@ -892,6 +893,7 @@ const getCellClassName = (
 
 type PageTableProps<T extends ContractApprovalItem | AssetApprovalSpender> = {
   isLoading: boolean;
+  emptyStatus?: 'none' | 'no-matched' | false;
   dataSource: T[];
   containerHeight: number;
   selectedRows: ApprovalSpenderItemToBeRevoked[];
@@ -901,6 +903,7 @@ type PageTableProps<T extends ContractApprovalItem | AssetApprovalSpender> = {
 };
 function TableByContracts({
   isLoading,
+  emptyStatus,
   dataSource,
   containerHeight,
   selectedRows = [],
@@ -964,6 +967,11 @@ function TableByContracts({
       markHoverRow={false}
       columns={columnsForContracts}
       sortedInfo={sortedInfo}
+      emptyText={
+        emptyStatus === 'no-matched'
+          ? t('page.approvals.component.table.bodyEmpty.noMatchText')
+          : t('page.approvals.component.table.bodyEmpty.noDataText')
+      }
       dataSource={dataSource}
       scroll={{ y: containerHeight, x: '100%' }}
       onClickRow={onClickRowInspection}
@@ -978,6 +986,7 @@ function TableByContracts({
 
 function TableByAssetSpenders({
   isLoading,
+  emptyStatus,
   dataSource,
   containerHeight,
   onClickRow,
@@ -1017,6 +1026,11 @@ function TableByAssetSpenders({
         t,
       })}
       sortedInfo={sortedInfo}
+      emptyText={
+        emptyStatus === 'no-matched'
+          ? t('page.approvals.component.table.bodyEmpty.noMatchText')
+          : t('page.approvals.component.table.bodyEmpty.noDataText')
+      }
       dataSource={dataSource}
       scroll={{ y: containerHeight, x: '100%' }}
       onClickRow={onClickRowInspection}
@@ -1047,7 +1061,9 @@ const ApprovalManagePage = () => {
     setSearchKw,
     account,
     displaySortedContractList,
+    contractEmptyStatus,
     displaySortedAssetsList,
+    assetEmptyStatus,
 
     filterType,
     setFilterType,
@@ -1152,10 +1168,7 @@ const ApprovalManagePage = () => {
         <header className="approvals-manager__header">
           {isShowTestnet && (
             <div className="tabs">
-              <NetSwitchTabs.ApprovalsPage
-                value={selectedTab}
-                onTabChange={onTabChange}
-              />
+              <NetSwitchTabs value={selectedTab} onTabChange={onTabChange} />
             </div>
           )}
           <div className="title">
@@ -1172,89 +1185,104 @@ const ApprovalManagePage = () => {
           </div>
         </header>
 
-        <main>
-          <div className="approvals-manager__table-tools">
-            <PillsSwitch
-              value={filterType}
-              options={
-                [
-                  {
-                    key: 'contract',
-                    // 'By Contracts'
-                    label: t('page.approvals.tab-switch.contract'),
-                  },
-                  {
-                    key: 'assets',
-                    // 'By Assets'
-                    label: t('page.approvals.tab-switch.assets'),
-                  },
-                ] as const
-              }
-              onTabChange={(key) => setFilterType(key)}
-              itemClassname="text-[15px] w-[148px] h-[40px]"
-              itemClassnameActive="bg-r-neutral-bg-1"
-              itemClassnameInActive={'text-r-neutral-body'}
-            />
+        {selectedTab === 'mainnet' ? (
+          <>
+            <main>
+              <div className="approvals-manager__table-tools">
+                <PillsSwitch
+                  value={filterType}
+                  options={
+                    [
+                      {
+                        key: 'contract',
+                        // 'By Contracts'
+                        label: t('page.approvals.tab-switch.contract'),
+                      },
+                      {
+                        key: 'assets',
+                        // 'By Assets'
+                        label: t('page.approvals.tab-switch.assets'),
+                      },
+                    ] as const
+                  }
+                  onTabChange={(key) => setFilterType(key)}
+                  itemClassname="text-[15px] w-[148px] h-[40px]"
+                  itemClassnameActive="bg-r-neutral-bg-1"
+                  itemClassnameInActive={
+                    'text-r-neutral-body hover:text-r-blue-default'
+                  }
+                />
 
-            <SearchInput
-              value={searchKw}
-              onChange={(e) => setSearchKw(e.target.value)}
-              prefix={<img src={IconSearch} />}
-              className="search-input"
-              suffix={<span />}
-              placeholder={t('page.approvals.search.placeholder', {
-                type: filterType === 'contract' ? 'contract' : 'assets',
-              })}
-            />
+                <SearchInput
+                  value={searchKw}
+                  onChange={(e) => setSearchKw(e.target.value)}
+                  prefix={<img src={IconSearch} />}
+                  className="search-input"
+                  suffix={<span />}
+                  placeholder={t('page.approvals.search.placeholder', {
+                    type: filterType === 'contract' ? 'contract' : 'assets',
+                  })}
+                />
+              </div>
+
+              <div className="approvals-manager__table-wrapper">
+                <TableByContracts
+                  isLoading={isLoading}
+                  className={filterType === 'contract' ? '' : 'hidden'}
+                  vGridRef={vGridRefContracts}
+                  containerHeight={yValue}
+                  emptyStatus={contractEmptyStatus}
+                  dataSource={displaySortedContractList}
+                  onClickRow={handleClickContractRow}
+                  onChangeSelectedContractSpenders={
+                    onChangeSelectedContractSpenders
+                  }
+                  selectedRows={contractRevokeList}
+                />
+
+                <TableByAssetSpenders
+                  className={filterType === 'assets' ? '' : 'hidden'}
+                  isLoading={isLoading}
+                  vGridRef={vGridRefAsset}
+                  containerHeight={yValue}
+                  emptyStatus={assetEmptyStatus}
+                  dataSource={displaySortedAssetsList}
+                  selectedRows={assetRevokeList}
+                  onClickRow={handleClickAssetRow}
+                />
+              </div>
+              {selectedItem ? (
+                <RevokeApprovalModal
+                  item={selectedItem}
+                  visible={visibleRevokeModal}
+                  onClose={() => {
+                    setVisibleRevokeModal(false);
+                  }}
+                  onConfirm={(list) => {
+                    setContractRevokeMap((prev) => ({
+                      ...prev,
+                      [selectedItemKey]: list,
+                    }));
+                  }}
+                  revokeList={contractRevokeMap[selectedItemKey]}
+                />
+              ) : null}
+            </main>
+            <div className="sticky-footer">
+              <RevokeButton
+                revokeList={currentRevokeList}
+                onRevoke={handleRevoke}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="mt-[20px] rounded-[8px] bg-r-neutral-card1 pt-[145px] pb-[175px] flex flex-col items-center w-full">
+            <RcIconEmpty />
+            <div className="mt-[4px] text-r-neutral-foot text-[14px] leading-[20px]">
+              {t('global.notSupportTesntnet')}
+            </div>
           </div>
-
-          <div className="approvals-manager__table-wrapper">
-            <TableByContracts
-              isLoading={isLoading}
-              className={filterType === 'contract' ? '' : 'hidden'}
-              vGridRef={vGridRefContracts}
-              containerHeight={yValue}
-              dataSource={displaySortedContractList}
-              onClickRow={handleClickContractRow}
-              onChangeSelectedContractSpenders={
-                onChangeSelectedContractSpenders
-              }
-              selectedRows={contractRevokeList}
-            />
-
-            <TableByAssetSpenders
-              className={filterType === 'assets' ? '' : 'hidden'}
-              isLoading={isLoading}
-              vGridRef={vGridRefAsset}
-              containerHeight={yValue}
-              dataSource={displaySortedAssetsList}
-              selectedRows={assetRevokeList}
-              onClickRow={handleClickAssetRow}
-            />
-          </div>
-          {selectedItem ? (
-            <RevokeApprovalModal
-              item={selectedItem}
-              visible={visibleRevokeModal}
-              onClose={() => {
-                setVisibleRevokeModal(false);
-              }}
-              onConfirm={(list) => {
-                setContractRevokeMap((prev) => ({
-                  ...prev,
-                  [selectedItemKey]: list,
-                }));
-              }}
-              revokeList={contractRevokeMap[selectedItemKey]}
-            />
-          ) : null}
-        </main>
-        <div className="sticky-footer">
-          <RevokeButton
-            revokeList={currentRevokeList}
-            onRevoke={handleRevoke}
-          />
-        </div>
+        )}
       </div>
     </div>
   );

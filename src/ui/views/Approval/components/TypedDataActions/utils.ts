@@ -18,11 +18,16 @@ import {
   SubmitDelegatedAddressModificationAction,
   SubmitTokenApprovalModificationAction,
   SendAction,
+  RevokeTokenApproveAction,
+  NFTItem,
+  SwapOrderAction,
+  ApproveNFTAction,
 } from '@rabby-wallet/rabby-api/dist/types';
 import { ContextActionData } from '@rabby-wallet/rabby-security-engine/dist/rules';
 import BigNumber from 'bignumber.js';
 import { getArrayType, isArrayType } from '@metamask/abi-utils/dist/parsers';
 import { BigNumber as EthersBigNumber } from 'ethers';
+import { isStrictHexString, add0x } from 'ui/utils/address';
 import i18n from '@/i18n';
 import { WalletControllerType, getTimeSpan } from '@/ui/utils';
 import {
@@ -30,10 +35,18 @@ import {
   getProtocol,
   calcUSDValueChange,
   SendRequireData,
+  AssetOrderRequireData,
+  ApproveNFTRequireData,
+  fetchNFTApproveRequiredData,
 } from '../Actions/utils';
-import { CHAINS, ALIAS_ADDRESS } from 'consts';
+import { ALIAS_ADDRESS } from 'consts';
 import { Chain } from 'background/service/openapi';
-import { isTestnetChainId } from '@/utils/chain';
+import {
+  findChain,
+  findChainByServerID,
+  isTestnetChainId,
+} from '@/utils/chain';
+import { ReceiverData } from '../Actions/components/ViewMorePopup/ReceiverPopup';
 
 interface PermitActionData extends PermitAction {
   expire_at: number | undefined;
@@ -62,6 +75,7 @@ export interface TypedDataActionData {
   buyNFT?: BuyNFTOrderAction;
   permit?: PermitActionData;
   permit2?: Permit2ActionData;
+  approveNFT?: ApproveNFTAction;
   batchPermit2?: BatchPermit2ActionData;
   swapTokenOrder?: {
     payToken: TokenItem;
@@ -79,11 +93,23 @@ export interface TypedDataActionData {
   coboSafeModificationDelegatedAddress?: SubmitSafeRoleModificationAction;
   coboSafeModificationRole?: SubmitDelegatedAddressModificationAction;
   coboSafeModificationTokenApproval?: SubmitTokenApprovalModificationAction;
+  revokePermit?: RevokeTokenApproveAction;
+  assetOrder?: {
+    payTokenList: TokenItem[];
+    payNFTList: NFTItem[];
+    receiveTokenList: TokenItem[];
+    receiveNFTList: NFTItem[];
+    takers: string[];
+    receiver: string | null;
+    expireAt: string | null;
+  };
   common?: {
     title: string;
     desc: string;
     is_asset_changed: boolean;
     is_involving_privacy: boolean;
+    receiver?: string;
+    from: string;
   };
 }
 
@@ -110,6 +136,27 @@ export const parseAction = (
     case 'sell_nft_order': {
       const actionData = data.action.data as SellNFTOrderAction;
       result.sellNFT = actionData;
+      return result;
+    }
+    case 'swap_order': {
+      const {
+        pay_token_list,
+        pay_nft_list,
+        receive_nft_list,
+        receive_token_list,
+        receiver,
+        takers,
+        expire_at,
+      } = data.action.data as SwapOrderAction;
+      result.assetOrder = {
+        payTokenList: pay_token_list,
+        payNFTList: pay_nft_list,
+        receiveNFTList: receive_nft_list,
+        receiveTokenList: receive_token_list,
+        receiver,
+        takers,
+        expireAt: expire_at,
+      };
       return result;
     }
     case 'sell_nft_list_order': {
@@ -144,6 +191,12 @@ export const parseAction = (
         ...actionData,
         sig_expire_at: data.action.expire_at,
       };
+      return result;
+    }
+    case 'approve_nft': {
+      const actionData = data.action.data as ApproveNFTAction;
+
+      result.approveNFT = actionData;
       return result;
     }
     case 'sign_multisig': {
@@ -205,8 +258,15 @@ export const parseAction = (
     case 'send_token':
       result.send = data.action.data as SendAction;
       return result;
+    case 'permit1_revoke_token':
+      console.log('permit1_revoke_token');
+      result.revokePermit = data.action.data as RevokeTokenApproveAction;
+      return result;
     case null:
-      result.common = data.action as any;
+      result.common = {
+        ...(data.action as any),
+        from: sender,
+      };
       return result;
     default:
       break;
@@ -229,15 +289,19 @@ export interface ContractRequireData {
   bornAt: number;
   hasInteraction: boolean;
   rank: number | null;
+  unexpectedAddr: ReceiverData | null;
+  receiverInWallet: boolean;
 }
 
-const fetchContractRequireData = async (
+export const fetchContractRequireData = async (
   id: string,
   chainId: string,
   sender: string,
   apiProvider:
     | WalletControllerType['openapi']
-    | WalletControllerType['testnetOpenapi']
+    | WalletControllerType['testnetOpenapi'],
+  wallet?: WalletControllerType,
+  actionData?: TypedDataActionData
 ) => {
   const queue = new PQueue();
   const result: ContractRequireData = {
@@ -246,6 +310,8 @@ const fetchContractRequireData = async (
     bornAt: 0,
     hasInteraction: false,
     rank: null,
+    unexpectedAddr: null,
+    receiverInWallet: false,
   };
   queue.add(async () => {
     const credit = await apiProvider.getContractCredit(id, chainId);
@@ -268,6 +334,77 @@ const fetchContractRequireData = async (
     );
     result.hasInteraction = hasInteraction.has_interaction;
   });
+
+  if (actionData && wallet) {
+    if (actionData.contractCall || actionData.common) {
+      const chain = findChainByServerID(chainId);
+
+      queue.add(async () => {
+        const addr = actionData.common?.receiver;
+
+        if (addr) {
+          result.receiverInWallet = await wallet.hasAddress(addr);
+          const receiverData: ReceiverData = {
+            address: addr,
+            chain: chain!,
+            eoa: null,
+            cex: null,
+            contract: null,
+            usd_value: 0,
+            hasTransfer: false,
+            isTokenContract: false,
+            name: null,
+            onTransferWhitelist: false,
+          };
+
+          const { has_transfer } = await apiProvider.hasTransfer(
+            chainId,
+            sender,
+            addr
+          );
+          receiverData.hasTransfer = has_transfer;
+
+          const { desc } = await apiProvider.addrDesc(addr);
+          if (desc.cex?.id) {
+            receiverData.cex = {
+              id: desc.cex.id,
+              logo: desc.cex.logo_url,
+              name: desc.cex.name,
+              bornAt: desc.born_at,
+              isDeposit: desc.cex.is_deposit,
+            };
+          }
+          if (desc.contract && Object.keys(desc.contract).length > 0) {
+            receiverData.contract = desc.contract;
+          }
+          if (!receiverData.cex && !receiverData.contract) {
+            receiverData.eoa = {
+              id: addr,
+              bornAt: desc.born_at,
+            };
+          }
+          receiverData.usd_value = desc.usd_value;
+          if (id) {
+            const { is_token } = await apiProvider.isTokenContract(
+              chainId,
+              addr
+            );
+            receiverData.isTokenContract = is_token;
+          }
+          receiverData.name = desc.name;
+          if (ALIAS_ADDRESS[addr.toLowerCase()]) {
+            receiverData.name = ALIAS_ADDRESS[addr.toLowerCase()];
+          }
+
+          const whitelist = await wallet.getWhitelist();
+          receiverData.onTransferWhitelist = whitelist.includes(
+            addr.toLowerCase()
+          );
+          result.unexpectedAddr = receiverData;
+        }
+      });
+    }
+  }
   await waitQueueFinished(queue);
   return result;
 };
@@ -547,6 +684,7 @@ export type TypedDataRequireData =
   | ApproveTokenRequireData
   | BatchApproveTokenRequireData
   | SendRequireData
+  | ApproveNFTRequireData
   | null;
 
 export const fetchRequireData = async (
@@ -554,11 +692,11 @@ export const fetchRequireData = async (
   sender: string,
   wallet: WalletControllerType
 ): Promise<TypedDataRequireData> => {
-  let chain: Chain | undefined;
+  let chain: Chain | null | undefined;
   if (actionData.chainId) {
-    chain = Object.values(CHAINS).find(
-      (item) => item.id === Number(actionData.chainId)
-    );
+    chain = findChain({
+      id: Number(actionData.chainId),
+    });
   }
   const apiProvider = isTestnetChainId(actionData.chainId)
     ? wallet.testnetOpenapi
@@ -633,7 +771,31 @@ export const fetchRequireData = async (
       return tokenApproveRequireData;
     }
   }
-  if (actionData.batchPermit2) {
+  if (actionData.approveNFT) {
+    const data = actionData.approveNFT;
+    if (chain && actionData.contractId) {
+      const nftApproveRequireData = await fetchNFTApproveRequiredData({
+        spender: data.spender,
+        address: sender,
+        chainId: chain.serverId,
+        apiProvider,
+      });
+      return nftApproveRequireData;
+    }
+  }
+  if (actionData?.revokePermit) {
+    const { token, spender } = actionData.revokePermit;
+    if (chain && actionData.contractId) {
+      return await fetchTokenApproveRequireData({
+        apiProvider,
+        chainId: chain?.serverId,
+        address: sender,
+        token,
+        spender,
+      });
+    }
+  }
+  if (actionData?.batchPermit2) {
     const data = actionData.batchPermit2;
     if (chain && actionData.contractId) {
       const tokenApproveRequireData = await fetchBatchTokenApproveRequireData({
@@ -646,7 +808,21 @@ export const fetchRequireData = async (
       return tokenApproveRequireData;
     }
   }
-  if (actionData.send) {
+  if (actionData?.assetOrder) {
+    if (chain && actionData.contractId) {
+      const data = await fetchContractRequireData(
+        actionData.contractId,
+        chain.serverId,
+        sender,
+        apiProvider
+      );
+      return {
+        ...data,
+        sender,
+      } as AssetOrderRequireData;
+    }
+  }
+  if (actionData?.send) {
     const data = actionData.send;
     if (chain && actionData.contractId) {
       const receiverRequireData = await fetchReceiverRequireData({
@@ -665,16 +841,21 @@ export const fetchRequireData = async (
       actionData.contractId,
       chain.serverId,
       sender,
-      apiProvider
+      apiProvider,
+      wallet,
+      actionData
     );
   }
-  if (actionData.common) {
+
+  if (actionData?.common) {
     if (chain && actionData.contractId) {
       const contractRequireData = await fetchContractRequireData(
         actionData.contractId,
         chain.serverId,
         sender,
-        apiProvider
+        apiProvider,
+        wallet,
+        actionData
       );
       return contractRequireData;
     }
@@ -690,6 +871,9 @@ export const getActionTypeText = (data: TypedDataActionData | null) => {
   }
   if (data?.permit2 || data?.batchPermit2) {
     return t('page.signTypedData.permit2.title');
+  }
+  if (data?.approveNFT) {
+    return t('page.signTx.nftApprove.title');
   }
   if (data?.swapTokenOrder) {
     return t('page.signTypedData.swapTokenOrder.title');
@@ -724,6 +908,12 @@ export const getActionTypeText = (data: TypedDataActionData | null) => {
   if (data?.send) {
     return t('page.signTx.send.title');
   }
+  if (data?.revokePermit) {
+    return t('page.signTx.revokePermit.title');
+  }
+  if (data?.assetOrder) {
+    return t('page.signTx.assetOrder.title');
+  }
   if (data?.common) {
     return data.common.title;
   }
@@ -739,11 +929,11 @@ export const formatSecurityEngineCtx = async ({
   requireData: TypedDataRequireData;
   wallet: WalletControllerType;
 }): Promise<ContextActionData> => {
-  let chain: Chain | undefined;
+  let chain: Chain | null | undefined;
   if (actionData?.chainId) {
-    chain = Object.values(CHAINS).find(
-      (item) => item.id === Number(actionData.chainId)
-    );
+    chain = findChain({
+      id: Number(actionData.chainId),
+    });
   }
   if (actionData?.chainId && isTestnetChainId(actionData?.chainId)) {
     return {};
@@ -773,6 +963,20 @@ export const formatSecurityEngineCtx = async ({
         hasInteracted: data.hasInteraction,
         isDanger: !!data.isDanger,
         chainId: chain?.serverId,
+      },
+    };
+  }
+  if (actionData?.approveNFT) {
+    const data = requireData as ApproveNFTRequireData;
+    return {
+      nftApprove: {
+        spender: actionData.approveNFT.spender,
+        isEOA: data.isEOA,
+        riskExposure: data.riskExposure,
+        deployDays: getTimeSpan(Math.floor(Date.now() / 1000) - data.bornAt).d,
+        hasInteracted: data.hasInteraction,
+        isDanger: !!data.isDanger,
+        chainId: chain?.serverId || 'eth',
       },
     };
   }
@@ -909,11 +1113,33 @@ export const formatSecurityEngineCtx = async ({
       },
     };
   }
+  if (actionData?.assetOrder) {
+    const { takers, receiver } = actionData.assetOrder;
+    const data = requireData as AssetOrderRequireData;
+    return {
+      assetOrder: {
+        specificBuyer: takers[0],
+        from: data.sender,
+        receiver: receiver || '',
+        chainId: chain?.serverId,
+        id: data.id,
+      },
+    };
+  }
   if (actionData?.contractCall && actionData?.contractId && chain) {
     return {
       contractCall: {
         id: actionData.contractId,
         chainId: chain.serverId,
+      },
+    };
+  }
+  if (actionData?.common) {
+    return {
+      common: {
+        ...actionData.common,
+        receiverInWallet: (requireData as ContractRequireData)
+          ?.receiverInWallet,
       },
     };
   }
@@ -946,8 +1172,10 @@ export function normalizeValue(type: string, value: unknown): any {
   }
 
   if (type === 'address') {
-    if (typeof value === 'string' && !value.startsWith('0x')) {
+    if (typeof value === 'string' && !/^(0x|0X)/.test(value)) {
       return EthersBigNumber.from(value).toHexString();
+    } else if (isStrictHexString(value)) {
+      return add0x(value);
     }
   }
 

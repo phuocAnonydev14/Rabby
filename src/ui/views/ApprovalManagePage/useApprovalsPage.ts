@@ -97,12 +97,6 @@ export function useApprovalsPage(options?: { isTestnet?: boolean }) {
   const dispatch = useRabbyDispatch();
 
   const account = useRabbySelector((state) => state.account.currentAccount);
-  const chain = useRabbySelector(
-    (state) =>
-      state.preference.tokenApprovalChain[
-        account?.address?.toLowerCase() || ''
-      ] || CHAINS_ENUM.ETH
-  );
 
   useEffect(() => {
     dispatch.account.fetchCurrentAccountAliasNameAsync();
@@ -517,8 +511,21 @@ export function useApprovalsPage(options?: { isTestnet?: boolean }) {
     vGridRefAsset,
 
     account,
-    chain,
+    contractEmptyStatus: useMemo(() => {
+      if (!sortedContractList.length) return 'none' as const;
+
+      if (!displaySortedContractList.length) return 'no-matched' as const;
+
+      return false as const;
+    }, [sortedContractList, displaySortedContractList]),
     displaySortedContractList,
+    assetEmptyStatus: useMemo(() => {
+      if (!sortedAssetstList.length) return 'none' as const;
+
+      if (!displaySortedAssetsList.length) return 'no-matched' as const;
+
+      return false as const;
+    }, [sortedAssetstList, displaySortedAssetsList]),
     displaySortedAssetsList,
   };
 }

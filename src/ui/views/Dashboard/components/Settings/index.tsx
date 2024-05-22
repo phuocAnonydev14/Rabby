@@ -22,6 +22,7 @@ import IconSettingsDeBank from 'ui/assets/dashboard/settings/debank.svg';
 import { useRabbyDispatch, useRabbySelector } from '@/ui/store';
 import { ReactComponent as RcIconAddresses } from 'ui/assets/dashboard/addresses.svg';
 import { ReactComponent as RcIconCustomRPC } from 'ui/assets/dashboard/custom-rpc.svg';
+import { ReactComponent as RcIconCustomTestnet } from 'ui/assets/dashboard/icon-custom-testnet.svg';
 import { ReactComponent as RcIconPreferMetamask } from 'ui/assets/dashboard/icon-prefer-metamask.svg';
 import { ReactComponent as RcIconAutoLock } from 'ui/assets/dashboard/settings/icon-auto-lock.svg';
 import { ReactComponent as RcIconLockWallet } from 'ui/assets/dashboard/settings/lock.svg';
@@ -38,7 +39,7 @@ import IconSuccess from 'ui/assets/success.svg';
 import { ReactComponent as RcIconTestnet } from 'ui/assets/dashboard/settings/icon-testnet.svg';
 import { Field, PageHeader, Popup } from 'ui/component';
 import AuthenticationModalPromise from 'ui/component/AuthenticationModal';
-import { openInTab, useWallet } from 'ui/utils';
+import { openInTab, openInternalPageInTab, useWallet } from 'ui/utils';
 import './style.less';
 
 import IconCheck from 'ui/assets/check-2.svg';
@@ -46,6 +47,7 @@ import { ReactComponent as RcIconSettingsFeatureConnectedDapps } from 'ui/assets
 import { ReactComponent as RcIconSettingsAboutFollowUs } from 'ui/assets/dashboard/settings/follow-us.svg';
 import { ReactComponent as RcIconSettingsAboutSupporetedChains } from 'ui/assets/dashboard/settings/supported-chains.svg';
 import { ReactComponent as RcIconSettingsAboutVersion } from 'ui/assets/dashboard/settings/version.svg';
+import { ReactComponent as RcIconSettingsSearchDapps } from 'ui/assets/dashboard/settings/search.svg';
 import IconSettingsRabbyBadge from 'ui/assets/badge/rabby-badge-s.svg';
 import { ReactComponent as RcIconI18n } from 'ui/assets/dashboard/settings/i18n.svg';
 import { ReactComponent as RcIconFeedback } from 'ui/assets/dashboard/settings/feedback.svg';
@@ -57,6 +59,8 @@ import { Contacts, RecentConnections } from '..';
 import SwitchThemeModal from './components/SwitchThemeModal';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import FeedbackPopup from '../Feedback';
+import { getChainList, getMainnetChainList } from '@/utils/chain';
+import { SvgIconCross } from '@/ui/assets';
 
 const useAutoLockOptions = () => {
   const { t } = useTranslation();
@@ -604,6 +608,9 @@ const SettingsInner = ({
         width: 320,
         closable: true,
         centered: true,
+        closeIcon: (
+          <SvgIconCross className="w-14 fill-current text-r-neutral-foot" />
+        ),
         className: clsx(updateVersionClassName, 'modal-support-darkmode'),
         title: t('page.dashboard.settings.updateVersion.title'),
         content: (
@@ -685,6 +692,19 @@ const SettingsInner = ({
             reportSettings('Connected Dapps');
           },
         },
+        {
+          leftIcon: RcIconSettingsSearchDapps,
+          content: t('page.dashboard.settings.features.searchDapps'),
+          onClick: () => {
+            matomoRequestEvent({
+              category: 'Setting',
+              action: 'clickToUse',
+              label: 'Search Dapps',
+            });
+            reportSettings('Search Dapps');
+            openInternalPageInTab('dapp-search');
+          },
+        },
       ] as SettingItem[],
     },
     settings: {
@@ -702,15 +722,19 @@ const SettingsInner = ({
             />
           ),
         },
+
         {
-          leftIcon: RcIconTestnet,
-          content: t('page.dashboard.settings.settings.enableTestnets'),
-          rightIcon: (
-            <Switch
-              checked={isShowTestnet}
-              onChange={handleSwitchIsShowTestnet}
-            />
-          ),
+          leftIcon: RcIconCustomTestnet,
+          content: t('page.dashboard.settings.settings.customTestnet'),
+          onClick: () => {
+            history.push('/custom-testnet');
+            matomoRequestEvent({
+              category: 'Setting',
+              action: 'clickToUse',
+              label: 'Custom Testnet',
+            });
+            reportSettings('Custom Testnet');
+          },
         },
         {
           leftIcon: RcIconCustomRPC,
@@ -928,7 +952,7 @@ const SettingsInner = ({
                 className="text-14 mr-[8px] text-r-neutral-title-1"
                 role="button"
               >
-                {Object.values(CHAINS).length}
+                {getChainList('mainnet').length}
               </span>
               <ThemeIcon
                 src={RcIconArrowRight}
@@ -997,9 +1021,7 @@ const SettingsInner = ({
   };
 
   if (process.env.DEBUG) {
-    renderData.features.items.splice(
-      -1,
-      0,
+    renderData.features.items.push(
       {
         leftIcon: RcIconServer,
         content: t('page.dashboard.settings.backendServiceUrl'),
@@ -1015,15 +1037,12 @@ const SettingsInner = ({
         rightIcon: (
           <ThemeIcon src={RcIconArrowRight} className="icon icon-arrow-right" />
         ),
+      } as typeof renderData.features.items[0],
+      {
+        content: t('page.dashboard.settings.clearWatchMode'),
+        onClick: handleClickClearWatchMode,
       } as typeof renderData.features.items[0]
     );
-  }
-
-  if (process.env.DEBUG) {
-    renderData.features.items.push({
-      content: t('page.dashboard.settings.clearWatchMode'),
-      onClick: handleClickClearWatchMode,
-    } as typeof renderData.features.items[0]);
   }
 
   const lockWallet = async () => {

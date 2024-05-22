@@ -42,7 +42,7 @@ const Permit = ({
 }: {
   data: TypedDataActionData['permit'];
   requireData: ApproveTokenRequireData;
-  chain: Chain;
+  chain?: Chain;
   engineResults: Result[];
 }) => {
   const actionData = data!;
@@ -65,7 +65,6 @@ const Permit = ({
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     dispatch.securityEngine.init();
   }, []);
 

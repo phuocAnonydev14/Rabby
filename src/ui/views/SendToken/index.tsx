@@ -1,5 +1,5 @@
+/* eslint "react-hooks/exhaustive-deps": ["error"] */
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import ClipboardJS from 'clipboard';
 import clsx from 'clsx';
 import BigNumber from 'bignumber.js';
 import { Trans, useTranslation } from 'react-i18next';
@@ -9,7 +9,6 @@ import { useDebounce } from 'react-use';
 import { Input, Form, Skeleton, message, Button, InputProps } from 'antd';
 import abiCoderInst, { AbiCoder } from 'web3-eth-abi';
 import { isValidAddress, intToHex, zeroAddress } from 'ethereumjs-util';
-import { ethers } from 'ethers';
 
 import styled from 'styled-components';
 import {
@@ -20,7 +19,7 @@ import {
   MINIMUM_GAS_LIMIT,
   CAN_ESTIMATE_L1_FEE_CHAINS,
   ARB_LIKE_L2_CHAINS,
-  EVENTS,
+  L2_ENUMS,
 } from 'consts';
 import { useRabbyDispatch, useRabbySelector, connectStore } from 'ui/store';
 import { Account, ChainGas } from 'background/service/preference';
@@ -56,9 +55,9 @@ import { getKRCategoryByType } from '@/utils/transaction';
 import { filterRbiSource, useRbiSource } from '@/ui/utils/ga-event';
 import { UIContactBookItem } from '@/background/service/contactBook';
 import {
+  findChain,
   findChainByEnum,
   findChainByID,
-  findChainByServerID,
   makeTokenFromChain,
 } from '@/utils/chain';
 import ChainSelectorInForm from '@/ui/component/ChainSelector/InForm';
@@ -74,13 +73,9 @@ import { isHex } from 'web3-utils';
 import { Chain } from '@debank/common';
 import IconAlertInfo from './alert-info.svg';
 import { formatTxInputDataOnERC20 } from '@/ui/utils/transaction';
-import { useThemeMode } from '@/ui/hooks/usePreference';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
+import { customTestnetTokenToTokenItem } from '@/ui/utils/token';
 import { copyAddress } from '@/ui/utils/clipboard';
-import { CONCHA_RPC } from '@/background/utils/conts';
-import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
-import eventBus from '@/eventBus';
-import { use } from 'i18next';
 
 const abiCoder = (abiCoderInst as unknown) as AbiCoder;
 
@@ -277,6 +272,12 @@ const SendTokenMessageForContract = React.forwardRef<
   );
 });
 
+// interface CustomTestnetTokenItem extends CustomTestnetToken {
+//   chain: string;
+//   raw_amount: string;
+//   raw_amount_hex_str?: string;
+// }
+
 type FormSendToken = {
   to: string;
   amount: string;
@@ -289,7 +290,7 @@ const SendToken = () => {
 
   const [chain, setChain] = useState(CHAINS_ENUM.ETH);
 
-  const chainItem = useMemo(() => findChainByEnum(chain), [chain]);
+  const chainItem = useMemo(() => findChain({ enum: chain }), [chain]);
   const { t } = useTranslation();
   const [tokenAmountForGas, setTokenAmountForGas] = useState('0');
   const { useForm } = Form;
@@ -372,7 +373,6 @@ const SendToken = () => {
     Record<string, { list: GasLevel[]; expireAt: number }>
   >({});
   const [isGnosisSafe, setIsGnosisSafe] = useState(false);
-  const [accountBalanceUpdateNonce, setAccountBalanceUpdateNonce] = useState(0);
 
   const { whitelist, whitelistEnabled } = useRabbySelector((s) => ({
     whitelist: s.whitelist.whitelist,
@@ -429,29 +429,7 @@ const SendToken = () => {
         </>
       ),
     };
-  }, [temporaryGrant, whitelist, toAddressInWhitelist, whitelistEnabled]);
-
-  useEffect(() => {
-    if (currentAccount) {
-      eventBus.addEventListener(EVENTS.TX_COMPLETED, async ({ address }) => {
-        if (isSameAddress(address, currentAccount.address)) {
-          const count = await dispatch.transactions.getPendingTxCountAsync(
-            currentAccount.address
-          );
-          if (count === 0) {
-            setTimeout(() => {
-              // increase accountBalanceUpdateNonce to trigger useCurrentBalance re-fetch account balance
-              // delay 5s for waiting db sync data
-              setAccountBalanceUpdateNonce(accountBalanceUpdateNonce + 1);
-            }, 5000);
-          }
-        }
-      });
-    }
-    return () => {
-      eventBus.removeAllEventListeners(EVENTS.TX_COMPLETED);
-    };
-  }, [currentAccount]);
+  }, [t, temporaryGrant, toAddressInWhitelist, whitelistEnabled]);
 
   const canSubmit =
     isValidAddress(form.getFieldValue('to')) &&
@@ -463,9 +441,9 @@ const SendToken = () => {
     !!chainItem && currentToken?.id === chainItem.nativeTokenAddress;
 
   const fetchGasList = async () => {
-    const list: GasLevel[] = await wallet.openapi.gasMarket(
-      chainItem?.serverId || ''
-    );
+    const list: GasLevel[] = chainItem?.isTestnet
+      ? await wallet.getCustomTestnetGasMarket({ chainId: chainItem.id })
+      : await wallet.openapi.gasMarket(chainItem?.serverId || '');
     return list;
   };
 
@@ -494,9 +472,9 @@ const SendToken = () => {
   );
 
   const calcGasCost = async () => {
-    const targetChain = Object.values(CHAINS).find(
-      (item) => item.enum === chain
-    )!;
+    const targetChain = findChain({
+      enum: chain,
+    })!;
     const gasList = gasPriceMap[targetChain.enum]?.list;
 
     if (!gasList) return new BigNumber(0);
@@ -553,13 +531,8 @@ const SendToken = () => {
     messageDataForContractCall,
   }: FormSendToken) => {
     setIsSubmitLoading(true);
-    localStorage.setItem('token_transfer', JSON.stringify(currentToken));
-    localStorage.setItem('token_transfer_amount', amount);
-    localStorage.setItem('token_transfer_to', form.getFieldValue('to'));
-
-    const chain = Object.values(CHAINS).find((item) => {
-      console.log({ item });
-      return item.serverId === currentToken.chain;
+    const chain = findChain({
+      serverId: currentToken.chain,
     })!;
     const sendValue = new BigNumber(amount)
       .multipliedBy(10 ** currentToken.decimals)
@@ -581,8 +554,6 @@ const SendToken = () => {
       } as const,
       [to, sendValue.toFixed(0)] as any[],
     ] as const;
-    console.log(chain);
-
     const params: Record<string, any> = {
       chainId: chain.id,
       from: currentAccount!.address,
@@ -590,8 +561,8 @@ const SendToken = () => {
       value: '0x0',
       data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
       isSend: true,
+      // userTo: form.getFieldValue('to'),
     };
-
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
     }
@@ -609,6 +580,10 @@ const SendToken = () => {
       }
 
       params.value = `0x${sendValue.toString(16)}`;
+      const noEstimateGasRequired =
+        !ARB_LIKE_L2_CHAINS.includes(chain.enum) &&
+        !L2_ENUMS.includes(chain.enum);
+
       try {
         const code = await wallet.requestETHRpc(
           {
@@ -617,17 +592,21 @@ const SendToken = () => {
           },
           chain.serverId
         );
-        if (estimateGas > 0) {
+        /**
+         * we dont' need always fetch estimateGas, if no `params.gas` set below,
+         * `params.gas` would be filled on Tx Page.
+         */
+        if (chain.needEstimateGas && estimateGas > 0) {
           params.gas = intToHex(estimateGas);
         } else if (
           code &&
           (code === '0x' || code === '0x0') &&
-          !ARB_LIKE_L2_CHAINS.includes(chain.enum)
+          noEstimateGasRequired
         ) {
           params.gas = intToHex(21000); // L2 has extra validation fee so can not set gasLimit as 21000 when send native token
         }
       } catch (e) {
-        if (!ARB_LIKE_L2_CHAINS.includes(chain.enum)) {
+        if (noEstimateGasRequired) {
           params.gas = intToHex(21000); // L2 has extra validation fee so can not set gasLimit as 21000 when send native token
         }
       }
@@ -656,6 +635,7 @@ const SendToken = () => {
           filterRbiSource('sendToken', rbisource) && rbisource, // mark source module of `sendToken`
         ].join('|'),
       });
+
       wallet.sendRequest({
         method: 'eth_sendTransaction',
         params: [params],
@@ -717,8 +697,6 @@ const SendToken = () => {
     }
   ) => {
     const { token, isInitFromCache } = opts || {};
-    console.log('to, amount, ...restForm ne', to, amount, restForm);
-    console.log('opts ne', opts);
     if (changedValues && changedValues.to) {
       setTemporaryGrant(false);
     }
@@ -740,20 +718,18 @@ const SendToken = () => {
     if (!/^\d*(\.\d*)?$/.test(amount)) {
       resultAmount = cacheAmount;
     }
-    const conchaBalance = currentAccount
-      ? await wallet.getConchaBalance(currentAccount.address)
-      : 0;
-    console.log('concha balance ne', conchaBalance);
 
     if (amount !== cacheAmount) {
       if (showGasReserved && Number(resultAmount) > 0) {
         setShowGasReserved(false);
       } else if (isNativeToken && !isGnosisSafe) {
-        const gasCostTokenAmount = await wallet.getConchaGasPrice();
-        const gasString = ethers.utils.formatEther(gasCostTokenAmount);
-        console.log('gas string ne', gasString);
+        const gasCostTokenAmount = await calcGasCost();
         if (
-          new BigNumber(conchaBalance || 0).minus(amount).minus(gasString).lt(0)
+          new BigNumber(targetToken.raw_amount_hex_str || 0)
+            .div(10 ** targetToken.decimals)
+            .minus(amount)
+            .minus(gasCostTokenAmount)
+            .lt(0)
         ) {
           setBalanceWarn(t('page.sendToken.balanceWarn.gasFeeReservation'));
         } else {
@@ -761,15 +737,13 @@ const SendToken = () => {
         }
       }
     }
+
     if (
       new BigNumber(resultAmount || 0).isGreaterThan(
-        new BigNumber(conchaBalance || 0)
+        new BigNumber(targetToken.raw_amount_hex_str || 0).div(
+          10 ** targetToken.decimals
+        )
       )
-      // new BigNumber(resultAmount || 0).isGreaterThan(
-      //   new BigNumber(targetToken.raw_amount_hex_str || 0).div(
-      //     10 ** targetToken.decimals
-      //   )
-      // )
     ) {
       // Insufficient balance
       setBalanceError(t('page.sendToken.balanceError.insufficientBalance'));
@@ -811,7 +785,7 @@ const SendToken = () => {
         amount: '',
       });
     }
-    const chainItem = findChainByServerID(token.chain);
+    const chainItem = findChain({ serverId: token.chain });
     setChain(chainItem?.enum ?? CHAINS_ENUM.ETH);
     setCurrentToken(token);
     await persistPageStateCache({ currentToken: token });
@@ -842,7 +816,7 @@ const SendToken = () => {
             instant = list[i];
           }
         }
-        const gasUsed = await wallet.requestETHRpc(
+        const _gasUsed = await wallet.requestETHRpc(
           {
             method: 'eth_estimateGas',
             params: [
@@ -853,15 +827,18 @@ const SendToken = () => {
               },
             ],
           },
-          CHAINS[chain].serverId
+          chainItem.serverId
         );
+        const gasUsed = chainItem.isTestnet
+          ? new BigNumber(_gasUsed).multipliedBy(1.5).integerValue().toNumber()
+          : _gasUsed;
         setEstimateGas(Number(gasUsed));
         let gasTokenAmount = handleGasChange(instant, false, Number(gasUsed));
         if (CAN_ESTIMATE_L1_FEE_CHAINS.includes(chain)) {
           const l1GasFee = await wallet.fetchEstimatedL1Fee(
             {
               txParams: {
-                chainId: CHAINS[chain].id,
+                chainId: chainItem.id,
                 from: currentAccount.address,
                 to: to && isValidAddress(to) ? to : zeroAddress(),
                 value: currentToken.raw_amount_hex_str,
@@ -901,7 +878,12 @@ const SendToken = () => {
 
   const handleChainChanged = async (val: CHAINS_ENUM) => {
     const account = (await wallet.syncGetCurrentAccount())!;
-    const chain = CHAINS[val];
+    const chain = findChain({
+      enum: val,
+    });
+    if (!chain) {
+      return;
+    }
     setChain(val);
     setCurrentToken({
       id: chain.nativeTokenAddress,
@@ -962,44 +944,46 @@ const SendToken = () => {
     }
   };
 
-  const isShowTestnet = useRabbySelector(
-    (state) => state.preference.isShowTestnet
-  );
-  const { balance } = useCurrentBalance(
-    currentAccount?.address,
-    true,
-    false,
-    accountBalanceUpdateNonce,
-    isShowTestnet
-  );
-
   const loadCurrentToken = async (
-    id?: string,
-    chainId?: string,
-    address?: string
+    id: string,
+    chainId: string,
+    address: string
   ) => {
-    // const t = await wallet.openapi.getToken(address, chainId, id);
-    // if (t) setCurrentToken(t);
-    if (!currentAccount?.address) return;
-    const tokenInfo = await wallet.getCurrentToken(
-      address,
-      currentAccount?.address
-    );
-    if (tokenInfo) setCurrentToken(tokenInfo);
+    const chain = findChain({
+      serverId: chainId,
+    });
+    let result: TokenItem | null = null;
+    if (chain?.isTestnet) {
+      const res = await wallet.getCustomTestnetToken({
+        address,
+        chainId: chain.id,
+        tokenId: id,
+      });
+      if (res) {
+        result = customTestnetTokenToTokenItem(res);
+      }
+    } else {
+      result = await wallet.openapi.getToken(address, chainId, id);
+    }
+    if (result) {
+      setCurrentToken(result);
+    }
     setIsLoading(false);
 
-    return t;
+    return result;
   };
 
   const initByCache = async () => {
     const account = (await wallet.syncGetCurrentAccount())!;
     const qs = query2obj(history.location.search);
+
     if (qs.token) {
       const [tokenChain, id] = qs.token.split(':');
       if (!tokenChain || !id) return;
-      const target = Object.values(CHAINS).find(
-        (item) => item.serverId === tokenChain
-      );
+
+      const target = findChain({
+        serverId: tokenChain,
+      });
       if (!target) {
         loadCurrentToken(currentToken.id, currentToken.chain, account.address);
         return;
@@ -1064,18 +1048,14 @@ const SendToken = () => {
       }
 
       if (chainItem && needLoadToken.chain !== chainItem.serverId) {
-        const target = findChainByServerID(needLoadToken.chain);
-        if (target?.enum) setChain(target.enum);
+        const target = findChain({ serverId: needLoadToken.chain });
+        if (target?.enum) {
+          setChain(target.enum);
+        }
       }
       loadCurrentToken(needLoadToken.id, needLoadToken.chain, account.address);
     }
   };
-
-  useEffect(() => {
-    loadCurrentToken();
-  }, [balance]);
-
-  console.log({ currentToken });
 
   const init = async () => {
     const account = await wallet.syncGetCurrentAccount();
@@ -1099,6 +1079,7 @@ const SendToken = () => {
     if (inited) {
       initByCache();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inited]);
 
   const getAlianName = async () => {
@@ -1124,7 +1105,7 @@ const SendToken = () => {
     setTokenAmountForGas(gasTokenAmount.toFixed());
     if (updateTokenAmount) {
       const values = form.getFieldsValue();
-      const diffValue = new BigNumber(currentToken.amount || 0)
+      const diffValue = new BigNumber(currentToken.raw_amount_hex_str || 0)
         .div(10 ** currentToken.decimals)
         .minus(gasTokenAmount);
       if (diffValue.lt(0)) {
@@ -1178,7 +1159,7 @@ const SendToken = () => {
         await Promise.allSettled([
           fetchContactAccounts(),
           // trigger get balance of address
-          wallet.getAddressBalance(result.contactAddrAdded, true),
+          wallet.getInMemoryAddressBalance(result.contactAddrAdded, true),
         ]);
       },
     });
@@ -1186,15 +1167,18 @@ const SendToken = () => {
 
   useEffect(() => {
     init();
+    wallet.approveTokenCustom();
     return () => {
       wallet.clearPageStateCache();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (currentAccount) {
       getAlianName();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAccount]);
 
   return (
@@ -1219,12 +1203,10 @@ const SendToken = () => {
             </div>
             <ChainSelectorInForm
               value={chain}
-              onChange={() => {
-                return;
-              }}
+              onChange={handleChainChanged}
               disabledTips={'Not supported'}
               supportChains={undefined}
-              readonly={true}
+              readonly={!!safeInfo}
             />
             <div className={clsx('section-title mt-[10px]')}>
               {t('page.sendToken.sectionFrom.title')}
@@ -1236,7 +1218,7 @@ const SendToken = () => {
                 watch: KEYRING_PURPLE_LOGOS[KEYRING_CLASS.WATCH],
               }}
               alianName={sendAlianName}
-              isHideAmount={CHAINS[chain]?.isTestnet}
+              isHideAmount={chainItem?.isTestnet}
             />
             <div className="section-title">
               <span className="section-title__to">
@@ -1342,15 +1324,15 @@ const SendToken = () => {
                     <span
                       className="truncate max-w-[80px]"
                       title={formatTokenAmount(
-                        new BigNumber(currentToken.amount || 0)
-                          // .div(10 ** currentToken.decimals)
+                        new BigNumber(currentToken.raw_amount_hex_str || 0)
+                          .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4
                       )}
                     >
                       {formatTokenAmount(
-                        new BigNumber(currentToken.amount || 0)
-                          // .div(10 ** currentToken.decimals)
+                        new BigNumber(currentToken.raw_amount_hex_str || 0)
+                          .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4
                       )}
@@ -1415,18 +1397,20 @@ const SendToken = () => {
                 <span>{t('page.sendToken.tokenInfoFieldLabel.chain')}</span>
                 <span>
                   {
-                    Object.values(CHAINS).find(
-                      (chain) => chain.serverId === currentToken.chain
-                    )?.name
+                    findChain({
+                      serverId: currentToken?.chain,
+                    })?.name
                   }
                 </span>
               </div>
-              <div className="section-field">
-                <span>{t('page.sendToken.tokenInfoPrice')}</span>
-                <span>
-                  ${splitNumberByStep((currentToken.price || 0).toFixed(2))}
-                </span>
-              </div>
+              {!chainItem?.isTestnet ? (
+                <div className="section-field">
+                  <span>{t('page.sendToken.tokenInfoPrice')}</span>
+                  <span>
+                    ${splitNumberByStep((currentToken.price || 0).toFixed(2))}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
           <SendTokenMessageForEoa
@@ -1469,7 +1453,7 @@ const SendToken = () => {
           )}
           <div className="btn-wrapper w-[100%] px-[20px] flex justify-center">
             <Button
-              // disabled={!canSubmit}
+              disabled={!canSubmit}
               type="primary"
               htmlType="submit"
               size="large"

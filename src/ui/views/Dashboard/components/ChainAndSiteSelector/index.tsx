@@ -244,12 +244,6 @@ export default ({
       eventKey: 'Approvals',
       content: t('page.dashboard.home.panel.approvals'),
       onClick: async (evt) => {
-        // history.push('/popup/approval-manage');
-        if (process.env.NODE_ENV !== 'production' && evt.ctrlKey) {
-          history.push('/popup/approval-manage');
-          return;
-        }
-
         openInternalPageInTab('approval-manage');
       },
       badge: approvalRiskAlert,
@@ -293,27 +287,27 @@ export default ({
 
   if (isGnosis) {
     pickedPanelKeys = [
-      // 'swap',
+      'swap',
       'send',
-      // 'receive',
+      'receive',
       'nft',
       // 'queue',
       'transactions',
-      // 'gasTopUp',
-      // 'security',
-      // 'feedback',
+      'gasTopUp',
+      'security',
+      'feedback',
       'more',
     ];
   } else {
     pickedPanelKeys = [
-      // 'swap',
+      'swap',
       'send',
-      // 'receive',
+      'receive',
       'nft',
       'transactions',
-      // 'gasTopUp',
-      // 'security',
-      // 'feedback',
+      'gasTopUp',
+      'security',
+      'feedback',
       'more',
     ];
   }

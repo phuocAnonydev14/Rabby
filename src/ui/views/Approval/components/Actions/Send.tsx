@@ -39,8 +39,6 @@ const Send = ({
   chain: Chain;
   engineResults: Result[];
 }) => {
-  console.log({ data, requireData, chain, engineResults });
-
   const actionData = data!;
   const dispatch = useRabbyDispatch();
   const { t } = useTranslation();
@@ -56,7 +54,6 @@ const Send = ({
   useEffect(() => {
     dispatch.securityEngine.init();
   }, []);
-  console.log(requireData.name);
 
   return (
     <Wrapper>

@@ -112,7 +112,6 @@ class RPCService {
     params: any[]
   ) => {
     const host = this.store.customRPC[chain]?.url;
-    console.log('host ne', host);
     if (!host) {
       throw new Error(`No customRPC set for ${chain}`);
     }

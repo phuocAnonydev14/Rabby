@@ -5,7 +5,13 @@ import browser from 'webextension-polyfill';
 import { ethErrors } from 'eth-rpc-errors';
 import { WalletController } from 'background/controller/wallet';
 import { Message } from '@/utils/message';
-import { CHAINS, EVENTS, KEYRING_CATEGORY_MAP } from 'consts';
+import {
+  CHAINS,
+  CHAINS_ENUM,
+  EVENTS,
+  EVENTS_IN_BG,
+  KEYRING_CATEGORY_MAP,
+} from 'consts';
 import { storage } from './webapi';
 import {
   permissionService,
@@ -35,18 +41,19 @@ import createSubscription from './controller/provider/subscriptionManager';
 import buildinProvider from 'background/utils/buildinProvider';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-import { setPopupIcon, wait } from './utils';
-import { getSentryEnv } from '@/utils/env';
+import { setPopupIcon } from './utils';
+import { appIsDev, getSentryEnv } from '@/utils/env';
 import { matomoRequestEvent } from '@/utils/matomo-request';
 import { testnetOpenapiService } from './service/openapi';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import Safe from '@rabby-wallet/gnosis-sdk';
+import { customTestnetService } from './service/customTestnet';
+import { findChain } from '@/utils/chain';
+import { syncChainService } from './service/syncChain';
 
 Safe.adapter = fetchAdapter as any;
 
 dayjs.extend(utc);
-
-setPopupIcon('default');
 
 const { PortMessage } = Message;
 
@@ -54,7 +61,7 @@ let appStoreLoaded = false;
 
 Sentry.init({
   dsn:
-    'https://e871ee64a51b4e8c91ea5fa50b67be6b@o460488.ingest.sentry.io/5831390',
+    'https://a864fbae7ba680ce68816ff1f6ef2c4e@o4507018303438848.ingest.us.sentry.io/4507018389749760',
   release: process.env.release,
   environment: getSentryEnv(),
   ignoreErrors: [
@@ -75,6 +82,7 @@ async function restoreAppState() {
   // Init keyring and openapi first since this two service will not be migrated
   await migrateData();
 
+  await customTestnetService.init();
   await permissionService.init();
   await preferenceService.init();
   await transactionWatchService.init();
@@ -90,19 +98,52 @@ async function restoreAppState() {
   await RabbyPointsService.init();
   await HDKeyRingLastAddAddrTimeService.init();
 
+  setPopupIcon(
+    walletController.isUnlocked() || !walletController.isBooted()
+      ? 'default'
+      : 'locked'
+  );
+
   rpcCache.start();
 
   appStoreLoaded = true;
 
+  syncChainService.roll();
   transactionWatchService.roll();
   transactionBroadcastWatchService.roll();
   startEnableUser();
+  walletController.syncMainnetChainList();
+
+  eventBus.addEventListener(EVENTS_IN_BG.ON_TX_COMPLETED, ({ address }) => {
+    if (!address) return;
+
+    walletController.forceExpireInMemoryAddressBalance(address);
+    walletController.forceExpireInMemoryNetCurve(address);
+  });
+
+  if (appIsDev) {
+    globalThis._forceExpireBalanceAboutData = (address: string) => {
+      eventBus.emit(EVENTS_IN_BG.ON_TX_COMPLETED, { address });
+    };
+  }
+
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'getBackgroundReady') {
+      sendResponse({
+        data: {
+          ready: true,
+        },
+      });
+    }
+  });
 }
 
 restoreAppState();
 {
   let interval: NodeJS.Timeout | null;
   keyringService.on('unlock', () => {
+    walletController.syncMainnetChainList();
+
     if (interval) {
       clearInterval(interval);
     }
@@ -110,6 +151,14 @@ restoreAppState();
       const time = preferenceService.getSendLogTime();
       if (dayjs(time).utc().isSame(dayjs().utc(), 'day')) {
         return;
+      }
+      const customTestnetLength = customTestnetService.getList()?.length;
+      if (customTestnetLength) {
+        matomoRequestEvent({
+          category: 'Custom Network',
+          action: 'Custom Network Status',
+          value: customTestnetLength,
+        });
       }
       const chains = preferenceService.getSavedChains();
       matomoRequestEvent({
@@ -183,10 +232,6 @@ browser.runtime.onConnect.addListener((port) => {
             break;
           case 'openapi':
             if (walletController.openapi[data.method]) {
-              console.log('openapi', data.method, data.params);
-              // if (data.method === 'preExecTx') {
-              //   return;
-              // }
               return walletController.openapi[data.method].apply(
                 null,
                 data.params
@@ -270,13 +315,23 @@ browser.runtime.onConnect.addListener((port) => {
     const origin = getOriginFromUrl(port.sender.url);
     const session = sessionService.getOrCreateSession(sessionId, origin);
     const req = { data, session, origin };
+    if (!session?.origin) {
+      const tabInfo = await browser.tabs.get(sessionId);
+      // prevent tabCheckin not triggered, re-fetch tab info when session have no info at all
+      session?.setProp({
+        origin,
+        name: tabInfo.title || '',
+        icon: tabInfo.favIconUrl || '',
+      });
+    }
     // for background push to respective page
     req.session!.setPortMessage(pm);
 
     if (subscriptionManager.methods[data?.method]) {
       const connectSite = permissionService.getConnectedSite(session!.origin);
       if (connectSite) {
-        const chain = CHAINS[connectSite.chain];
+        const chain =
+          findChain({ enum: connectSite.chain }) || CHAINS[CHAINS_ENUM.ETH];
         provider.chainId = chain.network;
       }
       return subscriptionManager.methods[data.method].call(null, req);

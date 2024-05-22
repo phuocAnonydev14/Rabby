@@ -27,6 +27,7 @@ import {
 } from './Popup/ApprovalPopupContainer';
 import { useLedgerStatus } from '@/ui/component/ConnectStatus/useLedgerStatus';
 import * as Sentry from '@sentry/browser';
+import { findChain } from '@/utils/chain';
 
 interface ApprovalParams {
   address: string;
@@ -51,9 +52,9 @@ const LedgerHardwareWaiting = ({ params }: { params: ApprovalParams }) => {
     WALLETCONNECT_STATUS_MAP.WAITING
   );
   const [getApproval, resolveApproval, rejectApproval] = useApproval();
-  const chain = Object.values(CHAINS).find(
-    (item) => item.id === (params.chainId || 1)
-  )!;
+  const chain = findChain({
+    id: params.chainId || 1,
+  });
   const { t } = useTranslation();
   const [isSignText, setIsSignText] = React.useState(false);
   const [result, setResult] = React.useState('');
@@ -86,10 +87,10 @@ const LedgerHardwareWaiting = ({ params }: { params: ApprovalParams }) => {
     }
   };
 
-  const handleClickResult = () => {
-    const url = chain.scanLink.replace(/_s_/, result);
-    openInTab(url);
-  };
+  // const handleClickResult = () => {
+  //   const url = chain.scanLink.replace(/_s_/, result);
+  //   openInTab(url);
+  // };
 
   const init = async () => {
     const account = params.isGnosis
@@ -114,23 +115,26 @@ const LedgerHardwareWaiting = ({ params }: { params: ApprovalParams }) => {
 
         const signingTx = await wallet.getSigningTx(signingTxId);
 
-        if (!signingTx?.explain) {
+        if (!signingTx?.explain && chain && !chain.isTestnet) {
           setErrorMessage(t('page.signFooterBar.qrcode.failedToGetExplain'));
           return;
         }
 
-        const explain = signingTx.explain;
+        const explain = signingTx?.explain;
 
-        stats.report('signTransaction', {
+        wallet.reportStats('signTransaction', {
           type: account.brandName,
-          chainId: chain.serverId,
+          chainId: chain?.serverId || '',
           category: KEYRING_CATEGORY_MAP[account.type],
           preExecSuccess: explain
             ? explain?.calcSuccess && explain?.pre_exec.success
             : true,
-          createBy: params?.$ctx?.ga ? 'rabby' : 'dapp',
+          createdBy: params?.$ctx?.ga ? 'rabby' : 'dapp',
           source: params?.$ctx?.ga?.source || '',
           trigger: params?.$ctx?.ga?.trigger || '',
+          networkType: chain?.isTestnet
+            ? 'Custom Network'
+            : 'Integrated Network',
         });
       }
     } else {
@@ -178,7 +182,7 @@ const LedgerHardwareWaiting = ({ params }: { params: ApprovalParams }) => {
         matomoRequestEvent({
           category: 'Transaction',
           action: 'Submit',
-          label: KEYRING_CLASS.HARDWARE.LEDGER,
+          label: chain?.isTestnet ? 'Custom Network' : 'Integrated Network',
         });
 
         setSignFinishedData({

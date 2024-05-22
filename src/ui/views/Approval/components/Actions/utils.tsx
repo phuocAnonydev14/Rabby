@@ -26,6 +26,7 @@ import {
   CrossTokenAction,
   CrossSwapAction,
   RevokePermit2Action,
+  SwapOrderAction,
 } from '@rabby-wallet/rabby-api/dist/types';
 import {
   ContextActionData,
@@ -37,9 +38,13 @@ import PQueue from 'p-queue';
 import { getTimeSpan } from 'ui/utils/time';
 import { ALIAS_ADDRESS, CHAINS } from 'consts';
 import { TransactionGroup } from '@/background/service/transactionHistory';
-import { isTestnet } from '@/utils/chain';
+import { findChain, isTestnet } from '@/utils/chain';
 import { findChainByServerID } from '@/utils/chain';
 import { ReceiverData } from './components/ViewMorePopup/ReceiverPopup';
+import {
+  ContractRequireData,
+  fetchContractRequireData,
+} from '../TypedDataActions/utils';
 
 export interface ReceiveTokenItem extends TokenItem {
   min_amount: number;
@@ -129,11 +134,22 @@ export interface ParsedActionData {
     nonce: string;
   };
   pushMultiSig?: PushMultiSigAction;
+  assetOrder?: {
+    payTokenList: TokenItem[];
+    payNFTList: NFTItem[];
+    receiveTokenList: TokenItem[];
+    receiveNFTList: NFTItem[];
+    takers: string[];
+    receiver: string | null;
+    expireAt: string | null;
+  };
   common?: {
     title: string;
     desc: string;
     is_asset_changed: boolean;
     is_involving_privacy: boolean;
+    receiver?: string;
+    from: string;
   };
 }
 
@@ -401,7 +417,32 @@ export const parseAction = (
   }
   if (data?.type === null) {
     return {
-      common: data as any,
+      common: {
+        from: tx.from,
+        ...(data as any),
+      },
+    };
+  }
+  if (data?.type === 'swap_order') {
+    const {
+      pay_token_list,
+      pay_nft_list,
+      receive_nft_list,
+      receive_token_list,
+      receiver,
+      takers,
+      expire_at,
+    } = data.data as SwapOrderAction;
+    return {
+      assetOrder: {
+        payTokenList: pay_token_list,
+        payNFTList: pay_nft_list,
+        receiveNFTList: receive_nft_list,
+        receiveTokenList: receive_token_list,
+        receiver,
+        takers,
+        expireAt: expire_at,
+      },
     };
   }
   return {
@@ -513,6 +554,7 @@ export interface ContractCallRequireData {
   payNativeTokenAmount: string;
   nativeTokenSymbol: string;
   unexpectedAddr: ReceiverData | null;
+  receiverInWallet: boolean;
 }
 
 export interface ApproveNFTRequireData {
@@ -541,6 +583,10 @@ export interface PushMultiSigRequireData {
   id: string;
 }
 
+export interface AssetOrderRequireData extends ContractRequireData {
+  sender: string;
+}
+
 export type ActionRequireData =
   | SwapRequireData
   | ApproveTokenRequireData
@@ -553,6 +599,7 @@ export type ActionRequireData =
   | CancelTxRequireData
   | WrapTokenRequireData
   | PushMultiSigRequireData
+  | AssetOrderRequireData
   | null;
 
 export const waitQueueFinished = (q: PQueue) => {
@@ -563,7 +610,7 @@ export const waitQueueFinished = (q: PQueue) => {
   });
 };
 
-const fetchNFTApproveRequiredData = async ({
+export const fetchNFTApproveRequiredData = async ({
   spender,
   address,
   chainId,
@@ -903,9 +950,9 @@ export const fetchActionRequiredData = async ({
     });
   }
   if (actionData.cancelTx) {
-    const chain = Object.values(CHAINS).find(
-      (chain) => chain.serverId === chainId
-    );
+    const chain = findChain({
+      serverId: chainId,
+    });
     if (chain) {
       const pendingTxs = await wallet.getPendingTxsByNonce(
         address,
@@ -1040,6 +1087,19 @@ export const fetchActionRequiredData = async ({
     }
     return result;
   }
+
+  if (actionData.assetOrder) {
+    const requireData = await fetchContractRequireData(
+      tx.to,
+      chainId,
+      address,
+      apiProvider
+    );
+    return {
+      ...requireData,
+      sender: address,
+    };
+  }
   if ((actionData.contractCall || actionData.common) && contractCall) {
     const chain = findChainByServerID(chainId);
     const result: ContractCallRequireData = {
@@ -1053,6 +1113,7 @@ export const fetchActionRequiredData = async ({
       payNativeTokenAmount: tx.value || '0x0',
       nativeTokenSymbol: chain?.nativeTokenSymbol || 'ETH',
       unexpectedAddr: null,
+      receiverInWallet: false,
     };
     queue.add(async () => {
       const credit = await apiProvider.getContractCredit(
@@ -1080,14 +1141,20 @@ export const fetchActionRequiredData = async ({
       result.hasInteraction = hasInteraction.has_interaction;
     });
     queue.add(async () => {
-      const unexpectedAddrList = await apiProvider.unexpectedAddrList({
-        chainId,
-        tx,
-        origin: origin || '',
-        addr: address,
-      });
-      if (unexpectedAddrList.length > 0) {
-        const addr = unexpectedAddrList[0].id;
+      let addr = actionData.common?.receiver;
+
+      if (!addr) {
+        const unexpectedAddrList = await apiProvider.unexpectedAddrList({
+          chainId,
+          tx,
+          origin: origin || '',
+          addr: address,
+        });
+        addr = unexpectedAddrList[0]?.id;
+      }
+
+      if (addr) {
+        result.receiverInWallet = await wallet.hasAddress(addr);
         const receiverData: ReceiverData = {
           address: addr,
           chain: chain!,
@@ -1388,12 +1455,34 @@ export const formatSecurityEngineCtx = ({
       },
     };
   }
+  if (actionData.assetOrder) {
+    const { takers, receiver } = actionData.assetOrder;
+    const data = requireData as AssetOrderRequireData;
+    return {
+      assetOrder: {
+        specificBuyer: takers[0],
+        from: data.sender,
+        receiver: receiver || '',
+        chainId,
+        id: data.id,
+      },
+    };
+  }
   if (actionData.contractCall) {
     const data = requireData as ContractCallRequireData;
     return {
       contractCall: {
         chainId,
         id: data.id,
+      },
+    };
+  }
+  if (actionData.common) {
+    return {
+      common: {
+        ...actionData.common,
+        receiverInWallet: (requireData as ContractCallRequireData)
+          .receiverInWallet,
       },
     };
   }
@@ -1483,6 +1572,9 @@ export const getActionTypeText = (data: ParsedActionData) => {
   if (data.revokePermit2) {
     return t('page.signTx.revokePermit2.title');
   }
+  if (data.assetOrder) {
+    return t('page.signTx.assetOrder.title');
+  }
   if (data?.common) {
     return data.common.title;
   }
@@ -1511,6 +1603,7 @@ export const getActionTypeTextByType = (type: string) => {
     cancel_tx: t('page.signTx.cancelTx.title'),
     push_multisig: t('page.signTx.submitMultisig.title'),
     contract_call: t('page.signTx.contractCall.title'),
+    swap_order: t('page.signTx.assetOrder.title'),
   };
 
   return dict[type] || t('page.signTx.unknownAction');

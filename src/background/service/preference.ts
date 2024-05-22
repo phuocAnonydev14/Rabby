@@ -20,8 +20,8 @@ import semver from 'semver-compare';
 import { syncStateToUI } from '../utils/broadcastToUI';
 import { BROADCAST_TO_UI_EVENTS } from '@/utils/broadcastToUI';
 import dayjs from 'dayjs';
-import { ethers } from 'ethers';
-import { CONCHA_RPC } from 'background/utils/conts';
+import type { IExtractFromPromise } from '@/ui/utils/type';
+import { OpenApiService } from '@rabby-wallet/rabby-api';
 
 const version = process.env.release || '0';
 
@@ -59,6 +59,9 @@ export type IHighlightedAddress = {
   brandName: Account['brandName'];
   address: Account['address'];
 };
+export type CurvePointCollection = IExtractFromPromise<
+  ReturnType<OpenApiService['getNetCurve']>
+>;
 export interface PreferenceStore {
   currentAccount: Account | undefined | null;
   externalLinkAck: boolean;
@@ -66,9 +69,20 @@ export interface PreferenceStore {
   balanceMap: {
     [address: string]: TotalBalanceResponse;
   };
+  curvePointsMap: {
+    [address: string]: CurvePointCollection;
+  };
   testnetBalanceMap: {
     [address: string]: TotalBalanceResponse;
   };
+  /**
+   * @why only mainnet assets would be calculated in Dashboard, we don't need curvePointsMap for testnet
+   */
+  // testnetCurveDataMap: {
+  //   [address: string]: {
+  //     curveData: CurvePointCollection;
+  //   };
+  // };
   /**
    * @deprecated
    */
@@ -126,7 +140,6 @@ class PreferenceService {
   popupOpen = false;
   hasOtherProvider = false;
   currentCoboSafeAddress?: Account | null;
-  provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
 
   init = async () => {
     const defaultLang = 'en';
@@ -137,6 +150,7 @@ class PreferenceService {
         externalLinkAck: false,
         hiddenAddresses: [],
         balanceMap: {},
+        curvePointsMap: {},
         testnetBalanceMap: {},
         useLedgerLive: false,
         locale: defaultLang,
@@ -259,7 +273,10 @@ class PreferenceService {
     if (!key || ['search', 'lastCurrent'].includes(key)) {
       this.resetAddressSortStoreExpiredValue();
     }
-    return key ? this.store[key] : this.store;
+    if (key === 'isShowTestnet') {
+      return true;
+    }
+    return key ? this.store[key] : { ...this.store, isShowTestnet: true };
   };
 
   getTokenApprovalChain = (address: string) => {
@@ -303,26 +320,26 @@ class PreferenceService {
 
   getLastSelectedSwapPayToken = (address: string) => {
     const key = address.toLowerCase();
-    return this.store?.lastSelectedSwapPayToken?.[key];
+    return this.store.lastSelectedSwapPayToken?.[key];
   };
 
   setLastSelectedSwapPayToken = (address: string, token: TokenItem) => {
     const key = address.toLowerCase();
     this.store.lastSelectedSwapPayToken = {
-      ...this.store?.lastSelectedSwapPayToken,
+      ...this.store.lastSelectedSwapPayToken,
       [key]: token,
     };
   };
 
   getLastSelectedGasTopUpChain = (address: string) => {
     const key = address.toLowerCase();
-    return this.store?.lastSelectedGasTopUpChain?.[key];
+    return this.store.lastSelectedGasTopUpChain?.[key];
   };
 
   setLastSelectedGasTopUpChain = (address: string, chain: CHAINS_ENUM) => {
     const key = address.toLowerCase();
     this.store.lastSelectedGasTopUpChain = {
-      ...this.store?.lastSelectedGasTopUpChain,
+      ...this.store.lastSelectedGasTopUpChain,
       [key]: chain,
     };
   };
@@ -402,7 +419,6 @@ class PreferenceService {
   };
 
   getCurrentAccount = (): Account | undefined | null => {
-    console.log('this store ne', this.store);
     const account = cloneDeep(this.store.currentAccount);
     if (!account) return account;
     return {
@@ -438,14 +454,6 @@ class PreferenceService {
     };
   };
 
-  updateAddressBalance = (address: string, data: TotalBalanceResponse) => {
-    const balanceMap = this.store.balanceMap || {};
-    this.store.balanceMap = {
-      ...balanceMap,
-      [address.toLowerCase()]: data,
-    };
-  };
-
   removeTestnetAddressBalance = (address: string) => {
     const key = address.toLowerCase();
     if (key in this.store.testnetBalanceMap) {
@@ -464,25 +472,63 @@ class PreferenceService {
     }
   };
 
-  getAddressBalance = (address: string): TotalBalanceResponse | null => {
+  updateBalanceAboutCache = (
+    address: string,
+    data: {
+      totalBalance?: TotalBalanceResponse;
+      curvePoints?: CurvePointCollection;
+    }
+  ) => {
+    const addr = address.toLowerCase();
+    if (data.totalBalance) {
+      const balanceMap = this.store.balanceMap || {};
+      this.store.balanceMap = {
+        ...balanceMap,
+        [addr]: data.totalBalance,
+      };
+    }
+
+    if (data.curvePoints) {
+      const curvePointsMap = this.store.curvePointsMap || {};
+      this.store.curvePointsMap = {
+        ...curvePointsMap,
+        [addr]: data.curvePoints,
+      };
+    }
+  };
+
+  getBalanceAboutCacheByAddress = (address: string) => {
+    const addr = address.toLowerCase();
     const balanceMap = this.store.balanceMap || {};
-    return balanceMap[address.toLowerCase()] || null;
+    const curvePointsMap = this.store.curvePointsMap || {};
+
+    return {
+      totalBalance: balanceMap[addr] || null,
+      curvePoints: curvePointsMap[addr] || null,
+    };
   };
 
-  getConchaBalance = async (address: string): Promise<string> => {
-    const balance = await this.provider.getBalance(address);
-    console.log('balance ne', ethers.utils.formatEther(balance));
-    return ethers.utils.formatEther(balance);
+  getBalanceAboutCacheMap = () => {
+    return {
+      balanceMap: this.store.balanceMap || {},
+      curvePointsMap: this.store.curvePointsMap || {},
+    };
   };
 
-  getConchaGasPrice = async (): Promise<ethers.BigNumber> => {
-    return this.provider.getGasPrice();
+  removeCurvePoints = (address: string) => {
+    const key = address.toLowerCase();
+    if (key in this.store.curvePointsMap) {
+      const map = this.store.curvePointsMap;
+      delete map[key];
+      this.store.curvePointsMap = map;
+    }
   };
 
-  getTestnetAddressBalance = (address: string): TotalBalanceResponse | null => {
-    const balanceMap = this.store.testnetBalanceMap || {};
-    return balanceMap[address.toLowerCase()] || null;
-  };
+  /** useless now, maybe useful in the future */
+  // getTestnetAddressBalance = (address: string): TotalBalanceResponse | null => {
+  //   const balanceMap = this.store.testnetBalanceMap || {};
+  //   return balanceMap[address.toLowerCase()] || null;
+  // };
 
   getExternalLinkAck = (): boolean => {
     return this.store.externalLinkAck;
@@ -616,19 +662,18 @@ class PreferenceService {
   getCustomizedToken = () => {
     return this.store.customizedToken || [];
   };
+  hasCustomizedToken = (token: Token) => {
+    return !!this.store.customizedToken?.find(
+      (item) =>
+        isSameAddress(item.address, token.address) && item.chain === token.chain
+    );
+  };
   addCustomizedToken = (token: Token) => {
-    if (
-      !this.store.customizedToken?.find(
-        (item) =>
-          isSameAddress(item.address, token.address) &&
-          item.chain === token.chain
-      )
-    ) {
-      this.store.customizedToken = [
-        ...(this.store.customizedToken || []),
-        token,
-      ];
+    if (this.hasCustomizedToken(token)) {
+      throw new Error('Token already added');
     }
+
+    this.store.customizedToken = [...(this.store.customizedToken || []), token];
   };
   removeCustomizedToken = (token: Token) => {
     this.store.customizedToken = this.store.customizedToken?.filter(
@@ -718,7 +763,8 @@ class PreferenceService {
     this.store.hiddenBalance = value;
   };
   getIsShowTestnet = () => {
-    return this.store.isShowTestnet;
+    // return this.store.isShowTestnet;
+    return true;
   };
   setIsShowTestnet = (value: boolean) => {
     this.store.isShowTestnet = value;

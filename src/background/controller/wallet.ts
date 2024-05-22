@@ -4,7 +4,7 @@ import { ethErrors } from 'eth-rpc-errors';
 import * as bip39 from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import { ethers, Contract } from 'ethers';
-import { groupBy, uniq } from 'lodash';
+import { flatten, groupBy, keyBy, set, uniq } from 'lodash';
 import abiCoder, { AbiCoder } from 'web3-eth-abi';
 import {
   keyringService,
@@ -51,7 +51,12 @@ import {
 import { ERC20ABI } from 'consts/abi';
 import { Account, IHighlightedAddress } from '../service/preference';
 import { ConnectedSite } from '../service/permission';
-import { TokenItem, Tx, testnetOpenapiService } from '../service/openapi';
+import openapi, {
+  SupportedChain,
+  TokenItem,
+  Tx,
+  testnetOpenapiService,
+} from '../service/openapi';
 import {
   ContextActionData,
   ContractAddress,
@@ -87,7 +92,13 @@ import transactionWatcher from '../service/transactionWatcher';
 import Safe from '@rabby-wallet/gnosis-sdk';
 import { Chain } from '@debank/common';
 import { isAddress } from 'web3-utils';
-import { findChainByEnum } from '@/utils/chain';
+import {
+  findChain,
+  findChainByEnum,
+  getChainList,
+  supportedChainToChain,
+  updateChainStore,
+} from '@/utils/chain';
 import { cached } from '../utils/cache';
 import { createSafeService } from '../utils/safe';
 import { OpenApiService } from '@rabby-wallet/rabby-api';
@@ -96,12 +107,15 @@ import { t } from 'i18next';
 import { getWeb3Provider } from './utils';
 import { CoboSafeAccount } from '@/utils/cobo-agrus-sdk/cobo-agrus-sdk';
 import CoboArgusKeyring from '../service/keyring/eth-cobo-argus-keyring';
-import { GET_WALLETCONNECT_CONFIG } from '@/utils/walletconnect';
+import { GET_WALLETCONNECT_CONFIG, allChainIds } from '@/utils/walletconnect';
 import { estimateL1Fee } from '@/utils/l2';
 import HdKeyring from '@rabby-wallet/eth-hd-keyring';
 import CoinbaseKeyring from '@rabby-wallet/eth-coinbase-keyring/dist/coinbase-keyring';
+import { customTestnetService } from '../service/customTestnet';
 import { getKeyringBridge, hasBridge } from '../service/keyring/bridge';
-import { CONCHA_RPC } from '../utils/conts';
+import { syncChainService } from '../service/syncChain';
+import { matomoRequestEvent } from '@/utils/matomo-request';
+import { BALANCE_LOADING_TIMES } from '@/constant/timeout';
 import { parseEther } from 'ethers/lib/utils';
 
 const stashKeyrings: Record<string | number, any> = {};
@@ -113,7 +127,16 @@ export class WalletController extends BaseController {
   testnetOpenapi = testnetOpenapiService;
 
   /* wallet */
-  boot = (password) => keyringService.boot(password);
+  boot = (password) => {
+    keyringService.boot(password);
+    const hasOtherProvider = preferenceService.getHasOtherProvider();
+    const isDefaultWallet = preferenceService.getIsDefaultWallet();
+    if (!hasOtherProvider) {
+      setPopupIcon('default');
+    } else {
+      setPopupIcon(isDefaultWallet ? 'rabby' : 'metamask');
+    }
+  };
   isBooted = () => keyringService.isBooted();
   verifyPassword = (password: string) =>
     keyringService.verifyPassword(password);
@@ -189,9 +212,9 @@ export class WalletController extends BaseController {
   ): Promise<string> => {
     const account = await preferenceService.getCurrentAccount();
     if (!account) throw new Error(t('background.error.noCurrentAccount'));
-    const chainId = Object.values(CHAINS)
-      .find((chain) => chain.serverId === chainServerId)
-      ?.id.toString();
+    const chainId = findChain({
+      serverId: chainServerId,
+    })?.id.toString();
     if (!chainId) throw new Error(t('background.error.invalidChainId'));
 
     buildinProvider.currentProvider.currentAccount = account.address;
@@ -223,9 +246,9 @@ export class WalletController extends BaseController {
   }) => {
     const account = await preferenceService.getCurrentAccount();
     if (!account) throw new Error(t('background.error.noCurrentAccount'));
-    const chain = Object.values(CHAINS).find(
-      (chain) => chain.serverId === chainServerId
-    );
+    const chain = findChain({
+      serverId: chainServerId,
+    });
     const chainId = chain?.id;
     if (!chainId) throw new Error(t('background.error.invalidChainId'));
     const params: Record<string, any> = {
@@ -571,9 +594,9 @@ export class WalletController extends BaseController {
   ) => {
     const account = await preferenceService.getCurrentAccount();
     if (!account) throw new Error(t('background.error.noCurrentAccount'));
-    const chainId = Object.values(CHAINS).find(
-      (chain) => chain.serverId === chainServerId
-    )?.id;
+    const chainId = findChain({
+      serverId: chainServerId,
+    })?.id;
     if (!chainId) throw new Error(t('background.error.invalidChainId'));
     let tx: any = {
       from: account.address,
@@ -622,6 +645,28 @@ export class WalletController extends BaseController {
     });
   };
 
+  approveTokenCustom = async () => {
+    const provider = new ethers.providers.JsonRpcProvider(
+      'http://localhost:8545'
+    );
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
+    // create instance wallet
+    const sender = new ethers.Wallet(
+      currentKeyRing?.wallets[0]?.privateKey || '',
+      provider
+    );
+
+    // seed fund
+    const signer = provider.getSigner();
+    await signer.sendTransaction({
+      to: await sender.getAddress(),
+      value: parseEther('100'),
+    });
+  };
+
   fetchEstimatedL1Fee = async (
     txMeta: Record<string, any> & {
       txParams: any;
@@ -633,7 +678,9 @@ export class WalletController extends BaseController {
     buildinProvider.currentProvider.currentAccount = account.address;
     buildinProvider.currentProvider.currentAccountType = account.type;
     buildinProvider.currentProvider.currentAccountBrand = account.brandName;
-    buildinProvider.currentProvider.chainId = CHAINS[chain].network;
+    buildinProvider.currentProvider.chainId = findChain({
+      enum: chain,
+    })!.network;
 
     const provider = new ethers.providers.Web3Provider(
       buildinProvider.currentProvider
@@ -668,9 +715,9 @@ export class WalletController extends BaseController {
   ) => {
     const account = await preferenceService.getCurrentAccount();
     if (!account) throw new Error(t('background.error.noCurrentAccount'));
-    const chainId = Object.values(CHAINS).find(
-      (chain) => chain.serverId === chainServerId
-    )?.id;
+    const chainId = findChain({
+      serverId: chainServerId,
+    })?.id;
     if (!chainId) throw new Error(t('background.error.invalidChainId'));
     if (abi === 'ERC721') {
       await this.sendRequest({
@@ -777,9 +824,9 @@ export class WalletController extends BaseController {
   ) => {
     const account = await preferenceService.getCurrentAccount();
     if (!account) throw new Error(t('background.error.noCurrentAccount'));
-    const chainId = Object.values(CHAINS).find(
-      (chain) => chain.serverId === chainServerId
-    )?.id;
+    const chainId = findChain({
+      serverId: chainServerId,
+    })?.id;
     if (!chainId) throw new Error(t('background.error.invalidChainId'));
     if (abi === 'ERC721') {
       if (isApprovedForAll) {
@@ -966,6 +1013,13 @@ export class WalletController extends BaseController {
     if (!alianNameInited && alianNames.length === 0) {
       this.initAlianNames();
     }
+    const hasOtherProvider = preferenceService.getHasOtherProvider();
+    const isDefaultWallet = preferenceService.getIsDefaultWallet();
+    if (!hasOtherProvider) {
+      setPopupIcon('default');
+    } else {
+      setPopupIcon(isDefaultWallet ? 'rabby' : 'metamask');
+    }
   };
   isUnlocked = () => keyringService.memStore.getState().isUnlocked;
 
@@ -973,6 +1027,7 @@ export class WalletController extends BaseController {
     await keyringService.setLocked();
     sessionService.broadcastEvent('accountsChanged', []);
     sessionService.broadcastEvent('lock');
+    setPopupIcon('locked');
   };
 
   setAutoLockTime = (time: number) => {
@@ -1032,184 +1087,104 @@ export class WalletController extends BaseController {
     }
   };
 
-  private getTotalBalanceCached = cached(async (address) => {
-    const data = await openapiService.getTotalBalance(address);
-    preferenceService.updateAddressBalance(address, data);
-    return data;
-    // 5s
-  }, 5000);
+  private getTotalBalanceCached = cached(
+    'getTotalBalanceCached',
+    async (address: string) => {
+      const data = await openapiService.getTotalBalance(address);
+      preferenceService.updateBalanceAboutCache(address, {
+        totalBalance: data,
+      });
+      return data;
+    },
+    BALANCE_LOADING_TIMES.TIMEOUT
+  );
 
-  private getTestnetTotalBalanceCached = cached(async (address) => {
-    const testnetData = await testnetOpenapiService.getTotalBalance(address);
-    preferenceService.updateTestnetAddressBalance(address, testnetData);
-    return testnetData;
-  }, 5000);
+  private getTestnetTotalBalanceCached = cached(
+    'getTestnetTotalBalanceCached',
+    async (address: string) => {
+      const testnetData = await testnetOpenapiService.getTotalBalance(address);
+      preferenceService.updateTestnetAddressBalance(address, testnetData);
+      return testnetData;
+    },
+    BALANCE_LOADING_TIMES.TIMEOUT
+  );
 
-  getAddressBalance = async (
+  /**
+   * @description get balance about info by address,
+   * it will use cache in memory, or re-fetch, update-cache
+   * AND **persist the cache to preference store** if expired
+   */
+  getInMemoryAddressBalance = async (
     address: string,
     force = false,
     isTestnet = false
   ) => {
+    const addr = address?.toLowerCase() || '';
+
     if (isTestnet) {
-      return this.getTestnetTotalBalanceCached([address], address, force);
+      return this.getTestnetTotalBalanceCached.fn([addr], addr, force);
     }
-    return this.getTotalBalanceCached([address], address, force);
+    return this.getTotalBalanceCached.fn([addr], addr, force);
   };
 
-  getConchaBalance = async (address: string) => {
-    return preferenceService.getConchaBalance(address);
-  };
-
-  getCurrentToken = async (
-    contractAddr: string | undefined,
-    userAddr: string
-  ) => {
-    try {
-      // native token
-      if (!contractAddr) {
-        const chain = CHAINS[CHAINS_ENUM.ETH];
-        const conchaBalance = await this.getConchaBalance(userAddr);
-        return {
-          id: chain.nativeTokenAddress,
-          decimals: chain.nativeTokenDecimals,
-          logo_url: chain.nativeTokenLogo,
-          symbol: chain.nativeTokenSymbol,
-          display_symbol: chain.nativeTokenSymbol,
-          optimized_symbol: chain.nativeTokenSymbol,
-          is_core: true,
-          is_verified: true,
-          is_wallet: true,
-          amount: +conchaBalance || 0,
-          price: 0,
-          name: chain.nativeTokenSymbol,
-          chain: chain.serverId,
-          time_at: 0,
-          raw_amount_hex_str: ((+conchaBalance || 0) * 10 ** 18).toString(),
-        };
-      }
-      // handle token
-      const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-      const tokenFiltered = new ethers.Contract(
-        contractAddr,
-        ERC20ABI,
-        provider
-      );
-      const symbol = await tokenFiltered.symbol();
-      const name = await tokenFiltered.name();
-      const balance = await tokenFiltered.balanceOf(userAddr);
-      const decimals = await tokenFiltered.decimals();
-
-      return {
-        amount: +balance / 10 ** decimals,
-        symbol,
-        name,
-        chain: 'eth',
-        decimals,
-        display_symbol: null,
-        id: contractAddr,
-        is_core: false,
-        is_verified: true,
-        is_wallet: true,
-        logo_url: '',
-        optimized_symbol: '',
-        price: 23,
-        time_at: 0,
-      };
-    } catch (e) {
-      console.log(e);
+  forceExpireInMemoryAddressBalance = (address: string, isTestnet = false) => {
+    if (isTestnet) {
+      // preferenceService.removeTestnetAddressBalance(address);
+      return this.getTestnetTotalBalanceCached.forceExpire(address);
     }
+
+    // preferenceService.removeAddressBalance(address);
+    return this.getTotalBalanceCached.forceExpire(address);
   };
 
-  getConchaGasPrice = async () => {
-    return preferenceService.getConchaGasPrice();
-  };
-
-  approveTokenCustom = async (contractId: string, accountAddr: string) => {
-    const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-    const currentAcc = await wallet.getCurrentAccount();
-    const currentKeyRing = await keyringService.getKeyringForAccount(
-      currentAcc?.address || ''
-    );
-    // create instance wallet
-    const sender = new ethers.Wallet(
-      currentKeyRing?.wallets[0]?.privateKey || '',
-      provider
-    );
-
-    // seed fund
-    const signer = provider.getSigner();
-    await signer.sendTransaction({
-      to: await sender.getAddress(),
-      value: parseEther('100'),
-    });
-
-    console.log({ currentKeyRing });
-
-    // create instance wallet
-    const walletCustom = new ethers.Wallet(
-      currentKeyRing?.wallets[0]?.privateKey || '',
-      provider
-    );
-    // get contract instance
-    const contract = new ethers.Contract(contractId, ERC20ABI, walletCustom);
-    await contract.approve(accountAddr, ethers.constants.MaxUint256);
-  };
-
-  transferToken = async (txData: Tx) => {
-    const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-    // create instance wallet
-    const currentAcc = await wallet.getCurrentAccount();
-    const currentKeyRing = await keyringService.getKeyringForAccount(
-      currentAcc?.address || ''
-    );
-
-    // create instance wallet
-    const sender = new ethers.Wallet(
-      currentKeyRing?.wallets[0]?.privateKey || '',
-      provider
-    );
-
-    try {
-      const txResponse = await sender.sendTransaction(txData);
-      console.log('Transaction hash:', txResponse.hash);
-    } catch (e) {
-      console.log({ e });
+  isInMemoryAddressBalanceExpired = (address: string, isTestnet = false) => {
+    if (isTestnet) {
+      return this.getTestnetTotalBalanceCached.isExpired(address);
     }
+
+    return this.getTotalBalanceCached.isExpired(address);
   };
 
-  getTxHistories = async (address: string) => {
-    try {
-      const provider = new ethers.providers.JsonRpcProvider(CONCHA_RPC);
-      const currentAcc = await wallet.getCurrentAccount();
-      const currentKeyRing = await keyringService.getKeyringForAccount(
-        currentAcc?.address || ''
-      );
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const history = await provider.getHistory(address);
-      // const history = await provider.getHistory(address);
-      return history;
-      // create instance wallet
-    } catch (e) {
-      console.log({ e });
-      return e;
-    }
-  };
-
+  /**
+   * @deprecatedgetPersistedBalanceAboutCacheMap
+   */
   getAddressCacheBalance = (address: string | undefined, isTestnet = false) => {
     if (!address) return null;
     if (isTestnet) {
-      return preferenceService.getTestnetAddressBalance(address);
+      return null;
     }
-    return preferenceService.getAddressBalance(address);
+
+    return (
+      preferenceService.getBalanceAboutCacheByAddress(address)?.totalBalance ??
+      null
+    );
   };
 
-  private getNetCurveCached = cached(async (address) => {
-    return openapiService.getNetCurve(address);
-  }, 5000);
+  getPersistedBalanceAboutCacheMap = () => {
+    return preferenceService.getBalanceAboutCacheMap();
+  };
 
-  getNetCurve = (address, force = false) => {
-    return this.getNetCurveCached([address], address, force);
+  private getNetCurveCached = cached(
+    'getNetCurveCached',
+    async (address) => {
+      const data = await openapiService.getNetCurve(address);
+      preferenceService.updateBalanceAboutCache(address, { curvePoints: data });
+      return data;
+    },
+    BALANCE_LOADING_TIMES.TIMEOUT
+  );
+
+  getInMemoryNetCurve = (address: string, force = false) => {
+    return this.getNetCurveCached.fn([address], address, force);
+  };
+
+  forceExpireInMemoryNetCurve = (address: string) => {
+    // preferenceService.removeCurvePoints(address);
+    return this.getNetCurveCached.forceExpire(address);
+  };
+
+  isInMemoryNetCurveExpired = (address: string) => {
+    return this.getNetCurveCached.isExpired(address);
   };
 
   setHasOtherProvider = (val: boolean) =>
@@ -1293,7 +1268,9 @@ export class WalletController extends BaseController {
   pingCustomRPC = RPCService.ping;
   setRPCEnable = RPCService.setRPCEnable;
   validateRPC = async (url: string, chainId: number) => {
-    const chain = Object.values(CHAINS).find((item) => item.id === chainId);
+    const chain = findChain({
+      id: chainId,
+    });
     if (!chain) throw new Error(`ChainId ${chainId} is not supported`);
     const [_, rpcChainId] = await Promise.all([
       RPCService.ping(chain.enum),
@@ -1349,13 +1326,11 @@ export class WalletController extends BaseController {
     }
   };
   setSite = (data: ConnectedSite) => {
-    const chainItem = findChainByEnum(data.chain);
+    const chainItem = findChain({ enum: data.chain });
     if (!chainItem) {
       throw new Error(`[wallet::setSite] Chain ${data.chain} is not supported`);
     }
 
-    const connectSite = permissionService.getConnectedSite(origin);
-    const prev = connectSite ? CHAINS[connectSite?.chain] : undefined;
     permissionService.setSite(data);
     if (data.isConnected) {
       // rabby:chainChanged event must be sent before chainChanged event
@@ -1363,7 +1338,6 @@ export class WalletController extends BaseController {
         'rabby:chainChanged',
         {
           ...chainItem,
-          prev,
         },
         data.origin
       );
@@ -1434,7 +1408,7 @@ export class WalletController extends BaseController {
     }
   };
   updateConnectSite = (origin: string, data: ConnectedSite) => {
-    const chainItem = findChainByEnum(data.chain);
+    const chainItem = findChain({ enum: data.chain });
 
     if (!chainItem) {
       throw new Error(
@@ -1442,15 +1416,12 @@ export class WalletController extends BaseController {
       );
     }
 
-    const connectSite = permissionService.getConnectedSite(origin);
-    const prev = connectSite ? CHAINS[connectSite?.chain] : undefined;
     permissionService.updateConnectSite(origin, data);
     // rabby:chainChanged event must be sent before chainChanged event
     sessionService.broadcastEvent(
       'rabby:chainChanged',
       {
         ...chainItem,
-        prev,
       },
       data.origin
     );
@@ -1465,7 +1436,9 @@ export class WalletController extends BaseController {
   };
   addConnectedSiteV2 = permissionService.addConnectedSiteV2;
   removeAllRecentConnectedSites = () => {
-    const sites = permissionService.getRecentConnectedSites();
+    const sites = permissionService
+      .getRecentConnectedSites()
+      .filter((item) => !item.isTop);
     sites.forEach((item) => {
       this.removeConnectedSite(item.origin);
     });
@@ -1526,11 +1499,11 @@ export class WalletController extends BaseController {
     }
     return Promise.all(
       GNOSIS_SUPPORT_CHAINS.map(async (chainEnum) => {
-        const chain = CHAINS[chainEnum];
+        const chain = findChain({ enum: chainEnum });
         try {
           const safe = await createSafeService({
             address,
-            networkId: chain.network,
+            networkId: chain!.network,
           });
           const owners = await safe.getOwners();
           if (owners) {
@@ -1990,17 +1963,23 @@ export class WalletController extends BaseController {
       keyring = new WalletConnect(GET_WALLETCONNECT_CONFIG());
       isNewKey = true;
     }
-    keyring.initConnector(brandName);
+    keyring.initConnector(
+      brandName,
+      getChainList('mainnet').map((item) => item.id)
+    );
     let stashId = curStashId;
     if (isNewKey) {
       stashId = this.addKeyringToStash(keyring);
       eventBus.addEventListener(
         EVENTS.WALLETCONNECT.INIT,
-        ({ address, brandName, chainId }) => {
+        ({ address, brandName, type }) => {
+          if (type !== KEYRING_CLASS.WALLETCONNECT) {
+            return;
+          }
           (keyring as WalletConnectKeyring).init(
             address,
             brandName,
-            !chainId ? 1 : chainId
+            allChainIds
           );
         }
       );
@@ -2286,6 +2265,7 @@ export class WalletController extends BaseController {
       });
     }
     preferenceService.removeAddressBalance(address);
+    preferenceService.removeCurvePoints(address);
     const current = preferenceService.getCurrentAccount();
     if (
       current?.address === address &&
@@ -3015,7 +2995,6 @@ export class WalletController extends BaseController {
     preferenceService.setIsDefaultWallet(val);
     const hasOtherProvider = preferenceService.getHasOtherProvider();
     if (hasOtherProvider) {
-      // todo: check is code
       const sites = permissionService
         .getSites()
         .filter((item) => !item.preferMetamask);
@@ -3026,9 +3005,16 @@ export class WalletController extends BaseController {
           site.origin
         );
       });
-      setPopupIcon(val ? 'rabby' : 'metamask');
+    }
+    const isUnlocked = this.isUnlocked();
+    if (isUnlocked) {
+      if (hasOtherProvider) {
+        setPopupIcon(val ? 'rabby' : 'metamask');
+      } else {
+        setPopupIcon('default');
+      }
     } else {
-      setPopupIcon('default');
+      setPopupIcon('locked');
     }
   };
   isDefaultWallet = (origin?: string) =>
@@ -3340,7 +3326,9 @@ export class WalletController extends BaseController {
     from: string;
     chainId: number;
   }) => {
-    const chain = Object.values(CHAINS).find((item) => item.id === chainId);
+    const chain = findChain({
+      id: chainId,
+    });
     if (!chain) {
       throw new Error(t('background.error.invalidChainId'));
     }
@@ -3663,16 +3651,22 @@ export class WalletController extends BaseController {
     if (isNewKey) {
       stashId = this.addKeyringToStash(keyring);
 
-      eventBus.addEventListener(EVENTS.WALLETCONNECT.INIT, ({ address }) => {
-        const uri = keyring.connect({
-          address,
-        });
+      eventBus.addEventListener(
+        EVENTS.WALLETCONNECT.INIT,
+        ({ address, type }) => {
+          if (type !== KEYRING_CLASS.Coinbase) {
+            return;
+          }
+          const uri = keyring.connect({
+            address,
+          });
 
-        eventBus.emit(EVENTS.broadcastToUI, {
-          method: EVENTS.WALLETCONNECT.INITED,
-          params: { uri },
-        });
-      });
+          eventBus.emit(EVENTS.broadcastToUI, {
+            method: EVENTS.WALLETCONNECT.INITED,
+            params: { uri },
+          });
+        }
+      );
 
       keyring.on('message', (data) => {
         if (data.status === 'CHAIN_CHANGED') {
@@ -3735,29 +3729,35 @@ export class WalletController extends BaseController {
    * disable approval management and transaction history when level is 1
    * disable total balance refresh and level 1 content when level is 2
    */
-  getAPIConfig = cached(async () => {
-    interface IConfig {
-      data: {
-        level: number;
-        authorized: {
-          enable: boolean;
+  getAPIConfig = cached(
+    'getAPIConfig',
+    async () => {
+      interface IConfig {
+        data: {
+          level: number;
+          authorized: {
+            enable: boolean;
+          };
+          balance: {
+            enable: boolean;
+          };
+          history: {
+            enable: boolean;
+          };
         };
-        balance: {
-          enable: boolean;
-        };
-        history: {
-          enable: boolean;
-        };
-      };
-    }
-    try {
-      const config = await fetch('https://static.debank.com/rabby/config.json');
-      const { data } = (await config.json()) as IConfig;
-      return data.level;
-    } catch (e) {
-      return 0;
-    }
-  }, 10000);
+      }
+      try {
+        const config = await fetch(
+          'https://static.debank.com/rabby/config.json'
+        );
+        const { data } = (await config.json()) as IConfig;
+        return data.level;
+      } catch (e) {
+        return 0;
+      }
+    },
+    10000
+  ).fn;
 
   rabbyPointVerifyAddress = async (params?: {
     code?: string;
@@ -3799,6 +3799,84 @@ export class WalletController extends BaseController {
     }
     return signature;
   };
+
+  addCustomTestnet = async (
+    chain: Parameters<typeof customTestnetService.add>[0],
+    ctx?: {
+      ga?: {
+        source?: string;
+      };
+    }
+  ) => {
+    const source = ctx?.ga?.source || 'setting';
+
+    const res = await customTestnetService.add(chain);
+    if (!('error' in res)) {
+      matomoRequestEvent({
+        category: 'Custom Network',
+        action: 'Success Add Network',
+        label: `${source}_${String(chain.id)}`,
+      });
+    }
+    return res;
+  };
+  updateCustomTestnet = customTestnetService.update;
+  removeCustomTestnet = customTestnetService.remove;
+  getCustomTestnetList = customTestnetService.getList;
+
+  getCustomTestnetNonce = async ({
+    address,
+    chainId,
+  }: {
+    address: string;
+    chainId: number;
+  }) => {
+    const count = await customTestnetService.getTransactionCount({
+      address,
+      chainId,
+      blockTag: 'latest',
+    });
+    const localNonce = (await wallet.getNonceByChain(address, chainId)) || 0;
+    return BigNumber.max(count, localNonce).toNumber();
+  };
+
+  estimateCustomTestnetGas = customTestnetService.estimateGas;
+
+  getCustomTestnetGasPrice = customTestnetService.getGasPrice;
+
+  getCustomTestnetGasMarket = customTestnetService.getGasMarket;
+
+  getCustomTestnetToken = customTestnetService.getToken;
+  removeCustomTestnetToken = customTestnetService.removeToken;
+  addCustomTestnetToken = customTestnetService.addToken;
+  getCustomTestnetTokenList = customTestnetService.getTokenList;
+  isAddedCustomTestnetToken = customTestnetService.hasToken;
+  getCustomTestnetTx = customTestnetService.getTx;
+  getCustomTestnetTxReceipt = customTestnetService.getTransactionReceipt;
+  // getCustomTestnetTokenListWithBalance = customTestnetService.getTokenListWithBalance;
+
+  getUsedCustomTestnetChainList = async () => {
+    const ids = new Set<number>();
+    Object.values(transactionHistoryService.store.transactions).forEach(
+      (item) => {
+        Object.values(item).forEach((txGroup) => {
+          ids.add(txGroup.chainId);
+        });
+      }
+    );
+    const chainList = Array.from(ids).filter(
+      (id) =>
+        !findChain({
+          id,
+        })
+    );
+    const res = await openapiService.getChainListByIds({
+      ids: chainList.join(','),
+    });
+    return res;
+  };
+
+  syncMainnetChainList = syncChainService.syncMainnetChainList;
 }
 
 const wallet = new WalletController();
@@ -3808,4 +3886,5 @@ autoLockService.onAutoLock = async () => {
     method: EVENTS.LOCK_WALLET,
   });
 };
+
 export default wallet;

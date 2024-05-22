@@ -17,6 +17,7 @@ import SkeletonInput from 'antd/lib/skeleton/Input';
 import { ellipsis } from '@/ui/utils/address';
 import BigNumber from 'bignumber.js';
 import { useTranslation } from 'react-i18next';
+import { findChain } from '@/utils/chain';
 
 const TokenCost = ({
   payToken,
@@ -82,7 +83,10 @@ const Transaction = forwardRef<HTMLDivElement, TransactionProps>(
     const targetDex = data?.dex_id;
     const txId = data?.tx_id;
     const chainItem = useMemo(
-      () => CHAINS_LIST.find((e) => e.serverId === data?.chain),
+      () =>
+        findChain({
+          serverId: data?.chain,
+        }),
       [data?.chain]
     );
     const chainName = chainItem?.name || '';
@@ -124,7 +128,7 @@ const Transaction = forwardRef<HTMLDivElement, TransactionProps>(
         )}
         ref={ref}
       >
-        <div className="flex justify-between items-center pb-8 border-b border-solid border-rabby-neutral-line">
+        <div className="flex justify-between items-center pb-8 border-b-[0.5px] border-solid border-rabby-neutral-line">
           <div className="flex items-center text-12 font-medium text-r-neutral-title-1">
             {isPending && (
               <TooltipWithMagnetArrow title={t('page.swap.pendingTip')}>
@@ -195,7 +199,7 @@ const Transaction = forwardRef<HTMLDivElement, TransactionProps>(
           </div>
         </div>
 
-        <div className="flex items-center text-12 text-r-neutral-foot pt-10 border-t border-solid border-rabby-neutral-line">
+        <div className="flex items-center text-12 text-r-neutral-foot pt-10 border-t-[0.5px] border-solid border-rabby-neutral-line">
           <span className="cursor-pointer" onClick={gotoScan}>
             {chainName}:{' '}
             <span className="underline underline-r-neutral-foot">
@@ -236,8 +240,6 @@ const HistoryList = () => {
       </div>
     );
   }
-
-  console.log('txList?.list', txList?.list);
 
   return (
     <div className="overflow-y-auto max-h-[434px] space-y-[12px] pb-20">

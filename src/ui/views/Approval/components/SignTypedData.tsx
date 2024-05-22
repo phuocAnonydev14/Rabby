@@ -35,13 +35,14 @@ import {
   TypedDataActionData,
   formatSecurityEngineCtx,
   normalizeTypeData,
+  getActionTypeText,
 } from './TypedDataActions/utils';
 import { Level } from '@rabby-wallet/rabby-security-engine/dist/rules';
-import { isTestnetChainId, findChainByID } from '@/utils/chain';
+import { isTestnetChainId, findChainByID, findChain } from '@/utils/chain';
 import { TokenDetailPopup } from '@/ui/views/Dashboard/components/TokenDetailPopup';
-import { useSignPermissionCheck } from '../hooks/useSignPermissionCheck';
-import { useTestnetCheck } from '../hooks/useTestnetCheck';
 import { useEnterPassphraseModal } from '@/ui/hooks/useEnterPassphraseModal';
+import clsx from 'clsx';
+import stats from '@/stats';
 
 interface SignTypedDataProps {
   method: string;
@@ -57,6 +58,8 @@ interface SignTypedDataProps {
 }
 
 const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
+  const renderStartAt = useRef(0);
+  const actionType = useRef('');
   const [, resolveApproval, rejectApproval] = useApproval();
   const { t } = useTranslation();
   const wallet = useWallet();
@@ -81,23 +84,6 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
     number | string | undefined
   >(undefined);
 
-  useSignPermissionCheck({
-    origin: params.session.origin,
-    chainId: currentChainId,
-    onOk: () => {
-      handleCancel();
-    },
-    onDisconnect: () => {
-      handleCancel();
-    },
-  });
-
-  useTestnetCheck({
-    chainId: currentChainId,
-    onOk: () => {
-      handleCancel();
-    },
-  });
   const [
     actionRequireData,
     setActionRequireData,
@@ -194,7 +180,7 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
         console.error(error);
       }
       if (chainId) {
-        return findChainByID(chainId) || undefined;
+        return findChain({ id: chainId }) || undefined;
       }
     }
 
@@ -205,7 +191,9 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
     if (params.session.origin !== INTERNAL_REQUEST_ORIGIN) {
       const site = await wallet.getConnectedSite(params.session.origin);
       if (site) {
-        return CHAINS[site.chain].id;
+        return findChain({
+          enum: site.chain,
+        })?.id;
       }
     } else {
       return chain?.id;
@@ -223,10 +211,10 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
         ? account
         : await wallet.getCurrentAccount();
       const chainId = signTypedData?.domain?.chainId;
-      const apiProvider = isTestnetChainId(chainId)
-        ? wallet.testnetOpenapi
-        : wallet.openapi;
-      return await apiProvider.parseTypedData({
+      if (isTestnetChainId(chainId)) {
+        return null;
+      }
+      return wallet.openapi.parseTypedData({
         typedData: signTypedData,
         address: currentAccount!.address,
         origin: session.origin,
@@ -418,7 +406,7 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
     if (params.session.origin !== INTERNAL_REQUEST_ORIGIN) {
       const site = await wallet.getConnectedSite(params.session.origin);
       if (site) {
-        data.chainId = CHAINS[site.chain].id.toString();
+        data.chainId = findChain({ enum: site.chain })?.id.toString();
       }
     }
     if (currentAccount) {
@@ -488,6 +476,7 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
     const sender = isSignTypedDataV1 ? params.data[1] : params.data[0];
     if (!loading) {
       if (typedDataActionData) {
+        actionType.current = typedDataActionData?.action?.type || '';
         const parsed = parseAction(typedDataActionData, signTypedData, sender);
         setParsedActionData(parsed);
         getRequireData(parsed);
@@ -510,14 +499,27 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
   }, [scrollInfo, scrollRefSize]);
 
   useEffect(() => {
+    renderStartAt.current = Date.now();
     init();
     checkWachMode();
     report('createSignText');
   }, []);
 
+  useEffect(() => {
+    if (!isLoading) {
+      const duration = Date.now() - renderStartAt.current;
+      stats.report('signPageRenderTime', {
+        type: 'typedata',
+        actionType: actionType.current,
+        chain: chain?.serverId || '',
+        duration,
+      });
+    }
+  }, [isLoading]);
+
   return (
     <>
-      <div className="approval-text">
+      <div className="approval-text relative">
         {isLoading && (
           <Skeleton.Input
             active
@@ -538,6 +540,19 @@ const SignTypedData = ({ params }: { params: SignTypedDataProps }) => {
             origin={params.session.origin}
           />
         )}
+        {!isLoading && chain?.isTestnet ? (
+          <div
+            className={clsx(
+              'absolute top-[350px] right-[10px]',
+              'px-[16px] py-[12px] rotate-[-23deg]',
+              'border-rabby-neutral-title1 border-[1px] rounded-[6px]',
+              'text-r-neutral-title1 text-[20px] leading-[24px]',
+              'opacity-30'
+            )}
+          >
+            Custom Network
+          </div>
+        ) : null}
       </div>
 
       <footer className="approval-text__footer">

@@ -28,6 +28,8 @@ import IconQuestionMark from 'ui/assets/sign/tx/question-mark.svg';
 import { Chain } from '@debank/common';
 import { getGasLevelI18nKey } from '@/ui/utils/trans';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
+import { findChain } from '@/utils/chain';
+import { INPUT_NUMBER_RE, filterNumber } from '@/constant/regexp';
 
 export interface GasSelectorResponse extends GasLevel {
   gasLimit: number;
@@ -193,7 +195,7 @@ const ManuallySetGasLimitAlert = styled.div`
 `;
 
 const ErrorsWrapper = styled.div`
-  border-top: 1px solid var(--r-neutral-line, rgba(255, 255, 255, 0.1));
+  border-top: 0.5px solid var(--r-neutral-line, rgba(255, 255, 255, 0.1));
   padding-top: 14px;
   margin-top: 14px;
   .item {
@@ -276,7 +278,9 @@ const GasSelector = ({
       message: null,
     },
   });
-  const chain = Object.values(CHAINS).find((item) => item.id === chainId)!;
+  const chain = findChain({
+    id: chainId,
+  })!;
 
   const { rules, processedRules } = useRabbySelector((s) => ({
     rules: s.securityEngine.rules,
@@ -377,8 +381,8 @@ const GasSelector = ({
 
   const handleCustomGasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
-    if (/^\d*(\.\d*)?$/.test(e.target.value)) {
-      setCustomGas(e.target.value);
+    if (INPUT_NUMBER_RE.test(e.target.value)) {
+      setCustomGas(filterNumber(e.target.value));
     }
   };
 
@@ -470,11 +474,8 @@ const GasSelector = ({
   ) => {
     e.stopPropagation();
 
-    if (/^\d*(\.\d*)?$/.test(e.target.value)) {
-      let value = e?.target?.value || '';
-      if (value.trim() === '.') {
-        value = '0.';
-      }
+    if (INPUT_NUMBER_RE.test(e.target.value)) {
+      const value = filterNumber(e.target.value);
       setCustomGas(value);
 
       const gasObj = {
@@ -649,11 +650,11 @@ const GasSelector = ({
             gas.error || !gas.success ? 'items-start mb-12' : 'mb-12'
           )}
         >
-          <div className="relative flex">
+          <div className="relative flex overflow-hidden">
             <div className="gas-selector-card-title">
               {t('page.signTx.gasSelectorTitle')}
             </div>
-            <div className="gas-selector-card-content ml-4">
+            <div className="gas-selector-card-content ml-4 overflow-hidden">
               {disabled ? (
                 <div className="font-semibold">
                   {t('page.signTx.noGasRequired')}
@@ -666,15 +667,17 @@ const GasSelector = ({
                 </>
               ) : (
                 <div className="gas-selector-card-content-item">
-                  <div className="gas-selector-card-amount translate-y-1 flex items-center">
-                    <span className="text-r-blue-default font-medium text-15">
+                  <div className="gas-selector-card-amount translate-y-1 flex items-center overflow-hidden">
+                    <span className="text-r-blue-default font-medium text-15 truncate">
                       {formatTokenAmount(
                         new BigNumber(gas.gasCostAmount).toString(10),
                         8
                       )}{' '}
                       {chain.nativeTokenSymbol}
                     </span>
-                    &nbsp; ≈${new BigNumber(gas.gasCostUsd).toFixed(2)}
+                    <span className="truncate">
+                      &nbsp; ≈${new BigNumber(gas.gasCostUsd).toFixed(2)}
+                    </span>
                     {L2_ENUMS.includes(chain.enum) &&
                       !CAN_ESTIMATE_L1_FEE_CHAINS.includes(chain.enum) && (
                         <span className="relative ml-6">
@@ -805,8 +808,8 @@ const GasSelector = ({
               disabled ? t('page.signTx.gasNotRequireForSafeTransaction') : null
             }
           >
-            <CardBody className="justify-start" $disabled={disabled}>
-              {/* {gasList.map((item, idx) => (
+            <CardBody $disabled={disabled}>
+              {gasList.map((item, idx) => (
                 <div
                   key={`gas-item-${item.level}-${idx}`}
                   className={clsx('card', {
@@ -837,11 +840,20 @@ const GasSelector = ({
                         disabled={disabled}
                       />
                     ) : (
-                      new BigNumber(item.price / 1e9).toFixed(3)
+                      <Tooltip
+                        title={new BigNumber(item.price / 1e9).toFixed()}
+                        overlayClassName={clsx('rectangle')}
+                      >
+                        <div>
+                          {new BigNumber(item.price / 1e9)
+                            .toFixed()
+                            .slice(0, 8)}
+                        </div>
+                      </Tooltip>
                     )}
                   </div>
                 </div>
-              ))} */}
+              ))}
             </CardBody>
           </Tooltip>
         </div>
@@ -1047,68 +1059,72 @@ const GasSelectPanel = ({
       overlayClassName="rectangle"
       title={disabled ? t('page.signTx.gasNotRequireForSafeTransaction') : null}
     >
-      <CardBody className="justify-start" $disabled={disabled}>
-        {gasList.map(
-          (item, idx) =>
-            idx > 1 && (
-              <div
-                key={`gas-item-${item.level}-${idx}`}
-                className={clsx('card', {
-                  active: selectedGas?.level === item.level,
-                })}
-                onClick={(e) => {
-                  handlePanelSelection(e, item);
-                  if (item.level === 'custom') {
-                    customerInputRef.current?.focus();
-                  }
-                }}
-              >
-                <div className="gas-level">
-                  {t(getGasLevelI18nKey(item.level))}
-                </div>
-                <div
-                  className={clsx('cardTitle', {
-                    'custom-input': item.level === 'custom',
-                    active: selectedGas?.level === item.level,
-                  })}
+      <CardBody $disabled={disabled}>
+        {gasList.map((item, idx) => (
+          <div
+            key={`gas-item-${item.level}-${idx}`}
+            className={clsx('card', {
+              active: selectedGas?.level === item.level,
+            })}
+            onClick={(e) => {
+              handlePanelSelection(e, item);
+              if (item.level === 'custom') {
+                customerInputRef.current?.focus();
+              }
+            }}
+          >
+            <div className="gas-level">{t(getGasLevelI18nKey(item.level))}</div>
+            <div
+              className={clsx('cardTitle w-full', {
+                'custom-input': item.level === 'custom',
+                active: selectedGas?.level === item.level,
+              })}
+            >
+              {item.level === 'custom' ? (
+                <Input
+                  value={customGas}
+                  defaultValue={customGas}
+                  onChange={handleCustomGasChange}
+                  onClick={(e) => handlePanelSelection(e, item)}
+                  onPressEnter={customGasConfirm}
+                  ref={customerInputRef}
+                  autoFocus={selectedGas?.level === item.level}
+                  min={0}
+                  bordered={false}
+                  disabled={disabled}
+                  placeholder="0"
+                />
+              ) : (
+                <Tooltip
+                  title={new BigNumber(item.price / 1e9).toFixed()}
+                  overlayClassName={clsx('rectangle')}
                 >
-                  {item.level === 'custom' ? (
-                    <Input
-                      value={customGas}
-                      defaultValue={customGas}
-                      onChange={handleCustomGasChange}
-                      onClick={(e) => handlePanelSelection(e, item)}
-                      onPressEnter={customGasConfirm}
-                      ref={customerInputRef}
-                      autoFocus={selectedGas?.level === item.level}
-                      min={0}
-                      bordered={false}
-                      disabled={disabled}
-                      placeholder="0"
-                    />
-                  ) : (
-                    new BigNumber(item.price / 1e9).toFixed()
-                  )}
-                </div>
-              </div>
-            )
-        )}
+                  <div>
+                    {new BigNumber(item.price / 1e9).toFixed().slice(0, 8)}
+                  </div>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        ))}
       </CardBody>
       <GasPriceDesc>
         <li>
           {t('page.signTx.myNativeTokenBalance', {
             symbol: chain.nativeTokenSymbol,
             amount: formatTokenAmount(
-              new BigNumber(nativeTokenBalance).toFixed()
+              new BigNumber(nativeTokenBalance).div(1e18).toFixed(),
+              4,
+              true
             ),
           })}
         </li>
-        {/* {gasPriceMedian !== null && (
+        {gasPriceMedian !== null && (
           <li>
             {t('page.signTx.gasPriceMedian')}
             {new BigNumber(gasPriceMedian).div(1e9).toFixed()} Gwei
           </li>
-        )} */}
+        )}
       </GasPriceDesc>
     </Tooltip>
   );

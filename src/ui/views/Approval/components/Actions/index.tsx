@@ -23,6 +23,7 @@ import PushMultiSig from './PushMultiSig';
 import CrossToken from './CrossToken';
 import CrossSwapToken from './CrossSwapToken';
 import RevokePermit2 from './RevokePermit2';
+import AssetOrder from './AssetOrder';
 import {
   ActionRequireData,
   ApproveNFTRequireData,
@@ -37,6 +38,7 @@ import {
   SwapRequireData,
   WrapTokenRequireData,
   getActionTypeText,
+  AssetOrderRequireData,
 } from './utils';
 import IconArrowRight, {
   ReactComponent as RcIconArrowRight,
@@ -53,6 +55,7 @@ import clsx from 'clsx';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import { CommonAction } from '../CommonAction';
 import { ActionWrapper } from '../ActionWrapper';
+import { ContractRequireData } from '../TypedDataActions/utils';
 
 export const SignTitle = styled.div`
   display: flex;
@@ -97,7 +100,6 @@ const Actions = ({
   onChange(tx: Record<string, any>): void;
   isSpeedUp: boolean;
 }) => {
-
   const actionName = useMemo(() => {
     return getActionTypeText(data);
   }, [data]);
@@ -313,6 +315,15 @@ const Actions = ({
               chain={chain}
             />
           )}
+          {data?.assetOrder && (
+            <AssetOrder
+              data={data.assetOrder}
+              requireData={requireData as ContractRequireData}
+              chain={chain}
+              engineResults={engineResults}
+              sender={(requireData as AssetOrderRequireData).sender}
+            />
+          )}
           {data.contractCall && (
             <ContractCall
               data={data.contractCall}
@@ -326,7 +337,7 @@ const Actions = ({
           {data.common && (
             <CommonAction
               data={data.common}
-              requireData={requireData as SwapRequireData}
+              requireData={requireData as ContractCallRequireData}
               chain={chain}
               engineResults={engineResults}
             />

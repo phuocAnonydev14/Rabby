@@ -102,10 +102,11 @@ const TokenSelect = ({
   );
   const wallet = useWallet();
 
-  const handleCurrentTokenChange = async (token: TokenItem) => {
+  const handleCurrentTokenChange = (token: TokenItem) => {
     onChange && onChange('');
     onTokenChange(token);
     setTokenSelectorVisible(false);
+
     // const chainItem = findChainByServerID(token.chain);
     setQueryConds((prev) => ({ ...prev, chainServerId: token.chain }));
   };

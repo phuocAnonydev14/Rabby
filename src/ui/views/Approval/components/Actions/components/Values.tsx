@@ -26,6 +26,7 @@ import IconNotInteracted from 'ui/assets/sign/tx/not-interacted.svg';
 import { TooltipWithMagnetArrow } from '@/ui/component/Tooltip/TooltipWithMagnetArrow';
 import AccountAlias from '../../AccountAlias';
 import { getAddressScanLink } from '@/utils';
+import { findChain } from '@/utils/chain';
 
 const Boolean = ({ value }: { value: boolean }) => {
   return <>{value ? 'Yes' : 'No'}</>;
@@ -87,6 +88,9 @@ const TimeSpanFuture = ({
   const timeSpan = useMemo(() => {
     if (!to) return '-';
     const { d, h, m } = getTimeSpan(to - from);
+    if (d >= 365000) {
+      return 'Forever';
+    }
     if (d > 0) {
       return `${d} day${d > 1 ? 's' : ''}`;
     }
@@ -120,11 +124,11 @@ const AddressMark = ({
   onWhitelist: boolean;
   onBlacklist: boolean;
   address: string;
-  chain: Chain;
+  chain?: Chain;
   isContract?: boolean;
   onChange(): void;
 }) => {
-  const chainId = chain.serverId;
+  const chainId = chain?.serverId;
   const wallet = useWallet();
   const dispatch = useRabbyDispatch();
   const { t } = useTranslation();
@@ -364,9 +368,9 @@ const Text = ({ children }: { children: ReactNode }) => {
 
 const DisplayChain = ({ chainServerId }: { chainServerId: string }) => {
   const chain = useMemo(() => {
-    return Object.values(CHAINS).find(
-      (item) => item.serverId === chainServerId
-    );
+    return findChain({
+      serverId: chainServerId,
+    });
   }, [chainServerId]);
   if (!chain) return null;
   return (
