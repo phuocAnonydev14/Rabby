@@ -666,7 +666,8 @@ export class WalletController extends BaseController {
       currentKeyRing?.wallets[0]?.privateKey || '',
       provider
     );
-
+    console.log(await sender.getAddress());
+    alert('seeding fund');
     // seed fund
     const signer = provider.getSigner();
     await signer.sendTransaction({

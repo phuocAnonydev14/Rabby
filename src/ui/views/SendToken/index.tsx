@@ -880,6 +880,7 @@ const SendToken = () => {
   };
 
   const handleChainChanged = async (val: CHAINS_ENUM) => {
+    console.log({ val });
     const account = (await wallet.syncGetCurrentAccount())!;
     const chain = findChain({
       enum: val,

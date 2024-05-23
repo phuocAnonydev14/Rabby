@@ -323,6 +323,7 @@ const Dashboard = () => {
           'metamask-active': showGnosisWrongChainAlert && isGnosis,
         })}
       >
+        <ConlaCustom />
         <div className={clsx('main', showChain && 'show-chain-bg')}>
           {currentAccount && (
             <div
