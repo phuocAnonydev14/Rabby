@@ -561,7 +561,7 @@ const SendToken = () => {
       value: '0x0',
       data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
       isSend: true,
-      // userTo: form.getFieldValue('to'),
+      userTo: form.getFieldValue('to'),
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;

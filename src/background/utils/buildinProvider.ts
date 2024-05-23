@@ -106,9 +106,9 @@ export class EthereumProvider extends EventEmitter {
           });
         });
       case 'eth_sendTransaction': {
-        if (data.params[0]?.userTo) {
-          delete data.params[0]?.userTo;
-        }
+        // if (data.params[0]?.userTo) {
+        //   delete data.params[0]?.userTo;
+        // }
         const txParams = {
           ...data.params[0],
           chainId: Number(networkId),
