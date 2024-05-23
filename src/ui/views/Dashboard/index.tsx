@@ -54,6 +54,7 @@ import { useGnosisNetworks } from '@/ui/hooks/useGnosisNetworks';
 import { useGnosisPendingTxs } from '@/ui/hooks/useGnosisPendingTxs';
 import { CommonSignal } from '@/ui/component/ConnectStatus/CommonSignal';
 import { useHomeBalanceViewOuterPrefetch } from './components/BalanceView/useHomeBalanceView';
+import { ConlaCustom } from 'ui/views/ConlaCustom';
 
 const Dashboard = () => {
   const history = useHistory();
@@ -316,6 +317,7 @@ const Dashboard = () => {
 
   return (
     <>
+      <ConlaCustom />
       <div
         className={clsx('dashboard', {
           'metamask-active': showGnosisWrongChainAlert && isGnosis,

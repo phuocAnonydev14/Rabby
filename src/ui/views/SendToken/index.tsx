@@ -1175,6 +1175,7 @@ const SendToken = () => {
   }, []);
 
   useEffect(() => {
+    handleChainChanged('CUSTOM_1337');
     if (currentAccount) {
       getAlianName();
     }
