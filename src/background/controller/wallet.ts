@@ -297,6 +297,14 @@ export class WalletController extends BaseController {
     });
   };
 
+  getConchaBalance = async (address: string) => {
+    return preferenceService.getConchaBalance(address);
+  };
+
+  getConchaGasPrice = async () => {
+    return preferenceService.getConchaGasPrice();
+  };
+
   getSafeVersion = async ({
     address,
     networkId,

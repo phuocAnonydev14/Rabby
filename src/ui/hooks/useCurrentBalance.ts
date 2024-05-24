@@ -45,7 +45,6 @@ export default function useCurrentBalance(
     {
       onSuccess({ total_usd_value, chain_list }) {
         if (isCanceled) return;
-        setBalance(total_usd_value);
         setSuccess(true);
         const chainList = normalizeChainList(chain_list);
 
@@ -78,10 +77,11 @@ export default function useCurrentBalance(
     if (!account || noNeedBalance) return;
     setBalanceLoading(true);
     const cacheData = await wallet.getAddressCacheBalance(account);
+    const conchaBalance = await wallet.getConchaBalance(account);
     const apiLevel = await wallet.getAPIConfig([], 'ApiLevel', false);
     if (cacheData) {
       setBalanceFromCache(true);
-      setBalance(cacheData.total_usd_value);
+      // setBalance(cacheData.total_usd_value);
       const chainList = normalizeChainList(cacheData.chain_list);
       setChainBalances(chainList);
 
@@ -103,6 +103,7 @@ export default function useCurrentBalance(
       } else {
         setBalanceLoading(false);
       }
+      setBalance(+conchaBalance);
     }
   };
 
@@ -121,14 +122,18 @@ export default function useCurrentBalance(
   }, [account]);
 
   useEffect(() => {
-    if (nonce < 0) return;
+    // if (nonce < 0) return;
+    //
+    // getCurrentBalance();
+    // if (!noNeedBalance) {
+    //   wallet.getAddressCacheBalance(account).then((cache) => {
+    //     setChainBalances(cache ? normalizeChainList(cache?.chain_list) : []);
+    //   });
+    // }
 
-    getCurrentBalance();
-    if (!noNeedBalance) {
-      wallet.getAddressCacheBalance(account).then((cache) => {
-        setChainBalances(cache ? normalizeChainList(cache?.chain_list) : []);
-      });
-    }
+    wallet.getConchaBalance(account as string).then((balance) => {
+      setBalance(+balance);
+    });
     return () => {
       isCanceled = true;
     };

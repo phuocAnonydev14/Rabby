@@ -102,7 +102,7 @@ const BalanceView = ({
     matteredChainBalances,
     chainBalancesWithValue,
   } = useMemo(() => {
-    const balanceValue = latestBalance || currentHomeBalanceCache?.balance;
+    const balanceValue = latestBalance;
 
     return {
       balance: balanceValue,
@@ -294,6 +294,7 @@ const BalanceView = ({
   const currentHover = isDebounceHover;
 
   const currentBalance = currentHover ? curvePoint?.value || balance : balance;
+
   const currentChangePercent = currentHover
     ? curvePoint?.changePercent || curveChartData?.changePercent
     : curveChartData?.changePercent;
@@ -336,7 +337,7 @@ const BalanceView = ({
               <Skeleton.Input active className="w-[200px] h-[38px] rounded" />
             ) : (
               <BalanceLabel
-                // isCache={balanceFromCache}
+                isCache={balanceFromCache}
                 balance={currentBalance || 0}
               />
             )}

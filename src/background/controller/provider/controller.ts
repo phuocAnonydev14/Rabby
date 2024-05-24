@@ -785,6 +785,14 @@ class ProviderController extends BaseController {
 
           const isErc20Token = await isErc20(txData.to);
 
+          console.log({
+            provider,
+            entryPointAddress,
+            owner: sender,
+            factoryAddress,
+            paymasterAPI,
+          });
+
           const accountAPI = new SimpleAccountAPI({
             provider,
             entryPointAddress,
@@ -835,7 +843,11 @@ class ProviderController extends BaseController {
             );
             console.log(`Transaction hash: ${transactionHash}`);
           } else {
-            console.log('come native');
+            console.log('come native', {
+              target: txParams.to,
+              data: '0x',
+              value: decimalVal,
+            });
 
             const op = await accountAPI.createSignedUserOp({
               target: txParams.to,

@@ -22,6 +22,8 @@ import { BROADCAST_TO_UI_EVENTS } from '@/utils/broadcastToUI';
 import dayjs from 'dayjs';
 import type { IExtractFromPromise } from '@/ui/utils/type';
 import { OpenApiService } from '@rabby-wallet/rabby-api';
+import { ethers } from 'ethers';
+import { CONLA_RPC } from '@/utils/const';
 
 const version = process.env.release || '0';
 
@@ -140,6 +142,7 @@ class PreferenceService {
   popupOpen = false;
   hasOtherProvider = false;
   currentCoboSafeAddress?: Account | null;
+  provider = new ethers.providers.JsonRpcProvider(CONLA_RPC);
 
   init = async () => {
     const defaultLang = 'en';
@@ -470,6 +473,16 @@ class PreferenceService {
       delete map[key];
       this.store.balanceMap = map;
     }
+  };
+
+  getConchaBalance = async (address: string): Promise<string> => {
+    const balance = await this.provider.getBalance(address);
+    console.log('balance ne', ethers.utils.formatEther(balance));
+    return ethers.utils.formatEther(balance);
+  };
+
+  getConchaGasPrice = async (): Promise<ethers.BigNumber> => {
+    return this.provider.getGasPrice();
   };
 
   updateBalanceAboutCache = (
