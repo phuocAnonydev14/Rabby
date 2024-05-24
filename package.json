@@ -22,7 +22,6 @@
     "postinstall": "patch-package && npm run sync-chain"
   },
   "dependencies": {
-    "@account-abstraction/utils": "^0.6.0",
     "@coinbase/wallet-sdk": "3.8.0-beta.3",
     "@debank/common": "0.3.60",
     "@debank/festats": "1.0.1",
@@ -77,10 +76,8 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "@zxing/browser": "0.0.10",
     "@zxing/library": "0.8.0",
-    "account-abstraction-anony-bundler": "^0.6.2",
-    "account-abstraction-anony-sdk": "^0.6.4",
-    "account-abstraction-anony-utils": "^0.6.3",
-    "account-abstraction-anony-validation-manager": "^0.6.2",
+    "account-abstraction-anony-sdk": "^0.6.7",
+    "account-abstraction-anony-utils": "^0.6.6",
     "ahooks": "3.7.8",
     "antd": "4.15.3",
     "bignumber.js": "9.0.1",

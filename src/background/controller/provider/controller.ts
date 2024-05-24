@@ -739,132 +739,171 @@ class ProviderController extends BaseController {
           const client = customTestnetService.getClient(chainData.id);
 
           console.log('come to this tx');
-          // hash = await client.request({
-          //   method: 'eth_sendRawTransaction',
-          //   params: [rawTx as any],
-          // });
+          hash = await client.request({
+            method: 'eth_sendRawTransaction',
+            params: [rawTx as any],
+          });
 
           // start custom send feature
-          const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
-          const rpcUrl = 'http://localhost:8545';
-          const entryPointAddress =
-            '0x0000000071727De22E5E9d8BAf0edAc6f37da032';
-          const bundlerUrl = 'http://localhost:3000/rpc';
+          // const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
+          // const rpcUrl = 'http://localhost:8545';
+          // const entryPointAddress = '0x0000000071727De22E5E9d8BAf0edAc6f37da032';
+          // const bundlerUrl = 'http://localhost:3000/rpc';
 
-          const paymasterAPI = new PaymasterAPI(entryPointAddress, bundlerUrl);
+          // const paymasterAPI = new PaymasterAPI(entryPointAddress, bundlerUrl);
 
-          const provider = new JsonRpcProvider(rpcUrl);
+          // const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
-          const currentAcc = await wallet.getCurrentAccount();
-          const currentKeyRing = await keyringService.getKeyringForAccount(
-            currentAcc?.address || ''
-          );
+          // const currentAcc = await wallet.getCurrentAccount();
+          // const currentKeyRing = await keyringService.getKeyringForAccount(
+          //   currentAcc?.address || ''
+          // );
 
-          // create instance wallet
-          const sender = new ethers.Wallet(
-            currentKeyRing?.wallets[0]?.privateKey || '',
-            provider as any
-          );
+          // // create instance wallet
+          // const sender = new ethers.Wallet(
+          //   currentKeyRing?.wallets[0]?.privateKey || '',
+          //   provider
+          // );
 
-          const detDeployer = new DeterministicDeployer(provider);
-          const factoryAddress = await detDeployer.deterministicDeploy(
-            new SimpleAccountFactory__factory(),
-            0,
-            [entryPointAddress]
-          );
+          // console.log(sender.address);
+          // console.log(provider.getSigner(currentAcc?.address || '')._address);
 
-          console.log('factoryAddress', factoryAddress);
+          // // @ts-ignore
+          // const dep = new DeterministicDeployer(
+          //   provider,
+          //   provider.getSigner(currentAcc?.address || '')
+          // );
 
-          const isErc20 = async (address: string) => {
-            const code = await provider.getCode(address);
-            if (code === '0x') {
-              return false;
-            }
-            return true;
-          };
+          // let factoryAddress = await DeterministicDeployer.getAddress(
+          //   new SimpleAccountFactory__factory(),
+          //   0,
+          //   [entryPointAddress]
+          // );
+          // if (!(await dep.isContractDeployed(factoryAddress))) {
+          //   console.log('new deterministic deploy');
 
-          const isErc20Token = await isErc20(txData.to);
+          //   const detDeployer = new DeterministicDeployer(provider);
+          //   factoryAddress = await detDeployer.deterministicDeploy(
+          //     new SimpleAccountFactory__factory(),
+          //     0,
+          //     [entryPointAddress]
+          //   );
+          // }
 
-          console.log({
-            provider,
-            entryPointAddress,
-            owner: sender,
-            factoryAddress,
-            paymasterAPI,
-          });
+          // console.log('factoryAddress', factoryAddress);
 
-          const accountAPI = new SimpleAccountAPI({
-            provider,
-            entryPointAddress,
-            owner: sender,
-            factoryAddress,
-            paymasterAPI,
-          });
+          // const isErc20 = async (address: string) => {
+          //   const code = await provider.getCode(address);
+          //   if (code === '0x') {
+          //     return false;
+          //   }
+          //   return true;
+          // };
 
-          const chainId = await provider
-            .getNetwork()
-            .then((res) => res.chainId);
+          // const isErc20Token = await isErc20(txData.to);
 
-          const clientRpc = new HttpRpcClient(
-            bundlerUrl,
-            entryPointAddress,
-            chainId
-          );
+          // console.log({
+          //   provider,
+          //   entryPointAddress,
+          //   owner: sender,
+          //   factoryAddress,
+          //   paymasterAPI,
+          // });
 
-          console.log('come cient rpc');
+          // console.log('wallet balance', await sender.getBalance());
+          // console.log(
+          //   'factory balance',
+          //   await dep.provider.getBalance(factoryAddress)
+          // );
+          // console.log(
+          //   'entry point balance',
+          //   await dep.provider.getBalance(entryPointAddress)
+          // );
 
-          const decimalVal = ethers.BigNumber.from(txParams.value);
+          // // console.log(
+          // //   'factory balance',
+          // //   await provider.getBalance(factoryAddress)
+          // // );
 
-          if (isErc20Token) {
-            console.log('come erc20');
+          // // console.log(
+          // //   'entry point balance',
+          // //   await provider.getBalance(entryPointAddress)
+          // // );
 
-            const erc20 = new ethers.Contract(
-              txData.to,
-              ERC20_ABI,
-              provider as any
-            );
+          // const accountAPI = new SimpleAccountAPI({
+          //   provider,
+          //   entryPointAddress,
+          //   owner: sender,
+          //   factoryAddress,
+          //   paymasterAPI,
+          // });
 
-            const accountContract = await accountAPI._getAccountContract();
-            const transfer = await erc20.interface.encodeFunctionData(
-              'transfer',
-              [txParams.userTo, decimalVal]
-            );
+          // const chainId = await provider.getNetwork().then((res) => res.chainId);
+          // console.log({ chainId });
 
-            const op = await accountAPI.createSignedUserOp({
-              target: txParams.to,
-              data: transfer,
-              value: 0,
-            });
+          // const clientRpc = new HttpRpcClient(
+          //   bundlerUrl,
+          //   entryPointAddress,
+          //   chainId
+          // );
 
-            const userOpHash = await clientRpc.sendUserOpToBundler(op);
-            console.log('Waiting for user op to be mined');
-            const transactionHash = await accountAPI.getUserOpReceipt(
-              userOpHash
-            );
-            console.log(`Transaction hash: ${transactionHash}`);
-          } else {
-            console.log('come native', {
-              target: txParams.to,
-              data: '0x',
-              value: decimalVal,
-            });
+          // console.log('come cient rpc');
 
-            const op = await accountAPI.createSignedUserOp({
-              target: txParams.to,
-              data: '0x',
-              value: decimalVal,
-            });
-            console.log('come op');
+          // const decimalVal = txParams.sendValue || 0;
+          // console.log(decimalVal);
 
-            const userOpHash = await clientRpc.sendUserOpToBundler(op);
-            console.log('come hash');
+          // if (isErc20Token) {
+          //   console.log('come erc20');
 
-            const transactionHash = await accountAPI.getUserOpReceipt(
-              userOpHash
-            );
-            console.log(`Transaction hash: ${transactionHash}`);
-          }
+          //   const erc20 = new ethers.Contract(
+          //     txData.to,
+          //     ERC20_ABI,
+          //     provider as any
+          //   );
+
+          //   const accountContract = await accountAPI._getAccountContract();
+          //   const transfer = await erc20.interface.encodeFunctionData(
+          //     'transfer',
+          //     [txParams.userTo, decimalVal]
+          //   );
+
+          //   const op = await accountAPI.createSignedUserOp({
+          //     target: txParams.to,
+          //     data: transfer,
+          //     value: 0,
+          //   });
+
+          //   const userOpHash = await clientRpc.sendUserOpToBundler(op);
+          //   console.log('Waiting for user op to be mined');
+          //   const transactionHash = await accountAPI.getUserOpReceipt(userOpHash);
+          //   console.log(`Transaction hash: ${transactionHash}`);
+          //   hash = transactionHash as string;
+          // } else {
+          //   console.log('come native', {
+          //     target: txParams.to,
+          //     data: '0x',
+          //     value: decimalVal,
+          //   });
+
+          //   const op = await accountAPI.createSignedUserOp({
+          //     target: txParams.to,
+          //     data: '0x',
+          //     value: decimalVal,
+          //   });
+          //   console.log({ op });
+          //   console.log(paymasterAPI.getPaymasterData(op));
+
+          //   console.log('come op');
+
+          //   const userOpHash = await clientRpc.sendUserOpToBundler(op);
+          //   console.log('come hash');
+
+          //   const transactionHash = await accountAPI.getUserOpReceipt(userOpHash);
+          //   console.log(`Transaction hash: ${transactionHash}`);
+          //   hash = transactionHash as string;
+          // }
         }
+        console.log('done tx');
         onTransactionCreated({ hash, reqId, pushType });
         notificationService.setStatsData(statsData);
         return hash;

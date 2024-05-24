@@ -554,6 +554,8 @@ const SendToken = () => {
       } as const,
       [to, sendValue.toFixed(0)] as any[],
     ] as const;
+    console.log('sendValue', sendValue);
+
     const params: Record<string, any> = {
       chainId: chain.id,
       from: currentAccount!.address,
@@ -561,7 +563,8 @@ const SendToken = () => {
       value: '0x0',
       data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
       isSend: true,
-      userTo: form.getFieldValue('to'),
+      // userTo: form.getFieldValue('to'),
+      // sendValue,
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
