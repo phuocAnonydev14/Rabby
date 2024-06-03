@@ -131,17 +131,18 @@ export default function ChainSelectorInForm({
         onClick={handleClickSelector}
         readonly={readonly}
       />
-      {!readonly && (
-        <ChainSelectorModal
-          value={value}
-          visible={showSelectorModal}
-          onChange={handleChange}
-          onCancel={handleCancel}
-          supportChains={supportChains}
-          disabledTips={disabledTips}
-          title={title}
-        />
-      )}
+      {/* not allow user to change chain */}
+      {/*{!readonly && (*/}
+      {/*  <ChainSelectorModal*/}
+      {/*    value={value}*/}
+      {/*    visible={showSelectorModal}*/}
+      {/*    onChange={handleChange}*/}
+      {/*    onCancel={handleCancel}*/}
+      {/*    supportChains={supportChains}*/}
+      {/*    disabledTips={disabledTips}*/}
+      {/*    title={title}*/}
+      {/*  />*/}
+      {/*)}*/}
     </>
   );
 }

@@ -76,6 +76,7 @@ import { formatTxInputDataOnERC20 } from '@/ui/utils/transaction';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import { customTestnetTokenToTokenItem } from '@/ui/utils/token';
 import { copyAddress } from '@/ui/utils/clipboard';
+import { rabbyNetworkName } from '@/utils/const';
 
 const abiCoder = (abiCoderInst as unknown) as AbiCoder;
 
@@ -373,6 +374,7 @@ const SendToken = () => {
     Record<string, { list: GasLevel[]; expireAt: number }>
   >({});
   const [isGnosisSafe, setIsGnosisSafe] = useState(false);
+  const [conlaBalance, setConlaBalance] = useState('');
 
   const { whitelist, whitelistEnabled } = useRabbySelector((s) => ({
     whitelist: s.whitelist.whitelist,
@@ -563,8 +565,8 @@ const SendToken = () => {
       value: '0x0',
       data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
       isSend: true,
-      // userTo: form.getFieldValue('to'),
-      // sendValue,
+      userTo: form.getFieldValue('to'),
+      sendValue,
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
@@ -1179,12 +1181,27 @@ const SendToken = () => {
   }, []);
 
   useEffect(() => {
-    handleChainChanged('CUSTOM_1337');
+    handleChainChanged(rabbyNetworkName);
     if (currentAccount) {
       getAlianName();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAccount]);
+
+  useEffect(() => {
+    const handleGetBalance = async () => {
+      try {
+        const balance = await wallet.getAccountContractBalance();
+        console.log('balance', { balance });
+        setConlaBalance(balance.hex as any);
+        console.log('currentToken', currentToken);
+      } catch (e) {
+        console.log({ e });
+      }
+    };
+
+    handleGetBalance().then();
+  }, []);
 
   return (
     <div className="send-token">
@@ -1329,14 +1346,14 @@ const SendToken = () => {
                     <span
                       className="truncate max-w-[80px]"
                       title={formatTokenAmount(
-                        new BigNumber(currentToken.raw_amount_hex_str || 0)
+                        new BigNumber(conlaBalance || 0)
                           .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4
                       )}
                     >
                       {formatTokenAmount(
-                        new BigNumber(currentToken.raw_amount_hex_str || 0)
+                        new BigNumber(conlaBalance || 0)
                           .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4

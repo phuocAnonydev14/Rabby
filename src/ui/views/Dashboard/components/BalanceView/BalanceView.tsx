@@ -12,7 +12,7 @@ import { useCommonPopupView, useWallet } from 'ui/utils';
 import { KEYRING_TYPE } from 'consts';
 import { SvgIconOffline } from '@/ui/assets';
 import clsx from 'clsx';
-import { Skeleton } from 'antd';
+import { Button, Skeleton } from 'antd';
 import { Chain } from '@debank/common';
 import { ChainList } from './ChainList';
 import { formChartData, useCurve } from './useCurve';
@@ -95,6 +95,7 @@ const BalanceView = ({
   const [isHover, setHover] = useState(false);
   const [curvePoint, setCurvePoint] = useState<CurvePoint>();
   const [isDebounceHover, setIsDebounceHover] = useState(false);
+  const [isAccountDeployed, setIsAccountDeployed] = useState(true);
 
   const {
     balance,
@@ -145,6 +146,19 @@ const BalanceView = ({
     refreshCurve,
     isExpired: getCacheExpired,
   });
+
+  useEffect(() => {
+    const handleCheckDeployed = async () => {
+      try {
+        const isDeployed = await wallet.checkIsDeployedAccountContract();
+        setIsAccountDeployed(isDeployed);
+      } catch (e) {
+        console.log({ e });
+      }
+    };
+
+    handleCheckDeployed().finally();
+  }, [currentAccount]);
 
   // const refreshTimerlegacy = useRef<NodeJS.Timeout>();
   // only execute once on component mounted or address changed
@@ -388,86 +402,103 @@ const BalanceView = ({
             </div>
           </div>
         </div>
-        <div
-          onClick={onClickViewAssets}
-          onMouseMove={onMouseMove}
-          onMouseLeave={onMouseLeave}
-          className={clsx(
-            'mt-[4px] mb-10',
-            currentHover && 'bg-[#000] bg-opacity-10',
-            'rounded-[4px] relative cursor-pointer',
-            'overflow-hidden'
-          )}
-        >
-          <img
-            src={ArrowNextSVG}
-            className={clsx(
-              'absolute w-[20px] h-[20px] top-[8px] right-[10px]',
-              !currentHover && 'opacity-80'
-              // balanceFromCache
-              //   ? !currentHover && 'opacity-0'
-              //   : !currentHover && 'opacity-80'
-            )}
-          />
-          <div
-            className={clsx(
-              'extra flex h-[28px]',
-              'mx-[10px] pt-[8px] mb-[8px]'
-            )}
-          >
-            {shouldShowLoading ? (
-              <>
-                <Skeleton.Input active className="w-[130px] h-[20px] rounded" />
-              </>
-            ) : !loadBalanceSuccess ? (
-              <>
-                <SvgIconOffline className="mr-4 text-white" />
-                <span className="leading-tight">
-                  {t('page.dashboard.home.offline')}
-                </span>
-              </>
-            ) : chainBalancesWithValue.length > 0 ? (
-              <div
-                className={clsx(
-                  'flex space-x-4',
-                  !currentHover && 'opacity-80'
-                )}
-              >
-                <ChainList
-                  isGnosis={isGnosis}
-                  matteredChainBalances={chainBalancesWithValue.slice(0)}
-                  gnosisNetworks={gnosisNetworks}
-                />
-              </div>
-            ) : (
-              <span
-                className={clsx(
-                  'text-14 text-r-neutral-title-2',
-                  !currentHover && 'opacity-70'
-                )}
-              >
-                {t('page.dashboard.assets.noAssets')}
+        <div>
+          {!isAccountDeployed && (
+            <div className="flex gap-4 items-center">
+              <span style={{ color: 'rgba(229,228,228,0.83)' }}>
+                Account not deployed
               </span>
-            )}
-          </div>
-          <div className={clsx('h-[80px] w-full relative')}>
-            {!!shouldRenderCurve && !!curveChartData && (
-              <CurveThumbnail
-                isHover={currentHover}
-                data={curveChartData}
-                onHover={handleHoverCurve}
-              />
-            )}
-            {!!shouldShowLoading && (
-              <div className="flex mt-[14px]">
-                <Skeleton.Input
-                  active
-                  className="m-auto w-[360px] h-[72px] rounded"
-                />
-              </div>
-            )}
-          </div>
+              <Button
+                onClick={() => wallet.deployAccountContract()}
+                type={'ghost'}
+                size={'small'}
+                className="text-white"
+              >
+                Deploy
+              </Button>
+            </div>
+          )}
         </div>
+        {/*<div*/}
+        {/*  onClick={onClickViewAssets}*/}
+        {/*  onMouseMove={onMouseMove}*/}
+        {/*  onMouseLeave={onMouseLeave}*/}
+        {/*  className={clsx(*/}
+        {/*    'mt-[4px] mb-10',*/}
+        {/*    currentHover && 'bg-[#000] bg-opacity-10',*/}
+        {/*    'rounded-[4px] relative cursor-pointer',*/}
+        {/*    'overflow-hidden'*/}
+        {/*  )}*/}
+        {/*>*/}
+        {/*  <img*/}
+        {/*    src={ArrowNextSVG}*/}
+        {/*    className={clsx(*/}
+        {/*      'absolute w-[20px] h-[20px] top-[8px] right-[10px]',*/}
+        {/*      !currentHover && 'opacity-80'*/}
+        {/*      // balanceFromCache*/}
+        {/*      //   ? !currentHover && 'opacity-0'*/}
+        {/*      //   : !currentHover && 'opacity-80'*/}
+        {/*    )}*/}
+        {/*  />*/}
+        {/*  <div*/}
+        {/*    className={clsx(*/}
+        {/*      'extra flex h-[28px]',*/}
+        {/*      'mx-[10px] pt-[8px] mb-[8px]'*/}
+        {/*    )}*/}
+        {/*  >*/}
+        {/*    {shouldShowLoading ? (*/}
+        {/*      <>*/}
+        {/*        <Skeleton.Input active className="w-[130px] h-[20px] rounded" />*/}
+        {/*      </>*/}
+        {/*    ) : !loadBalanceSuccess ? (*/}
+        {/*      <>*/}
+        {/*        <SvgIconOffline className="mr-4 text-white" />*/}
+        {/*        <span className="leading-tight">*/}
+        {/*          {t('page.dashboard.home.offline')}*/}
+        {/*        </span>*/}
+        {/*      </>*/}
+        {/*    ) : chainBalancesWithValue.length > 0 ? (*/}
+        {/*      <div*/}
+        {/*        className={clsx(*/}
+        {/*          'flex space-x-4',*/}
+        {/*          !currentHover && 'opacity-80'*/}
+        {/*        )}*/}
+        {/*      >*/}
+        {/*        <ChainList*/}
+        {/*          isGnosis={isGnosis}*/}
+        {/*          matteredChainBalances={chainBalancesWithValue.slice(0)}*/}
+        {/*          gnosisNetworks={gnosisNetworks}*/}
+        {/*        />*/}
+        {/*      </div>*/}
+        {/*    ) : (*/}
+        {/*      <span*/}
+        {/*        className={clsx(*/}
+        {/*          'text-14 text-r-neutral-title-2',*/}
+        {/*          !currentHover && 'opacity-70'*/}
+        {/*        )}*/}
+        {/*      >*/}
+        {/*        {t('page.dashboard.assets.noAssets')}*/}
+        {/*      </span>*/}
+        {/*    )}*/}
+        {/*  </div>*/}
+        {/*  /!*<div className={clsx('h-[80px] w-full relative')}>*!/*/}
+        {/*  /!*  {!!shouldRenderCurve && !!curveChartData && (*!/*/}
+        {/*  /!*    <CurveThumbnail*!/*/}
+        {/*  /!*      isHover={currentHover}*!/*/}
+        {/*  /!*      data={curveChartData}*!/*/}
+        {/*  /!*      onHover={handleHoverCurve}*!/*/}
+        {/*  /!*    />*!/*/}
+        {/*  /!*  )}*!/*/}
+        {/*  /!*  {!!shouldShowLoading && (*!/*/}
+        {/*  /!*    <div className="flex mt-[14px]">*!/*/}
+        {/*  /!*      <Skeleton.Input*!/*/}
+        {/*  /!*        active*!/*/}
+        {/*  /!*        className="m-auto w-[360px] h-[72px] rounded"*!/*/}
+        {/*  /!*      />*!/*/}
+        {/*  /!*    </div>*!/*/}
+        {/*  /!*  )}*!/*/}
+        {/*  /!*</div>*!/*/}
+        {/*</div>*/}
       </div>
     </div>
   );

@@ -77,10 +77,9 @@ const TokenAmountInput = ({
     }
   }, [amountFocus, tokenSelectorVisible]);
 
-  const handleCurrentTokenChange = (token: TokenItem) => {
+  const handleCurrentTokenChange = async (token: TokenItem) => {
     onChange && onChange('');
     onTokenChange(token);
-    wallet.approveTokenCustom();
     setTokenSelectorVisible(false);
     tokenInputRef.current?.focus();
     setChainServerId(token.chain);
@@ -170,7 +169,7 @@ const TokenAmountInput = ({
 
   const valueNum = Number(value);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (INPUT_NUMBER_RE.test(e.target.value)) {
       onChange?.(filterNumber(e.target.value));
     }

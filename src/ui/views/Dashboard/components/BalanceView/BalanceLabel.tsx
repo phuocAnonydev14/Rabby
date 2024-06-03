@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAsync } from 'react-use';
 import { ConnectedSite } from 'background/service/permission';
 import { CHAINS, CHAINS_ENUM } from '@debank/common';
+import { conlaLogo } from '@/utils/const';
 
 interface Props {
   isCache: boolean;
@@ -98,7 +99,7 @@ export const BalanceLabel: React.FC<Props> = ({ isCache, balance }) => {
       ) : (
         <div className="flex items-center gap-1">
           <img
-            src={tokenLogo}
+            src={conlaLogo}
             className={clsx('rounded-full mr-1', {
               'w-[20px] h-[20px]': isETH,
               'w-[1px] h-[1px]': !isETH,

@@ -1,31 +1,32 @@
 import * as ethUtil from 'ethereumjs-util';
+import { addHexPrefix, unpadHexString } from 'ethereumjs-util';
 import Wallet, { thirdparty } from 'ethereumjs-wallet';
 import { ethErrors } from 'eth-rpc-errors';
 import * as bip39 from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
-import { ethers, Contract } from 'ethers';
-import { flatten, groupBy, keyBy, set, uniq } from 'lodash';
+import { Contract, ethers } from 'ethers';
+import { groupBy, uniq } from 'lodash';
 import abiCoder, { AbiCoder } from 'web3-eth-abi';
 import {
+  contactBookService,
+  contextMenuService,
+  HDKeyRingLastAddAddrTimeService,
   keyringService,
-  preferenceService,
   notificationService,
-  permissionService,
-  sessionService,
   openapiService,
   pageStateCacheService,
-  transactionHistoryService,
-  contactBookService,
-  signTextHistoryService,
-  whitelistService,
-  swapService,
-  RPCService,
-  unTriggerTxCounter,
-  contextMenuService,
-  securityEngineService,
-  transactionBroadcastWatchService,
+  permissionService,
+  preferenceService,
   RabbyPointsService,
-  HDKeyRingLastAddAddrTimeService,
+  RPCService,
+  securityEngineService,
+  sessionService,
+  signTextHistoryService,
+  swapService,
+  transactionBroadcastWatchService,
+  transactionHistoryService,
+  unTriggerTxCounter,
+  whitelistService,
 } from 'background/service';
 import buildinProvider, {
   EthereumProvider,
@@ -36,27 +37,21 @@ import { DisplayedKeryring } from 'background/service/keyring';
 import providerController from './provider/controller';
 import BaseController from './base';
 import {
-  KEYRING_WITH_INDEX,
-  CHAINS,
-  EVENTS,
   BRAND_ALIAN_TYPE_TEXT,
-  WALLET_BRAND_CONTENT,
   CHAINS_ENUM,
-  KEYRING_TYPE,
+  DARK_MODE_TYPE,
+  EVENTS,
   GNOSIS_SUPPORT_CHAINS,
   INTERNAL_REQUEST_SESSION,
-  DARK_MODE_TYPE,
   KEYRING_CLASS,
+  KEYRING_TYPE,
+  KEYRING_WITH_INDEX,
+  WALLET_BRAND_CONTENT,
 } from 'consts';
 import { ERC20ABI } from 'consts/abi';
 import { Account, IHighlightedAddress } from '../service/preference';
 import { ConnectedSite } from '../service/permission';
-import openapi, {
-  SupportedChain,
-  TokenItem,
-  Tx,
-  testnetOpenapiService,
-} from '../service/openapi';
+import { testnetOpenapiService, TokenItem, Tx } from '../service/openapi';
 import {
   ContextActionData,
   ContractAddress,
@@ -67,8 +62,8 @@ import provider from './provider';
 import { WalletConnectKeyring } from '@rabby-wallet/eth-walletconnect-keyring';
 import eventBus from '@/eventBus';
 import {
-  setPageStateCacheWhenPopupClose,
   isSameAddress,
+  setPageStateCacheWhenPopupClose,
   setPopupIcon,
 } from 'background/utils';
 import GnosisKeyring, {
@@ -84,7 +79,6 @@ import stats from '@/stats';
 import { generateAliasName } from '@/utils/account';
 import BigNumber from 'bignumber.js';
 import * as Sentry from '@sentry/browser';
-import { addHexPrefix, unpadHexString } from 'ethereumjs-util';
 import PQueue from 'p-queue';
 import { ProviderRequest } from './provider/type';
 import { QuoteResult } from '@rabby-wallet/rabby-swap/dist/quote';
@@ -92,13 +86,7 @@ import transactionWatcher from '../service/transactionWatcher';
 import Safe from '@rabby-wallet/gnosis-sdk';
 import { Chain } from '@debank/common';
 import { isAddress } from 'web3-utils';
-import {
-  findChain,
-  findChainByEnum,
-  getChainList,
-  supportedChainToChain,
-  updateChainStore,
-} from '@/utils/chain';
+import { findChain, findChainByEnum, getChainList } from '@/utils/chain';
 import { cached } from '../utils/cache';
 import { createSafeService } from '../utils/safe';
 import { OpenApiService } from '@rabby-wallet/rabby-api';
@@ -107,7 +95,7 @@ import { t } from 'i18next';
 import { getWeb3Provider } from './utils';
 import { CoboSafeAccount } from '@/utils/cobo-agrus-sdk/cobo-agrus-sdk';
 import CoboArgusKeyring from '../service/keyring/eth-cobo-argus-keyring';
-import { GET_WALLETCONNECT_CONFIG, allChainIds } from '@/utils/walletconnect';
+import { allChainIds, GET_WALLETCONNECT_CONFIG } from '@/utils/walletconnect';
 import { estimateL1Fee } from '@/utils/l2';
 import HdKeyring from '@rabby-wallet/eth-hd-keyring';
 import CoinbaseKeyring from '@rabby-wallet/eth-coinbase-keyring/dist/coinbase-keyring';
@@ -117,6 +105,13 @@ import { syncChainService } from '../service/syncChain';
 import { matomoRequestEvent } from '@/utils/matomo-request';
 import { BALANCE_LOADING_TIMES } from '@/constant/timeout';
 import { parseEther } from 'ethers/lib/utils';
+import {
+  DeterministicDeployer,
+  SimpleAccountFactory__factory,
+} from 'account-abstraction-anony-utils';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { CONLA_RPC, entryPointAddr } from '@/utils/const';
+import { PaymasterAPI, SimpleAccountAPI } from 'account-abstraction-anony-sdk';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -655,7 +650,7 @@ export class WalletController extends BaseController {
 
   approveTokenCustom = async () => {
     const provider = new ethers.providers.JsonRpcProvider(
-      'http://localhost:8545'
+      'http://10.241.72.139:8545'
     );
     const currentAcc = await wallet.getCurrentAccount();
     const currentKeyRing = await keyringService.getKeyringForAccount(
@@ -667,13 +662,104 @@ export class WalletController extends BaseController {
       provider
     );
     console.log(await sender.getAddress());
-    alert('seeding fund');
     // seed fund
     const signer = provider.getSigner();
+    console.log({ signer });
     await signer.sendTransaction({
       to: await sender.getAddress(),
       value: parseEther('100'),
     });
+    console.log(sender.getBalance());
+  };
+
+  getCurrentWallet = async () => {
+    const provider = new JsonRpcProvider(CONLA_RPC);
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
+
+    console.log(currentKeyRing?.wallets[0]?.privateKey);
+
+    const privateKeyBuffer = Uint8Array.from(
+      currentKeyRing?.wallets[0]?.privateKey
+    );
+
+    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
+
+    console.log('privateKeyHex', privateKeyHex);
+
+    // create instance wallet
+    return new ethers.Wallet(privateKeyHex).connect(provider);
+  };
+
+  checkIsDeployedAccountContract = async (returnFactoryAddr?: boolean) => {
+    const provider = new JsonRpcProvider(CONLA_RPC);
+    const wallet = await this.getCurrentWallet();
+
+    const dep = new DeterministicDeployer(provider, wallet);
+
+    const factoryAddress = DeterministicDeployer.getAddress(
+      new SimpleAccountFactory__factory(),
+      0,
+      [entryPointAddr]
+    );
+    const isDeployed = await dep.isContractDeployed(factoryAddress);
+    console.log({ isDeployed });
+    return returnFactoryAddr ? factoryAddress : isDeployed;
+  };
+
+  deployAccountContract = async () => {
+    const wallet = await this.getCurrentWallet();
+    const provider = new JsonRpcProvider(CONLA_RPC);
+
+    const detDeployer = new DeterministicDeployer(provider, wallet);
+    return detDeployer.deterministicDeploy(
+      new SimpleAccountFactory__factory(),
+      0,
+      [entryPointAddr]
+    );
+  };
+
+  getAccountContractBalance = async () => {
+    const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
+    const rpcUrl = CONLA_RPC;
+    const bundlerUrl = 'http://10.241.72.139:3000/rpc';
+
+    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+
+    const provider = new JsonRpcProvider(rpcUrl);
+
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
+
+    const privateKeyBuffer = Uint8Array.from(
+      currentKeyRing?.wallets[0]?.privateKey
+    );
+
+    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
+
+    // create instance wallet
+    const sender = new ethers.Wallet(privateKeyHex).connect(provider);
+
+    let factoryAddress = await this.checkIsDeployedAccountContract(true);
+
+    if (!factoryAddress) {
+      factoryAddress = await this.deployAccountContract();
+    }
+
+    const accountAPI = new SimpleAccountAPI({
+      provider,
+      entryPointAddress: entryPointAddr,
+      owner: sender,
+      factoryAddress,
+      paymasterAPI,
+    });
+    const accountContract = await accountAPI._getAccountContract();
+
+    return provider.getBalance(accountContract.address);
   };
 
   fetchEstimatedL1Fee = async (

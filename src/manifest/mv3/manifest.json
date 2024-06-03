@@ -6,22 +6,22 @@
   "default_locale": "en",
   "description": "__MSG_appDescription__",
   "icons": {
-    "16": "images/icon-16.png",
-    "19": "images/icon-19.png",
-    "32": "images/icon-32.png",
-    "38": "images/icon-38.png",
-    "48": "images/icon-48.png",
-    "64": "images/icon-64.png",
-    "128": "images/icon-128.png",
-    "512": "images/icon-512.png"
+    "16": "images/conla-logo.png",
+    "19": "images/conla-logo.png",
+    "32": "images/conla-logo.png",
+    "38": "images/conla-logo.png",
+    "48": "images/conla-logo.png",
+    "64": "images/conla-logo.png",
+    "128": "images/conla-logo.png",
+    "512": "images/conla-logo.png"
   },
   "action": {
     "default_icon": {
-      "16": "images/icon-16.png",
-      "19": "images/icon-19.png",
-      "32": "images/icon-32.png",
-      "48": "images/icon-48.png",
-      "128": "images/icon-128.png"
+      "16": "images/conla-logo.png",
+      "19": "images/conla-logo.png",
+      "32": "images/conla-logo.png",
+      "48": "images/conla-logo.png",
+      "128": "images/conla-logo.png"
     },
     "default_title": "Rabby",
     "default_popup": "popup.html"

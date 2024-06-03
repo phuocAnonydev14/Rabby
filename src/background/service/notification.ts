@@ -162,6 +162,7 @@ class NotificationService extends Events {
 
       const approval = this.approvals[0];
       this.currentApproval = approval;
+      console.log('approval.winProps', approval.winProps);
       this.openNotification(approval.winProps, true);
     } catch (e) {
       Sentry.captureException(

@@ -8,13 +8,7 @@ import {
   permissionService,
 } from './index';
 import { TotalBalanceResponse, TokenItem } from './openapi';
-import {
-  HARDWARE_KEYRING_TYPES,
-  EVENTS,
-  CHAINS_ENUM,
-  LANGS,
-  DARK_MODE_TYPE,
-} from 'consts';
+import { EVENTS, CHAINS_ENUM, LANGS, DARK_MODE_TYPE } from 'consts';
 import browser from 'webextension-polyfill';
 import semver from 'semver-compare';
 import { syncStateToUI } from '../utils/broadcastToUI';

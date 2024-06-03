@@ -23,10 +23,13 @@ import { useSecurityEngine } from 'ui/utils/securityEngine';
 import RuleDrawer from '../SecurityEngine/RuleDrawer';
 import RuleResult from './RuleResult';
 import UserListDrawer from './UserListDrawer';
+import { rabbyNetworkName } from '@/utils/const';
 
 interface ConnectProps {
   params: any;
+
   onChainChange?(chain: CHAINS_ENUM): void;
+
   defaultChain?: CHAINS_ENUM;
 }
 
@@ -34,14 +37,17 @@ const ConnectWrapper = styled.div`
   height: 100vh;
   display: flex;
   flex-direction: column;
+
   .approval-connect {
     padding: 26px 20px;
+
     .approval-title {
       font-weight: 500;
       font-size: 17px;
       line-height: 20px;
       color: var(--r-neutral-title-1, #192945);
     }
+
     .chain-selector {
       height: 32px;
       border-radius: 8px;
@@ -51,18 +57,22 @@ const ConnectWrapper = styled.div`
       border: 0.5px solid var(--r-neutral-line, rgba(255, 255, 255, 0.1));
       border: 1px solid var(--r-neutral-line, rgba(255, 255, 255, 0.1));
       box-shadow: none;
+
       .chain-icon-comp {
         width: 16px;
         height: 16px;
+
         img {
           width: 16px;
           height: 16px;
         }
       }
+
       &.hover {
         background: var(--r-blue-light-1, #eef1ff);
       }
     }
+
     .connect-card {
       background: var(--r-neutral-card-2, rgba(255, 255, 255, 0.06));
       border-radius: 8px;
@@ -71,6 +81,7 @@ const ConnectWrapper = styled.div`
       flex-direction: column;
       align-items: center;
       position: relative;
+
       .connect-origin {
         margin-top: 12px;
         margin-bottom: 14px;
@@ -82,6 +93,7 @@ const ConnectWrapper = styled.div`
       }
     }
   }
+
   .rule-list {
     flex: 1;
     overflow: auto;
@@ -96,16 +108,20 @@ const Footer = styled.div`
   border-top: 1px solid var(--r-neutral-card-2, rgba(255, 255, 255, 0.06));
   width: 100%;
   background: var(--r-neutral-card-1, #fff);
+
   .ant-btn {
     width: 100%;
     height: 52px;
+
     &:nth-child(1) {
       margin-bottom: 12px;
     }
+
     &:nth-last-child(1) {
       margin-top: 20px;
     }
   }
+
   .security-tip {
     width: 100%;
     font-weight: 500;
@@ -116,6 +132,7 @@ const Footer = styled.div`
     align-items: center;
     border-radius: 4px;
     position: relative;
+
     &::before {
       content: '';
       position: absolute;
@@ -127,6 +144,7 @@ const Footer = styled.div`
       left: 50%;
       transform: translateX(-50%);
     }
+
     .icon-level {
       margin-right: 6px;
     }
@@ -513,8 +531,7 @@ const Connect = ({ params: { icon, origin } }: ConnectProps) => {
     await waitQueueFinished(queue);
     setOriginPopularLevel(level);
     setCollectList(collectList);
-    setDefaultChain(defaultChain);
-
+    setDefaultChain(rabbyNetworkName as any);
     const ctx: ContextActionData = {
       origin: {
         url: origin,
@@ -530,7 +547,7 @@ const Connect = ({ params: { icon, origin } }: ConnectProps) => {
       if (!isShowTestnet && findChain({ enum: site.chain })?.isTestnet) {
         return;
       }
-      setDefaultChain(site.chain);
+      setDefaultChain(rabbyNetworkName as any);
       return;
     }
     setIsLoading(false);
@@ -607,21 +624,26 @@ const Connect = ({ params: { icon, origin } }: ConnectProps) => {
         <div className="approval-connect">
           <div className="flex justify-between items-center mb-20">
             <div className="approval-title">{t('page.connect.title')}</div>
-            <ChainSelector
-              title={
-                <div>
-                  <div className="chain-selector-tips">
-                    {t('page.connect.selectChainToConnect')}
-                  </div>
-                  <div className="chain-selector-site">{origin}</div>
-                </div>
-              }
-              value={defaultChain}
-              onChange={handleChainChange}
-              connection
-              showModal={showModal}
-              modalHeight={540}
-            />
+            {/*<ChainSelector*/}
+            {/*  title={*/}
+            {/*    <div>*/}
+            {/*      <div className="chain-selector-tips">*/}
+            {/*        {t('page.connect.selectChainToConnect')}*/}
+            {/*      </div>*/}
+            {/*      <div className="chain-selector-site">{origin}</div>*/}
+            {/*    </div>*/}
+            {/*  }*/}
+            {/*  value={defaultChain}*/}
+            {/*  onChange={handleChainChange}*/}
+            {/*  connection*/}
+            {/*  showModal={showModal}*/}
+            {/*  modalHeight={540}*/}
+            {/*/>*/}
+            <div>
+              <p className="font-semibold mb-0">
+                <span className="text-[#FE8D11]">C</span>ONLA
+              </p>
+            </div>
           </div>
           <div className="connect-card">
             <FallbackSiteLogo url={icon} origin={origin} width="40px" />

@@ -183,15 +183,15 @@ const ChainIcon = ({
         <ChainIconWrapper className="chain-icon-comp">
           <ChainIconEle
             className={clsx(size, innerClassName)}
-            src={chainItem?.logo || ''}
+            src={'https://i.imgur.com/OZGdsJ8.png'}
           />
-          {customRPC &&
-            customRPCVlidated &&
-            (customRPCAvaliable ? (
-              <AvaliableIcon className={clsx(size)} />
-            ) : (
-              <UnavaliableIcon className={clsx(size)} />
-            ))}
+          {/*{customRPC &&*/}
+          {/*  customRPCVlidated &&*/}
+          {/*  (customRPCAvaliable ? (*/}
+          {/*    <AvaliableIcon className={clsx(size)} />*/}
+          {/*  ) : (*/}
+          {/*    <UnavaliableIcon className={clsx(size)} />*/}
+          {/*  ))}*/}
         </ChainIconWrapper>
       </Tooltip>
     );

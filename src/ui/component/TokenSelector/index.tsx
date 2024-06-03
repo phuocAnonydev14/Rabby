@@ -19,6 +19,9 @@ import { ReactComponent as RcIconChainFilterClose } from 'ui/assets/chain-select
 import { ReactComponent as RcIconCloseCC } from 'ui/assets/component/close-cc.svg';
 import { isNil } from 'lodash';
 import ThemeIcon from '../ThemeMode/ThemeIcon';
+import { useWallet } from 'ui/utils';
+import { useRabbySelector } from 'ui/store';
+import { CONLA } from '@/utils/const';
 
 export const isSwapTokenType = (s: string) =>
   ['swapFrom', 'swapTo'].includes(s);
@@ -82,9 +85,29 @@ const TokenSelector = ({
     };
   }, [chainServerId, visible]);
 
+  const wallet = useWallet();
+  const currentAccount = useRabbySelector(
+    (state) => state.account.currentAccount
+  );
+
   useDebounce(
-    () => {
-      onSearch({ ...chainSearchCtx, keyword: query });
+    async () => {
+      if (!query.trim()) return;
+      const token = await wallet.getCustomTestnetToken({
+        address: currentAccount!.address,
+        chainId: CONLA.id,
+        tokenId: query,
+      });
+      if (token) {
+        console.log('handle add token');
+        await wallet.addCustomTestnetToken({
+          chainId: CONLA.id,
+          id: query,
+          symbol: token!.symbol,
+          decimals: token!.decimals,
+        });
+        onSearch({ ...chainSearchCtx, keyword: query });
+      }
     },
     150,
     [chainSearchCtx, query]
@@ -210,6 +233,8 @@ const TokenSelector = ({
     }
   }, [type, query, isSwapType, displayList, query, chainServerId]);
 
+  console.log({ displayList });
+
   return (
     <Drawer
       className="token-selector custom-popup is-support-darkmode"
@@ -288,12 +313,13 @@ const TokenSelector = ({
           </li>
           {isEmpty
             ? NoDataUI
-            : displayList.map((token) => {
+            : [...new Set(displayList)].map((token, index) => {
                 const chainItem = findChain({ serverId: token.chain });
                 const disabled =
                   !!supportChains?.length &&
                   chainItem &&
                   !supportChains.includes(chainItem.enum);
+                if (token.id === displayList[index + 1]?.id) return;
 
                 return (
                   <Tooltip
@@ -385,12 +411,13 @@ const TokenSelector = ({
           </li>
           {isEmpty
             ? NoDataUI
-            : displayList.map((token) => {
+            : [...new Set(displayList)].map((token, index) => {
                 const chainItem = findChain({ serverId: token.chain });
                 const disabled =
                   !!supportChains?.length &&
                   chainItem &&
                   !supportChains.includes(chainItem.enum);
+                if (token.id === displayList[index + 1]?.id) return;
 
                 return (
                   <Tooltip

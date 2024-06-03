@@ -96,11 +96,11 @@ export const setPopupIcon = (
 ) => {
   const icons = [16, 19, 32, 48, 128].reduce((res, size) => {
     if (type === 'rabby' || type === 'metamask') {
-      res[size] = `images/icon-default-${type}-${size}.png`;
+      res[size] = 'images/conla-logo.png';
     } else if (type === 'locked') {
-      res[size] = `images/icon-lock-${size}.png`;
+      res[size] = 'images/conla-logo.png';
     } else {
-      res[size] = `images/icon-${size}.png`;
+      res[size] = 'images/conla-logo.png';
     }
     return res;
   }, {});
