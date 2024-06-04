@@ -12,7 +12,7 @@ import { useCommonPopupView, useWallet } from 'ui/utils';
 import { KEYRING_TYPE } from 'consts';
 import { SvgIconOffline } from '@/ui/assets';
 import clsx from 'clsx';
-import { Button, Skeleton } from 'antd';
+import { Button, Skeleton, Typography } from 'antd';
 import { Chain } from '@debank/common';
 import { ChainList } from './ChainList';
 import { formChartData, useCurve } from './useCurve';
@@ -95,7 +95,7 @@ const BalanceView = ({
   const [isHover, setHover] = useState(false);
   const [curvePoint, setCurvePoint] = useState<CurvePoint>();
   const [isDebounceHover, setIsDebounceHover] = useState(false);
-  const [isAccountDeployed, setIsAccountDeployed] = useState(true);
+  const [accountDeployed, setAccountDeployed] = useState('');
 
   const {
     balance,
@@ -151,7 +151,7 @@ const BalanceView = ({
     const handleCheckDeployed = async () => {
       try {
         const isDeployed = await wallet.checkIsDeployedAccountContract();
-        setIsAccountDeployed(isDeployed);
+        setAccountDeployed(isDeployed);
       } catch (e) {
         console.log({ e });
       }
@@ -403,7 +403,7 @@ const BalanceView = ({
           </div>
         </div>
         <div>
-          {!isAccountDeployed && (
+          {!accountDeployed ? (
             <div className="flex gap-4 items-center">
               <span style={{ color: 'rgba(229,228,228,0.83)' }}>
                 Account not deployed
@@ -417,6 +417,18 @@ const BalanceView = ({
                 Deploy
               </Button>
             </div>
+          ) : (
+            <>
+              <span>
+                <strong>Account contract: </strong>{' '}
+                <Typography.Paragraph
+                  style={{ color: '#fff' }}
+                  copyable={{ text: accountDeployed }}
+                >
+                  {accountDeployed}
+                </Typography.Paragraph>
+              </span>
+            </>
           )}
         </div>
         {/*<div*/}

@@ -96,18 +96,21 @@ const TokenSelector = ({
       const token = await wallet.getCustomTestnetToken({
         address: currentAccount!.address,
         chainId: CONLA.id,
-        tokenId: query,
+        tokenId: query.trim(),
       });
       if (token) {
-        console.log('handle add token');
-        await wallet.addCustomTestnetToken({
-          chainId: CONLA.id,
-          id: query,
-          symbol: token!.symbol,
-          decimals: token!.decimals,
-        });
-        onSearch({ ...chainSearchCtx, keyword: query });
+        try {
+          await wallet.addCustomTestnetToken({
+            chainId: CONLA.id,
+            id: query,
+            symbol: token!.symbol,
+            decimals: token!.decimals,
+          });
+        } catch (e) {
+          console.log(e);
+        }
       }
+      onSearch({ ...chainSearchCtx, keyword: query });
     },
     150,
     [chainSearchCtx, query]
@@ -232,8 +235,6 @@ const TokenSelector = ({
       });
     }
   }, [type, query, isSwapType, displayList, query, chainServerId]);
-
-  console.log({ displayList });
 
   return (
     <Drawer

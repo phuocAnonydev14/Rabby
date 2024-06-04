@@ -675,6 +675,7 @@ class ProviderController extends BaseController {
         let hash: string | undefined = undefined;
         let reqId: string | undefined = undefined;
         if (!findChain({ enum: chain })?.isTestnet) {
+          console.log('come to if testnet');
           if (RPCService.hasCustomRPC(chain)) {
             const txData: any = {
               ...approvalRes,
@@ -725,6 +726,7 @@ class ProviderController extends BaseController {
             }
           }
         } else {
+          console.log('come to else testnet');
           const chainData = findChain({
             enum: chain,
           })!;
@@ -742,10 +744,22 @@ class ProviderController extends BaseController {
           const rawTx = bufferToHex(tx.serialize());
           const client = customTestnetService.getClient(chainData.id);
 
+          if (!txParams.conlaAccount.trim()) {
+            hash = await client.request({
+              method: 'eth_sendRawTransaction',
+              params: [rawTx as any],
+            });
+            console.log('tx hash', hash);
+
+            onTransactionCreated({ hash, reqId, pushType });
+            notificationService.setStatsData(statsData);
+            return;
+          }
+
           // start custom send feature
           const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
           const rpcUrl = CONLA_RPC;
-          const bundlerUrl = 'http://10.241.72.139:3000/rpc';
+          const bundlerUrl = 'http://localhost:3000/rpc';
 
           const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
 
@@ -755,8 +769,6 @@ class ProviderController extends BaseController {
           const currentKeyRing = await keyringService.getKeyringForAccount(
             currentAcc?.address || ''
           );
-
-          console.log(currentKeyRing?.wallets[0]?.privateKey);
 
           const privateKeyBuffer = Uint8Array.from(
             currentKeyRing?.wallets[0]?.privateKey
@@ -832,33 +844,49 @@ class ProviderController extends BaseController {
             paymasterAPI,
           };
 
-          const aaProvider = await wrapProvider(provider, config, sender);
+          const aaProvider = (await wrapProvider(
+            provider,
+            config,
+            sender
+          )) as any;
 
           if (!txData.to) {
             // handle deploy contract
-
+            console.log('handle deploy contract12');
             const proxyContract = new Contract(
               proxyFactory,
               PROXY_FACTORY_ABI,
               aaProvider
             );
 
-            proxyContract.on('ProxyCreated', (from, value, event) => {
+            proxyContract.on('ProxyCreated', (from, value) => {
               console.log(`Event received: from ${from}, value`, value);
               // chrome.notifications;
               const conTractAddr = value.args[0] || '';
-              chrome.notifications.onButtonClicked.addListener(
-                (notificationId, buttonIndex) => {
-                  if (buttonIndex === 0) {
-                    const input = document.createElement('textarea');
-                    document.body.appendChild(input);
-                    input.value = conTractAddr;
-                    input.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(input);
-                  }
-                }
-              );
+              // chrome.notifications.onButtonClicked.addListener(
+              //   (notificationId, buttonIndex) => {
+              //     if (buttonIndex === 0) {
+              //       // Function to be injected into the active tab
+              //       chrome.tabs.query(
+              //         { active: true, currentWindow: true },
+              //         (tabs) => {
+              //           if (tabs.length === 0) return;
+              //           const activeTab = tabs[0];
+              //           // Inject the script to copy the text
+              //           chrome.scripting.executeScript({
+              //             target: { tabId: activeTab.id! },
+              //             func: () => {
+              //               chrome.runtime.sendMessage({
+              //                 action: 'copyText',
+              //                 text: 'This is the text to be copied',
+              //               });
+              //             },
+              //           });
+              //         }
+              //       );
+              //     }
+              //   }
+              // );
 
               chrome.notifications.create({
                 type: 'basic',

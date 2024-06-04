@@ -72,8 +72,8 @@
       "enoughSafeSigCollected": "Enough signature collected",
       "moreSafeSigNeeded": "{{0}} more confirmation needed",
       "safeAdminSigned": "Signed",
-      "swap": {
-        "title": "Swap Token",
+      "switch": {
+        "title": "Swich account",
         "payToken": "Pay",
         "receiveToken": "Receive",
         "failLoadReceiveToken": "Fail to load",
@@ -872,6 +872,7 @@
       "home": {
         "offline": "The network is disconnected and no data is obtained",
         "panel": {
+          "switch": "Switch Account",
           "swap": "Swap",
           "send": "Send",
           "receive": "Receive",

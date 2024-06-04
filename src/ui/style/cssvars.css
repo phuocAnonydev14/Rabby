@@ -6,8 +6,8 @@
 
   /* -------------------- base define -------------------- */
   --rabby-light-blue-default: rgba(254, 152, 0, 1);
-  --rabby-light-blue-light1: rgba(238, 241, 255, 1);
-  --rabby-light-blue-light-1: rgba(238, 241, 255, 1);
+  --rabby-light-blue-light1: rgba(254, 152, 0, 0.1);
+  --rabby-light-blue-light-1: rgba(254, 152, 0, 0.1);
   --rabby-light-blue-light2: rgba(222, 227, 252, 1);
   --rabby-light-blue-light-2: rgba(222, 227, 252, 1);
   --rabby-light-blue-disable: rgba(219, 224, 255, 1);
@@ -82,9 +82,9 @@
   /* -------------------- light mode -------------------- */
   --r-blue-default-rgb: 254, 152, 0;
   --r-blue-default: var(--rabby-light-blue-default);
-  --r-blue-light1-rgb: 238, 241, 255;
+  --r-blue-light1-rgb: 254, 152, 0;
   --r-blue-light1: var(--rabby-light-blue-light1);
-  --r-blue-light-1-rgb: 238, 241, 255;
+  --r-blue-light-1-rgb: 254, 152, 0;
   --r-blue-light-1: var(--rabby-light-blue-light-1);
   --r-blue-light2-rgb: 222, 227, 252;
   --r-blue-light2: var(--rabby-light-blue-light2);

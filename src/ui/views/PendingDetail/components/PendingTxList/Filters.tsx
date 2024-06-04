@@ -297,9 +297,9 @@ export const Filters = ({
             key={item.key}
             className={clsx(
               'flex items-center gap-[6px] px-[8px] py-[9px] rounded-[4px] cursor-pointer border border-[0.5px]',
-              'hover:border-[#7084FF]',
+              'hover:border-[#ffb020]',
               value.find((i) => i.key === item.key)
-                ? 'border-[#7084FF] bg-r-blue-light-1 text-r-blue-default'
+                ? 'border-[#ffb020] bg-r-blue-light-1 text-r-blue-default'
                 : 'border-[#D3D8E0] text-r-neutral-title-1'
             )}
             onClick={() => {

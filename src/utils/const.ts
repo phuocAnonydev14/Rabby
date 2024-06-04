@@ -13,6 +13,13 @@ const entryPointAddr = '0x0000000071727De22E5E9d8BAf0edAc6f37da032';
 
 const conlaLogo = 'https://i.imgur.com/OZGdsJ8.png';
 
-const proxyFactory = '0xCFEcF64821287c815CEED356af1550F88D72Eb64'
+const proxyFactory = '0xed810aD11D8205f9Cda055f760DC76E12Aff4e8B';
 
-export { conlaLogo, CONLA, CONLA_RPC, entryPointAddr, rabbyNetworkName,proxyFactory };
+export {
+  conlaLogo,
+  CONLA,
+  CONLA_RPC,
+  entryPointAddr,
+  rabbyNetworkName,
+  proxyFactory,
+};

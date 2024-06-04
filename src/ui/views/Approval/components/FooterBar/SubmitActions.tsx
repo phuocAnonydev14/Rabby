@@ -74,7 +74,7 @@ export const SubmitActions: React.FC<Props> = ({
         >
           <GasLessAnimatedWrapper>
             <Button
-              disabled={disabledProcess}
+              disabled={false}
               type="primary"
               className={clsx(
                 gasLess && 'gasLess',

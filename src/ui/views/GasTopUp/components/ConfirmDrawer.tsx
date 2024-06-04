@@ -239,7 +239,7 @@ export const ConfirmDrawer = ({
               <div className="flex flex-col items-center justify-center pt-[80px]">
                 <SvgIconLoading
                   className="animate-spin"
-                  fill="var(--r-blue-default, #7084ff)"
+                  fill="var(--r-blue-default, #ffb020)"
                 />
                 <div className="mt-12 text-r-neutral-title-1">
                   {t('page.gasTopUp.Loading_Tokens')}

@@ -36,7 +36,7 @@ const Wraper = styled.div`
       line-height: 18px; /* 138.462% */
 
       .link {
-        color: var(--r-blue-default, #7084ff);
+        color: var(--r-blue-default, #ffb020);
         text-decoration-line: underline;
         cursor: pointer;
       }

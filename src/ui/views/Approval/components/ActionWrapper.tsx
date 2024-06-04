@@ -7,7 +7,7 @@ export const DIV = styled.div`
   .action-header {
     display: flex;
     justify-content: space-between;
-    background: var(--r-blue-default, #7084ff);
+    background: var(--r-blue-default, #ffb020);
     padding: 13px;
     align-items: center;
     color: #fff;

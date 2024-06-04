@@ -48,7 +48,7 @@ const StyledInput = styled(Input)`
     border: 1px solid transparent;
   }
   &:hover {
-    border-color: var(--r-blue-default, #7084ff) !important;
+    border-color: var(--r-blue-default, #ffb020) !important;
     box-shadow: none;
   }
 
@@ -67,7 +67,7 @@ const PreferMEVGuardSwitch = styled(Switch)`
   height: 12px;
 
   &.ant-switch-checked {
-    background-color: var(--r-blue-default, #7084ff);
+    background-color: var(--r-blue-default, #ffb020);
     .ant-switch-handle {
       left: calc(100% - 10px - 1px);
       top: 1px;

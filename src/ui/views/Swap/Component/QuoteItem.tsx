@@ -79,10 +79,10 @@ const ItemWrapper = styled.div`
 
   &:hover:not(.disabled, .inSufficient) {
     background: var(--r-blue-light-1, #eef1ff);
-    border: 1px solid var(--r-blue-default, #7084ff);
+    border: 1px solid var(--r-blue-default, #ffb020);
   }
   &.active {
-    outline: 2px solid var(--r-blue-default, #7084ff);
+    outline: 2px solid var(--r-blue-default, #ffb020);
   }
   &.disabled {
     height: 56px;

@@ -119,7 +119,7 @@ const MatrixWrapper = styled.div.withConfig<{
 
     &:focus,
     &.ant-input-focused {
-      border-color: var(--r-blue-default, #7084ff);
+      border-color: var(--r-blue-default, #ffb020);
       background-color: var(--r-neutral-bg-1, #fff);
       box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.24);
     }
@@ -364,7 +364,7 @@ function MnemonicsInputs({
                         values={{ count }}
                       >
                         I have a
-                        <b style={{ color: 'var(--r-blue-default, #7084ff)' }}>
+                        <b style={{ color: 'var(--r-blue-default, #ffb020)' }}>
                           {count}
                         </b>
                         -word phrase
@@ -391,7 +391,7 @@ function MnemonicsInputs({
                         values={{ count }}
                       >
                         I have a
-                        <b style={{ color: 'var(--r-blue-default, #7084ff)' }}>
+                        <b style={{ color: 'var(--r-blue-default, #ffb020)' }}>
                           {count}
                         </b>
                         -word phrase and Passphrase

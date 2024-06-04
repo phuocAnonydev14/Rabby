@@ -21,7 +21,7 @@ const Wrapper = styled.div`
   background: var(--r-blue-light-1, #eef1ff);
   cursor: pointer;
 
-  color: var(--r-blue-default, #7084ff);
+  color: var(--r-blue-default, #ffb020);
   font-size: 12px;
   font-weight: 400;
   line-height: 14px;

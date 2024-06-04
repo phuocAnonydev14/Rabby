@@ -55,6 +55,7 @@ import { GasPriceBar } from '../GasPriceBar';
 import { ClaimRabbyBadgeModal } from '../ClaimRabbyBadgeModal';
 import { useTranslation } from 'react-i18next';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
+import SwitchAccount from '../Switch';
 
 export default ({
   gnosisPendingCount,
@@ -86,6 +87,7 @@ export default ({
   const [rabbyPointsVisible, setRabbyPointVisible] = useState(false);
 
   const [settingVisible, setSettingVisible] = useState(false);
+  const [switchAccVisible, setSwitchAccVisible] = useState(false);
   const [currentConnect, setCurrentConnect] = useState<
     ConnectedSite | null | undefined
   >(null);
@@ -191,14 +193,17 @@ export default ({
     eventKey: string;
   };
 
+  const toggleSwitchAcc = () => {
+    setSwitchAccVisible(!switchAccVisible);
+    setDashboardReload();
+  };
+
   const panelItems = {
-    swap: {
+    switch: {
       icon: RcIconSwap,
-      eventKey: 'Swap',
-      content: t('page.dashboard.home.panel.swap'),
-      onClick: () => {
-        history.push('/dex-swap?rbisource=dashboard');
-      },
+      eventKey: 'Swich',
+      content: t('page.dashboard.home.panel.switch'),
+      onClick: toggleSwitchAcc,
     } as IPanelItem,
     send: {
       icon: RcIconSendToken,
@@ -287,27 +292,27 @@ export default ({
 
   if (isGnosis) {
     pickedPanelKeys = [
-      'swap',
+      'switch',
       'send',
       'receive',
-      'nft',
+      // 'nft',
       // 'queue',
       'transactions',
-      'gasTopUp',
-      'security',
-      'feedback',
+      // 'gasTopUp',
+      // 'security',
+      // 'feedback',
       'more',
     ];
   } else {
     pickedPanelKeys = [
-      'swap',
+      'switch',
       'send',
       'receive',
-      'nft',
+      // 'nft',
       'transactions',
-      'gasTopUp',
-      'security',
-      'feedback',
+      // 'gasTopUp',
+      // 'security',
+      // 'feedback',
       'more',
     ];
   }
@@ -419,6 +424,7 @@ export default ({
           setSettingVisible(false);
         }}
       />
+      <SwitchAccount visible={switchAccVisible} onClose={toggleSwitchAcc} />
       <ClaimRabbyBadgeModal
         visible={badgeModalVisible}
         onCancel={() => {

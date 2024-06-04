@@ -76,7 +76,9 @@ import { formatTxInputDataOnERC20 } from '@/ui/utils/transaction';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import { customTestnetTokenToTokenItem } from '@/ui/utils/token';
 import { copyAddress } from '@/ui/utils/clipboard';
-import { rabbyNetworkName } from '@/utils/const';
+import { conlaLogo, rabbyNetworkName } from '@/utils/const';
+import { ethers } from 'ethers';
+import useConlaAccount from '@/ui/hooks/useConlaAccount';
 
 const abiCoder = (abiCoderInst as unknown) as AbiCoder;
 
@@ -308,13 +310,12 @@ const SendToken = () => {
   const [currentToken, setCurrentToken] = useState<TokenItem>({
     id: 'eth',
     chain: 'eth',
-    name: 'ETH',
-    symbol: 'ETH',
+    name: 'CONLA',
+    symbol: 'CONLA',
     display_symbol: null,
-    optimized_symbol: 'ETH',
+    optimized_symbol: 'CONLA',
     decimals: 18,
-    logo_url:
-      'https://static.debank.com/image/token/logo_url/eth/935ae4e4d1d12d59a99717a24f2540b5.png',
+    logo_url: conlaLogo,
     price: 0,
     is_verified: true,
     is_core: true,
@@ -400,6 +401,35 @@ const SendToken = () => {
       toAddressInContactBook: isAddrOnContactBook(formSnapshot.to),
     };
   }, [whitelist, isAddrOnContactBook, formSnapshot]);
+
+  const { conlaAccount } = useConlaAccount();
+
+  const handleGetAccountContractBalance = async (tokenId: string) => {
+    try {
+      const contractBalance = await wallet.getAccountContractBalance(tokenId);
+      console.log('contract balance', contractBalance);
+
+      const contractBalanceBigNumber = ethers.BigNumber.from(
+        contractBalance.hex
+      );
+
+      const raw_amount = contractBalanceBigNumber.toString();
+      const amount = contractBalanceBigNumber
+        .div(ethers.BigNumber.from(10).pow(currentToken.decimals))
+        .toNumber();
+      console.log('amount', amount, raw_amount);
+
+      return conlaAccount
+        ? {
+            amount,
+            raw_amount_hex_str: contractBalance.hex,
+            raw_amount,
+          }
+        : {};
+    } catch (e) {
+      console.log('error', e);
+    }
+  };
 
   const whitelistAlertContent = useMemo(() => {
     if (!whitelistEnabled) {
@@ -567,6 +597,7 @@ const SendToken = () => {
       isSend: true,
       userTo: form.getFieldValue('to'),
       sendValue,
+      conlaAccount,
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
@@ -792,6 +823,9 @@ const SendToken = () => {
     }
     const chainItem = findChain({ serverId: token.chain });
     setChain(chainItem?.enum ?? CHAINS_ENUM.ETH);
+    const tokenAccountBalance = await handleGetAccountContractBalance(token.id);
+
+    token = { ...token, ...(tokenAccountBalance || {}) };
     setCurrentToken(token);
     await persistPageStateCache({ currentToken: token });
     setBalanceError(null);
@@ -891,21 +925,23 @@ const SendToken = () => {
       return;
     }
     setChain(val);
+    const accountBalance = await handleGetAccountContractBalance('eth');
     setCurrentToken({
       id: chain.nativeTokenAddress,
       decimals: chain.nativeTokenDecimals,
-      logo_url: chain.nativeTokenLogo,
-      symbol: chain.nativeTokenSymbol,
-      display_symbol: chain.nativeTokenSymbol,
-      optimized_symbol: chain.nativeTokenSymbol,
+      logo_url: conlaLogo,
+      symbol: 'CONLA',
+      display_symbol: 'CONLA',
+      optimized_symbol: 'CONLA',
       is_core: true,
       is_verified: true,
       is_wallet: true,
       amount: 0,
       price: 0,
-      name: chain.nativeTokenSymbol,
+      name: 'CONLA',
       chain: chain.serverId,
       time_at: 0,
+      ...(accountBalance || {}),
     });
 
     let nextToken: TokenItem | null = null;
@@ -972,6 +1008,11 @@ const SendToken = () => {
       result = await wallet.openapi.getToken(address, chainId, id);
     }
     if (result) {
+      const tokenAccountBalance = await handleGetAccountContractBalance(
+        result.id
+      );
+
+      result = { ...result, ...(tokenAccountBalance || {}) };
       setCurrentToken(result);
     }
     setIsLoading(false);
@@ -1020,8 +1061,13 @@ const SendToken = () => {
     } else {
       let tokenFromOrder: TokenItem | null = null;
 
-      const lastTimeToken = await wallet.getLastTimeSendToken(account.address);
+      let lastTimeToken = await wallet.getLastTimeSendToken(account.address);
       if (lastTimeToken) {
+        const tokenAccountBalance = await handleGetAccountContractBalance(
+          lastTimeToken.id
+        );
+
+        lastTimeToken = { ...lastTimeToken, ...(tokenAccountBalance || {}) };
         setCurrentToken(lastTimeToken);
       } else {
         const { firstChain } = await dispatch.chains.getOrderedChainList({
@@ -1082,6 +1128,7 @@ const SendToken = () => {
   };
 
   useEffect(() => {
+    handleGetAccountContractBalance(currentToken.id);
     if (inited) {
       initByCache();
     }
@@ -1179,6 +1226,8 @@ const SendToken = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  console.log('current token', currentToken);
 
   useEffect(() => {
     handleChainChanged(rabbyNetworkName);
@@ -1346,14 +1395,14 @@ const SendToken = () => {
                     <span
                       className="truncate max-w-[80px]"
                       title={formatTokenAmount(
-                        new BigNumber(conlaBalance || 0)
+                        new BigNumber(currentToken.raw_amount_hex_str || 0)
                           .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4
                       )}
                     >
                       {formatTokenAmount(
-                        new BigNumber(conlaBalance || 0)
+                        new BigNumber(currentToken.raw_amount_hex_str || 0)
                           .div(10 ** currentToken.decimals)
                           .toFixed(),
                         4

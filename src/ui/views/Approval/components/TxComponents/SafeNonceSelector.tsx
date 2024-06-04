@@ -40,7 +40,7 @@ const Wrapper = styled.div`
       margin-bottom: 8px;
     }
     .ant-input-affix-wrapper:not(.ant-input-affix-wrapper-disabled):hover {
-      border-color: var(--r-blue-default, #7084ff);
+      border-color: var(--r-blue-default, #ffb020);
       border-right-width: 1px !important;
       z-index: 1;
     }
@@ -92,7 +92,7 @@ const Wrapper = styled.div`
 
       &:hover,
       &.is-checked {
-        border: 1px solid var(--r-blue-default, #7084ff);
+        border: 1px solid var(--r-blue-default, #ffb020);
         background: var(--r-blue-light-1, #eef1ff);
       }
 

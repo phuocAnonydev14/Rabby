@@ -48,7 +48,7 @@ const FieldList = styled.div`
 
     &:hover {
       background-color: rgba(134, 151, 255, 0.2);
-      border: 1px solid var(--r-blue-default, #7084ff);
+      border: 1px solid var(--r-blue-default, #ffb020);
     }
 
     &:nth-last-child(1) {
