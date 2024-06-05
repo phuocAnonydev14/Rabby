@@ -13,7 +13,8 @@ const entryPointAddr = '0x0000000071727De22E5E9d8BAf0edAc6f37da032';
 
 const conlaLogo = 'https://i.imgur.com/OZGdsJ8.png';
 
-const proxyFactory = '0xed810aD11D8205f9Cda055f760DC76E12Aff4e8B';
+const proxyFactory = '0x2b6a6752f44fb5bb9ed649B82ec133BD1E2bD8cA';
+const bundlerUrl = 'http://localhost:3000/rpc';
 
 export {
   conlaLogo,
@@ -22,4 +23,5 @@ export {
   entryPointAddr,
   rabbyNetworkName,
   proxyFactory,
+  bundlerUrl,
 };

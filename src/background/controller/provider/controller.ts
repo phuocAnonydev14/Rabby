@@ -72,7 +72,13 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import ERC20_ABI from '@/abi/ERC20.json';
 import PROXY_FACTORY_ABI from '@/abi/PROXY_FACTORY.json';
 import { parseEther } from 'ethers/lib/utils';
-import { CONLA, CONLA_RPC, entryPointAddr, proxyFactory } from '@/utils/const';
+import {
+  CONLA,
+  CONLA_RPC,
+  bundlerUrl,
+  entryPointAddr,
+  proxyFactory,
+} from '@/utils/const';
 
 const reportSignText = (params: {
   method: string;
@@ -744,41 +750,33 @@ class ProviderController extends BaseController {
           const rawTx = bufferToHex(tx.serialize());
           const client = customTestnetService.getClient(chainData.id);
 
-          if (!txParams.conlaAccount.trim()) {
+          // case is wallet owner send
+          if (txParams.to && !txParams.conlaAccount?.trim()) {
             hash = await client.request({
               method: 'eth_sendRawTransaction',
               params: [rawTx as any],
             });
-            console.log('tx hash', hash);
-
             onTransactionCreated({ hash, reqId, pushType });
             notificationService.setStatsData(statsData);
             return;
           }
 
+          // case account contract
           // start custom send feature
-          const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
           const rpcUrl = CONLA_RPC;
-          const bundlerUrl = 'http://localhost:3000/rpc';
-
           const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
-
           const provider = new JsonRpcProvider(rpcUrl);
-
           const currentAcc = await wallet.getCurrentAccount();
           const currentKeyRing = await keyringService.getKeyringForAccount(
             currentAcc?.address || ''
           );
-
           const privateKeyBuffer = Uint8Array.from(
             currentKeyRing?.wallets[0]?.privateKey
           );
-
           const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
           // create instance wallet
           const sender = new ethers.Wallet(privateKeyHex).connect(provider);
-
           const dep = new DeterministicDeployer(provider, sender);
 
           let factoryAddress = DeterministicDeployer.getAddress(
@@ -787,8 +785,6 @@ class ProviderController extends BaseController {
             [entryPointAddr]
           );
           if (!(await dep.isContractDeployed(factoryAddress))) {
-            console.log('new deterministic deploy');
-
             const detDeployer = new DeterministicDeployer(provider);
             factoryAddress = await detDeployer.deterministicDeploy(
               new SimpleAccountFactory__factory(),
@@ -801,14 +797,6 @@ class ProviderController extends BaseController {
             const code = await provider.getCode(address);
             return code !== '0x';
           };
-
-          console.log({
-            provider,
-            entryPointAddr,
-            owner: sender,
-            factoryAddress,
-            paymasterAPI,
-          });
 
           const accountAPI = new SimpleAccountAPI({
             provider,
@@ -838,7 +826,7 @@ class ProviderController extends BaseController {
           const decimalVal = txParams.sendValue || 0;
 
           const config = {
-            chainId: await provider.getNetwork().then((net) => net.chainId),
+            chainId,
             entryPointAddress: entryPointAddr,
             bundlerUrl,
             paymasterAPI,
@@ -852,7 +840,6 @@ class ProviderController extends BaseController {
 
           if (!txData.to) {
             // handle deploy contract
-            console.log('handle deploy contract12');
             const proxyContract = new Contract(
               proxyFactory,
               PROXY_FACTORY_ABI,
@@ -863,30 +850,14 @@ class ProviderController extends BaseController {
               console.log(`Event received: from ${from}, value`, value);
               // chrome.notifications;
               const conTractAddr = value.args[0] || '';
-              // chrome.notifications.onButtonClicked.addListener(
-              //   (notificationId, buttonIndex) => {
-              //     if (buttonIndex === 0) {
-              //       // Function to be injected into the active tab
-              //       chrome.tabs.query(
-              //         { active: true, currentWindow: true },
-              //         (tabs) => {
-              //           if (tabs.length === 0) return;
-              //           const activeTab = tabs[0];
-              //           // Inject the script to copy the text
-              //           chrome.scripting.executeScript({
-              //             target: { tabId: activeTab.id! },
-              //             func: () => {
-              //               chrome.runtime.sendMessage({
-              //                 action: 'copyText',
-              //                 text: 'This is the text to be copied',
-              //               });
-              //             },
-              //           });
-              //         }
-              //       );
-              //     }
-              //   }
-              // );
+              const copyText = () => {
+                const textarea = document.createElement('textarea');
+                textarea.value = conTractAddr;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+              };
 
               chrome.notifications.create({
                 type: 'basic',
@@ -902,6 +873,8 @@ class ProviderController extends BaseController {
                 pushType,
               });
               notificationService.setStatsData(statsData);
+              const tx = provider.getTransaction(value.transactionHash);
+              console.log({ tx });
             });
 
             const transfer = proxyContract.interface.encodeFunctionData(
@@ -909,18 +882,13 @@ class ProviderController extends BaseController {
               [txParams.data]
             );
 
-            console.log('Transfer', transfer);
-
             const op = await accountAPI.createSignedUserOp({
               target: proxyFactory,
               data: transfer,
               value: 0,
             });
 
-            console.log({ op });
-
             const userOpHash = await clientRpc.sendUserOpToBundler(op);
-            console.log('Waiting for user op to be mined');
             const transactionHash = await accountAPI.getUserOpReceipt(
               userOpHash
             );
@@ -929,8 +897,6 @@ class ProviderController extends BaseController {
           } else {
             const isErc20Token = await isErc20(txData.to);
             if (isErc20Token) {
-              console.log('come erc20');
-
               console.log('erc20: come encode tx', decimalVal);
 
               const accountContract = await accountAPI._getAccountContract();
@@ -942,78 +908,40 @@ class ProviderController extends BaseController {
                 sender
               );
 
-              // console.log('erc20: come create sign up', {
-              //   erc20,
-              //   accAddr: currentAcc?.address,
-              // });
               const ercBalanceAcc = await erc20Admin.balanceOf(
                 currentAcc?.address
               );
-              console.log('account wallet before:  ', ercBalanceAcc);
-
-              await erc20Admin.transfer(
-                accountContract.address,
-                parseEther('99')
-              );
-              // const ercBalance = await erc20.balanceOf(accountContract.address);
-              // console.log('contract balance before:  ', ercBalance);
-
               const transfer = erc20.interface.encodeFunctionData('transfer', [
                 txParams.userTo,
                 decimalVal,
               ]);
-
-              console.log('execute op');
 
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
                 data: transfer,
                 value: 0,
               });
-              console.log({ op });
               const userOpHash = await clientRpc.sendUserOpToBundler(op);
-              console.log('Waiting for user op to be mined');
               const transactionHash = await accountAPI.getUserOpReceipt(
                 userOpHash
               );
-              console.log(`Transaction hash: ${transactionHash}`);
               hash = transactionHash as string;
-              const tx = await provider.getTransactionReceipt(hash);
-              console.log({ tx });
-              const ercBalance2 = await erc20Admin.balanceOf(
-                accountContract.address
-              );
-              console.log('contract balance after:  ', ercBalance2);
             } else {
-              console.log('come native', {
-                target: txParams.to,
-                data: '0x',
-                value: decimalVal,
-              });
-
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
                 data: '0x',
                 value: decimalVal,
               });
-              console.log({ op });
-              console.log(await paymasterAPI.getPaymasterData(op));
-
-              console.log('come op');
-
               const userOpHash = await clientRpc.sendUserOpToBundler(op);
-              console.log('come hash');
-
               const transactionHash = await accountAPI.getUserOpReceipt(
                 userOpHash
               );
 
               hash = transactionHash as string;
-              console.log(`Transaction hash: ${transactionHash}`);
             }
           }
         }
-        console.log('done tx');
+        if (!txParams.to) return;
         onTransactionCreated({ hash, reqId, pushType });
         notificationService.setStatsData(statsData);
         return hash;

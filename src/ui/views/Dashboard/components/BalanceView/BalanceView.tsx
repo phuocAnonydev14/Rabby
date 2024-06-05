@@ -21,7 +21,7 @@ import ArrowNextSVG from '@/ui/assets/dashboard/arrow-next.svg';
 import { ReactComponent as UpdateSVG } from '@/ui/assets/dashboard/update.svg';
 import { ReactComponent as WarningSVG } from '@/ui/assets/dashboard/warning-1.svg';
 import { useDebounce } from 'react-use';
-import { useRabbyDispatch, useRabbySelector } from '@/ui/store';
+import store, { useRabbyDispatch, useRabbySelector } from '@/ui/store';
 import { BalanceLabel } from './BalanceLabel';
 import { useTranslation } from 'react-i18next';
 import { TooltipWithMagnetArrow } from '@/ui/component/Tooltip/TooltipWithMagnetArrow';
@@ -60,6 +60,7 @@ const BalanceView = ({
       clearTimeout(timer);
     };
   }, []);
+  const { conlaAcc } = useRabbySelector((state) => state.customRPC);
 
   const {
     balance: latestBalance,
@@ -151,7 +152,10 @@ const BalanceView = ({
     const handleCheckDeployed = async () => {
       try {
         const isDeployed = await wallet.checkIsDeployedAccountContract();
-        setAccountDeployed(isDeployed);
+        if (isDeployed) {
+          const accountContract = await wallet.getAccountContract();
+          setAccountDeployed(accountContract.address);
+        }
       } catch (e) {
         console.log({ e });
       }
@@ -342,6 +346,15 @@ const BalanceView = ({
   const shouldRenderCurve =
     !shouldShowLoading && !hiddenBalance && !!curveChartData;
 
+  useEffect(() => {
+    (async () => {
+      const currentAccountContract = localStorage.getItem('conlaAccount');
+      if (currentAccountContract) {
+        store.dispatch.customRPC.setConlaAcc(currentAccountContract);
+      }
+    })();
+  }, []);
+
   return (
     <div onMouseLeave={onMouseLeave} className={clsx('assets flex')}>
       <div className="left relative overflow-x-hidden mx-10">
@@ -403,33 +416,34 @@ const BalanceView = ({
           </div>
         </div>
         <div>
-          {!accountDeployed ? (
-            <div className="flex gap-4 items-center">
-              <span style={{ color: 'rgba(229,228,228,0.83)' }}>
-                Account not deployed
-              </span>
-              <Button
-                onClick={() => wallet.deployAccountContract()}
-                type={'ghost'}
-                size={'small'}
-                className="text-white"
-              >
-                Deploy
-              </Button>
-            </div>
-          ) : (
-            <>
-              <span>
-                <strong>Account contract: </strong>{' '}
-                <Typography.Paragraph
-                  style={{ color: '#fff' }}
-                  copyable={{ text: accountDeployed }}
+          {conlaAcc &&
+            (!accountDeployed ? (
+              <div className="flex gap-4 items-center">
+                <span style={{ color: 'rgba(229,228,228,0.83)' }}>
+                  Account not deployed
+                </span>
+                <Button
+                  onClick={() => wallet.deployAccountContract()}
+                  type={'ghost'}
+                  size={'small'}
+                  className="text-white"
                 >
-                  {accountDeployed}
-                </Typography.Paragraph>
-              </span>
-            </>
-          )}
+                  Deploy
+                </Button>
+              </div>
+            ) : (
+              <>
+                <span>
+                  <strong>Account contract: </strong>{' '}
+                  <Typography.Paragraph
+                    style={{ color: '#fff' }}
+                    copyable={{ text: accountDeployed }}
+                  >
+                    {accountDeployed}
+                  </Typography.Paragraph>
+                </span>
+              </>
+            ))}
         </div>
         {/*<div*/}
         {/*  onClick={onClickViewAssets}*/}

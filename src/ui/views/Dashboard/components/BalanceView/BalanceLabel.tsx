@@ -36,6 +36,13 @@ export const BalanceLabel: React.FC<Props> = ({ isCache, balance }) => {
   );
   const wallet = useWallet();
 
+  useEffect(() => {
+    (async () => {
+      const chain = await wallet.getChain();
+      setCurrentConnectedSiteChain(chain);
+    })();
+  }, []);
+
   const currentConnectedSiteChainNativeToken = useMemo(
     () =>
       currentConnectedSiteChain

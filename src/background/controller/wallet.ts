@@ -110,8 +110,12 @@ import {
   SimpleAccountFactory__factory,
 } from 'account-abstraction-anony-utils';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { CONLA_RPC, entryPointAddr } from '@/utils/const';
-import { PaymasterAPI, SimpleAccountAPI } from 'account-abstraction-anony-sdk';
+import { CONLA_RPC, bundlerUrl, entryPointAddr } from '@/utils/const';
+import {
+  PaymasterAPI,
+  SimpleAccountAPI,
+  wrapProvider,
+} from 'account-abstraction-anony-sdk';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -342,11 +346,6 @@ export class WalletController extends BaseController {
         [entryPointAddr]
       );
     }
-
-    const isErc20 = async (address: string) => {
-      const code = await provider.getCode(address);
-      return code !== '0x';
-    };
 
     console.log({
       provider,
@@ -760,6 +759,47 @@ export class WalletController extends BaseController {
     return new ethers.Wallet(privateKeyHex).connect(provider);
   };
 
+  getAccountContract = async () => {
+    const rpcUrl = CONLA_RPC;
+    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+    const provider = new JsonRpcProvider(rpcUrl);
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
+    const privateKeyBuffer = Uint8Array.from(
+      currentKeyRing?.wallets[0]?.privateKey
+    );
+    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
+
+    // create instance wallet
+    const sender = new ethers.Wallet(privateKeyHex).connect(provider);
+    const dep = new DeterministicDeployer(provider, sender);
+
+    let factoryAddress = DeterministicDeployer.getAddress(
+      new SimpleAccountFactory__factory(),
+      0,
+      [entryPointAddr]
+    );
+    if (!(await dep.isContractDeployed(factoryAddress))) {
+      const detDeployer = new DeterministicDeployer(provider);
+      factoryAddress = await detDeployer.deterministicDeploy(
+        new SimpleAccountFactory__factory(),
+        0,
+        [entryPointAddr]
+      );
+    }
+    const accountAPI = new SimpleAccountAPI({
+      provider,
+      entryPointAddress: entryPointAddr,
+      owner: sender,
+      factoryAddress,
+      paymasterAPI,
+    });
+    const accountContract = await accountAPI._getAccountContract();
+    return accountContract;
+  };
+
   checkIsDeployedAccountContract = async () => {
     const provider = new JsonRpcProvider(CONLA_RPC);
     const wallet = await this.getCurrentWallet();
@@ -772,6 +812,7 @@ export class WalletController extends BaseController {
       [entryPointAddr]
     );
     const isDeployed = await dep.isContractDeployed(factoryAddress);
+
     return isDeployed ? factoryAddress : '';
   };
 
@@ -788,12 +829,7 @@ export class WalletController extends BaseController {
   };
 
   getAccountContractBalance = async (tokenAddr?: string) => {
-    const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
     const rpcUrl = CONLA_RPC;
-    const bundlerUrl = 'http://localhost:3000/rpc';
-
-    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
-
     const provider = new JsonRpcProvider(rpcUrl);
 
     const currentAcc = await wallet.getCurrentAccount();
@@ -808,30 +844,21 @@ export class WalletController extends BaseController {
     const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
     // create instance wallet
-    const sender = new ethers.Wallet(privateKeyHex).connect(provider);
-
     let factoryAddress = await this.checkIsDeployedAccountContract();
 
     if (!factoryAddress) {
       factoryAddress = await this.deployAccountContract();
     }
 
-    const accountAPI = new SimpleAccountAPI({
-      provider,
-      entryPointAddress: entryPointAddr,
-      owner: sender,
-      factoryAddress,
-      paymasterAPI,
-    });
-    const accountContract = await accountAPI._getAccountContract();
+    const accountContract = await this.getAccountContract();
 
     if (!tokenAddr || tokenAddr === 'eth' || tokenAddr === 'custom_1337') {
-      console.log('accountContract.address', accountContract.address);
       return provider.getBalance(accountContract.address);
     }
     // check balance erc20 contract
-    const erc20Contract = new ethers.Contract(tokenAddr, ERC20ABI, sender);
-    return erc20Contract.balanceOf(accountContract.address);
+    const erc20Contract = new ethers.Contract(tokenAddr, ERC20ABI, provider);
+    const erc20Balance = await erc20Contract.balanceOf(accountContract.address);
+    return erc20Balance;
   };
 
   fetchEstimatedL1Fee = async (

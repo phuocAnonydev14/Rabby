@@ -3,6 +3,9 @@ import { useWallet, useWalletRequest } from 'ui/utils';
 
 import { findChainByServerID, DisplayChainWithWhiteLogo } from '@/utils/chain';
 import { filterChainWithBalance, normalizeChainList } from '@/utils/account';
+import useConlaAccount from './useConlaAccount';
+import { ethers } from 'ethers';
+import { useRabbySelector } from '../store';
 
 /** @deprecated import from '@/utils/chain' directly  */
 export type { DisplayChainWithWhiteLogo };
@@ -73,11 +76,17 @@ export default function useCurrentBalance(
     }
   );
 
+  const { conlaAcc } = useRabbySelector((state) => state.customRPC);
+
   const getCurrentBalance = async (force = false) => {
     if (!account || noNeedBalance) return;
     setBalanceLoading(true);
     const cacheData = await wallet.getAddressCacheBalance(account);
-    const conchaBalance = await wallet.getConchaBalance(account);
+    let conlaBalance: string;
+    if (conlaAcc) {
+      const balanceAccountContract = (await wallet.getAccountContractBalance()) as any;
+      conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
+    } else conlaBalance = await wallet.getConchaBalance(account);
     const apiLevel = await wallet.getAPIConfig([], 'ApiLevel', false);
     if (cacheData) {
       setBalanceFromCache(true);
@@ -103,13 +112,13 @@ export default function useCurrentBalance(
       } else {
         setBalanceLoading(false);
       }
-      setBalance(+conchaBalance);
+      setBalance(+conlaBalance);
     }
   };
 
   const refresh = useCallback(async () => {
     await getCurrentBalance(true);
-  }, [getCurrentBalance]);
+  }, [getCurrentBalance, conlaAcc]);
 
   const isCurrentBalanceExpired = useCallback(async () => {
     if (!account) return false;
@@ -130,14 +139,21 @@ export default function useCurrentBalance(
     //     setChainBalances(cache ? normalizeChainList(cache?.chain_list) : []);
     //   });
     // }
-
-    wallet.getConchaBalance(account as string).then((balance) => {
-      setBalance(+balance);
-    });
+    (async () => {
+      let conlaBalance: string;
+      console.log('conlaAccount', conlaAcc);
+      if (conlaAcc) {
+        const balanceAccountContract = await wallet.getAccountContractBalance();
+        conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
+      } else conlaBalance = await wallet.getConchaBalance(account as string);
+      console.log('conlaBalance', conlaBalance, conlaAcc);
+      setBalance(+conlaBalance);
+    })();
+    console.log('conla account changed', conlaAcc);
     return () => {
       isCanceled = true;
     };
-  }, [account, nonce]);
+  }, [account, nonce, conlaAcc]);
 
   const chainBalancesWithValue = useMemo(() => {
     return filterChainWithBalance(matteredChainBalances);

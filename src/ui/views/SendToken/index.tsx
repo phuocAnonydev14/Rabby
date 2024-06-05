@@ -309,11 +309,11 @@ const SendToken = () => {
   );
   const [currentToken, setCurrentToken] = useState<TokenItem>({
     id: 'eth',
-    chain: 'eth',
-    name: 'CONLA',
-    symbol: 'CONLA',
+    chain: 'custom_1337',
+    name: 'ETH',
+    symbol: 'ETH',
     display_symbol: null,
-    optimized_symbol: 'CONLA',
+    optimized_symbol: 'ETH',
     decimals: 18,
     logo_url: conlaLogo,
     price: 0,
@@ -407,7 +407,6 @@ const SendToken = () => {
   const handleGetAccountContractBalance = async (tokenId: string) => {
     try {
       const contractBalance = await wallet.getAccountContractBalance(tokenId);
-      console.log('contract balance', contractBalance);
 
       const contractBalanceBigNumber = ethers.BigNumber.from(
         contractBalance.hex
@@ -417,7 +416,6 @@ const SendToken = () => {
       const amount = contractBalanceBigNumber
         .div(ethers.BigNumber.from(10).pow(currentToken.decimals))
         .toNumber();
-      console.log('amount', amount, raw_amount);
 
       return conlaAccount
         ? {
@@ -426,9 +424,7 @@ const SendToken = () => {
             raw_amount,
           }
         : {};
-    } catch (e) {
-      console.log('error', e);
-    }
+    } catch (e) {}
   };
 
   const whitelistAlertContent = useMemo(() => {
@@ -586,7 +582,6 @@ const SendToken = () => {
       } as const,
       [to, sendValue.toFixed(0)] as any[],
     ] as const;
-    console.log('sendValue', sendValue);
 
     const params: Record<string, any> = {
       chainId: chain.id,
@@ -916,7 +911,6 @@ const SendToken = () => {
   };
 
   const handleChainChanged = async (val: CHAINS_ENUM) => {
-    console.log({ val });
     const account = (await wallet.syncGetCurrentAccount())!;
     const chain = findChain({
       enum: val,
@@ -926,19 +920,20 @@ const SendToken = () => {
     }
     setChain(val);
     const accountBalance = await handleGetAccountContractBalance('eth');
+
     setCurrentToken({
       id: chain.nativeTokenAddress,
       decimals: chain.nativeTokenDecimals,
       logo_url: conlaLogo,
-      symbol: 'CONLA',
-      display_symbol: 'CONLA',
-      optimized_symbol: 'CONLA',
+      symbol: 'ETH',
+      display_symbol: 'ETH',
+      optimized_symbol: 'ETH',
       is_core: true,
       is_verified: true,
       is_wallet: true,
       amount: 0,
       price: 0,
-      name: 'CONLA',
+      name: 'ETH',
       chain: chain.serverId,
       time_at: 0,
       ...(accountBalance || {}),
@@ -992,7 +987,7 @@ const SendToken = () => {
     address: string
   ) => {
     const chain = findChain({
-      serverId: chainId,
+      serverId: chainId === 'eth' ? 'custom_1337' : chainId,
     });
     let result: TokenItem | null = null;
     if (chain?.isTestnet) {
@@ -1028,15 +1023,24 @@ const SendToken = () => {
       const [tokenChain, id] = qs.token.split(':');
       if (!tokenChain || !id) return;
 
-      const target = findChain({
+      let target = findChain({
         serverId: tokenChain,
       });
+      if (tokenChain === 'eth') {
+        target = findChain({
+          serverId: 'custom_1337',
+        });
+      }
       if (!target) {
         loadCurrentToken(currentToken.id, currentToken.chain, account.address);
         return;
       }
       setChain(target.enum);
-      loadCurrentToken(id, tokenChain, account.address);
+      loadCurrentToken(
+        id,
+        tokenChain === 'eth' ? 'custom_1337' : tokenChain,
+        account.address
+      );
     } else if ((history.location.state as any)?.safeInfo) {
       const safeInfo: {
         nonce: number;
@@ -1227,8 +1231,6 @@ const SendToken = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  console.log('current token', currentToken);
-
   useEffect(() => {
     handleChainChanged(rabbyNetworkName);
     if (currentAccount) {
@@ -1241,12 +1243,8 @@ const SendToken = () => {
     const handleGetBalance = async () => {
       try {
         const balance = await wallet.getAccountContractBalance();
-        console.log('balance', { balance });
         setConlaBalance(balance.hex as any);
-        console.log('currentToken', currentToken);
-      } catch (e) {
-        console.log({ e });
-      }
+      } catch (e) {}
     };
 
     handleGetBalance().then();
@@ -1524,7 +1522,7 @@ const SendToken = () => {
           )}
           <div className="btn-wrapper w-[100%] px-[20px] flex justify-center">
             <Button
-              disabled={!canSubmit}
+              // disabled={!canSubmit}
               type="primary"
               htmlType="submit"
               size="large"

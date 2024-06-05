@@ -1,5 +1,5 @@
 import { Field, Popup } from '@/ui/component';
-import { useRabbySelector } from '@/ui/store';
+import store, { useRabbySelector } from '@/ui/store';
 import { Button, message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { ReactComponent as RcIconArrowBlueRight } from 'ui/assets/dashboard/sett
 import { ReactComponent as RcIconArrowOrangeRight } from 'ui/assets/dashboard/settings/icon-right-arrow-orange.svg';
 import { useWallet } from '@/ui/utils';
 import useConlaAccount from '@/ui/hooks/useConlaAccount';
+import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
 
 interface SwitchAccountProps {
   visible: boolean;
@@ -19,6 +20,10 @@ interface SwitchAccountProps {
 export default function SwitchAccount(props: SwitchAccountProps) {
   const { onClose, visible } = props;
   const [accountContract, setAccountContract] = useState('');
+  const accountAddr = useRabbySelector(
+    (state) => state.account.currentAccount?.address
+  );
+  const { refreshBalance } = useCurrentBalance(accountAddr);
   const currentAccount = useRabbySelector(
     (state) => state.account.currentAccount
   );
@@ -28,14 +33,17 @@ export default function SwitchAccount(props: SwitchAccountProps) {
 
   useEffect(() => {
     (async () => {
-      const contract = await wallet.checkIsDeployedAccountContract();
-      setAccountContract(contract);
+      const contract = await wallet.getAccountContract();
+      setAccountContract(contract.address);
     })();
   }, [currentAccount]);
 
   const handleSwitch = async (isAccountContract?: boolean) => {
     try {
       handleChangeConlaAccount(isAccountContract ? accountContract : '');
+      store.dispatch.customRPC.setConlaAcc(
+        isAccountContract ? accountContract : ''
+      );
       message.success('Switch account successfully');
       onClose();
     } catch (err) {

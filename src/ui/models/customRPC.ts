@@ -3,15 +3,18 @@ import { RPCItem } from '@/background/service/rpc';
 import { createModel } from '@rematch/core';
 
 import { RootModel } from '.';
+import { set } from 'lodash';
 
 type IState = {
   customRPC: Record<CHAINS_ENUM, RPCItem>;
+  conlaAcc: string;
 };
 
 export const customRPC = createModel<RootModel>()({
   name: 'customRPC',
   state: {
     customRPC: {},
+    conlaAcc: '',
   } as IState,
   reducers: {
     setField(state, payload: Partial<typeof state>) {
@@ -22,6 +25,13 @@ export const customRPC = createModel<RootModel>()({
         },
         { ...state }
       );
+    },
+
+    setConlaAcc(state, payload: string) {
+      return {
+        ...state,
+        conlaAcc: payload,
+      };
     },
   },
   effects: (dispatch) => ({
