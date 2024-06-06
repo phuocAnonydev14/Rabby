@@ -8,6 +8,7 @@ import { set } from 'lodash';
 type IState = {
   customRPC: Record<CHAINS_ENUM, RPCItem>;
   conlaAcc: string;
+  conlaLoading: boolean;
 };
 
 export const customRPC = createModel<RootModel>()({
@@ -15,6 +16,7 @@ export const customRPC = createModel<RootModel>()({
   state: {
     customRPC: {},
     conlaAcc: '',
+    conlaLoading: false,
   } as IState,
   reducers: {
     setField(state, payload: Partial<typeof state>) {
@@ -31,6 +33,12 @@ export const customRPC = createModel<RootModel>()({
       return {
         ...state,
         conlaAcc: payload,
+      };
+    },
+    setConlaLoading(state, payload: boolean) {
+      return {
+        ...state,
+        conlaLoading: payload,
       };
     },
   },

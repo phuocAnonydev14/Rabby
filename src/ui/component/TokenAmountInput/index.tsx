@@ -22,6 +22,7 @@ import TokenSelector, { TokenSelectorProps } from '../TokenSelector';
 import TokenWithChain from '../TokenWithChain';
 import './style.less';
 import { INPUT_NUMBER_RE, filterNumber } from '@/constant/regexp';
+import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
 
 interface TokenAmountInputProps {
   token: TokenItem;
@@ -174,6 +175,12 @@ const TokenAmountInput = ({
       onChange?.(filterNumber(e.target.value));
     }
   };
+  useEffect(() => {
+    // async(() => {
+    //   const updateToken = wallet.
+    //   return;
+    // })();
+  }, [token]);
 
   return (
     <div className={clsx('token-amount-input', className)}>

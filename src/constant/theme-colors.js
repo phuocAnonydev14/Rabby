@@ -45,7 +45,7 @@ const themeColors = {
     'blue-light-1': 'rgba(66, 73, 98, 1)',
     'blue-light2': 'rgba(66, 73, 98, 1)',
     'blue-light-2': 'rgba(66, 73, 98, 1)',
-    'blue-disable': 'rgba(76, 86, 133, 1)',
+    'blue-disable': 'rgba(219, 224, 255, 1)',
     'green-default': 'rgba(42, 187, 127, 1)',
     'green-light': 'rgba(57, 90, 90, 1)',
     'orange-default': 'rgba(255, 198, 74, 1)',

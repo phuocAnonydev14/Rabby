@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FooterResend } from './FooterResend';
 import { FooterButton } from './FooterButton';
@@ -14,6 +14,10 @@ import ConnectWalletConnectSVG from 'ui/assets/approval/connect-walletconnect.sv
 import { noop, useCommonPopupView } from '@/ui/utils';
 import { FooterDoneButton } from './FooterDoneButton';
 import { Dots } from './Dots';
+import { ethers } from 'ethers';
+import { CONLA_RPC, proxyFactory } from '@/utils/const';
+import PROXY_FACTORY from '@/abi/PROXY_FACTORY.json';
+import { Typography } from 'antd';
 
 const PRIVATE_KEY_ERROR_HEIGHT = 247;
 const OTHER_ERROR_HEIGHT = 392;
@@ -72,6 +76,31 @@ export const ApprovalPopupContainer: React.FC<Props> = ({
         return ConnectQRCodeSVG;
     }
   }, [hdType]);
+
+  const customOnDone = () => {
+    onDone();
+    setDeployedAddress('');
+  };
+
+  const [deployedAddress, setDeployedAddress] = React.useState('');
+
+  useEffect(() => {
+    setDeployedAddress('');
+    const getDeployAddress = async () => {
+      const provider = new ethers.providers.JsonRpcProvider(CONLA_RPC);
+      const proxyContract = new ethers.Contract(
+        proxyFactory,
+        PROXY_FACTORY,
+        provider
+      );
+      proxyContract.on('ProxyCreated', (from, value) => {
+        console.log(`Event received: from ${from}, value`, value);
+        setDeployedAddress(value.args[0] || '');
+      });
+    };
+
+    getDeployAddress().finally();
+  }, []);
 
   React.useEffect(() => {
     switch (status) {
@@ -147,6 +176,25 @@ export const ApprovalPopupContainer: React.FC<Props> = ({
           <Dots />
         ) : null}
       </div>
+      <div className="mt-2">
+        {status === 'RESOLVED' && deployedAddress && (
+          <Typography.Paragraph
+            copyable={{
+              text: deployedAddress,
+              onCopy: () => {
+                setTimeout(() => {
+                  onDone();
+                  setDeployedAddress('');
+                }, 1000);
+              },
+            }}
+          >
+            <p>
+              <strong>Contract address:</strong> {deployedAddress}
+            </p>
+          </Typography.Paragraph>
+        )}
+      </div>
       <div
         className={clsx(
           contentColor,
@@ -164,7 +212,13 @@ export const ApprovalPopupContainer: React.FC<Props> = ({
         {status === 'FAILED' && (
           <FooterResendCancelGroup onCancel={onCancel} onResend={onRetry} />
         )}
-        {status === 'RESOLVED' && <FooterDoneButton onDone={onDone} hide />}
+        {status === 'RESOLVED' && (
+          <FooterDoneButton
+            deployerAddress={deployedAddress}
+            onDone={customOnDone}
+            hide
+          />
+        )}
         {status === 'REJECTED' && (
           <FooterResendCancelGroup onCancel={onCancel} onResend={onRetry} />
         )}

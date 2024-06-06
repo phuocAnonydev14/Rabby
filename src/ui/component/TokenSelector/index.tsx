@@ -22,6 +22,7 @@ import ThemeIcon from '../ThemeMode/ThemeIcon';
 import { useWallet } from 'ui/utils';
 import { useRabbySelector } from 'ui/store';
 import { CONLA } from '@/utils/const';
+import { ethers } from 'ethers';
 
 export const isSwapTokenType = (s: string) =>
   ['swapFrom', 'swapTo'].includes(s);
@@ -120,41 +121,74 @@ const TokenSelector = ({
     setQuery(value);
   };
 
-  const displayList = useMemo(() => {
-    if (!supportChains?.length) {
-      const resultList = list || [];
-      if (!chainServerId) return resultList.filter(filterTestnetTokenItem);
+  const { conlaAcc } = useRabbySelector((state) => state.customRPC);
 
-      return resultList;
-    }
+  const [displayList, setDisplayList] = useState<TokenItem[]>([]);
 
-    const varied = (list || []).reduce(
-      (accu, token) => {
-        const chainItem = findChainByServerID(token.chain);
-        const disabled =
-          !!supportChains?.length &&
-          chainItem &&
-          !supportChains.includes(chainItem.enum);
-
-        if (!disabled) {
-          accu.natural.push(token);
-        } else if (chainItem?.isTestnet && !chainServerId) {
-          accu.ignored.push(token);
-        } else {
-          accu.disabled.push(token);
+  useEffect(() => {
+    (async () => {
+      if (!supportChains?.length) {
+        let resultList = list || [];
+        if (!chainServerId) return resultList.filter(filterTestnetTokenItem);
+        if (conlaAcc) {
+          resultList = await Promise.all(
+            resultList.map(async (token) => {
+              const tokenAmount = await wallet.getAccountContractBalance(
+                token.id
+              );
+              return {
+                ...token,
+                amount: +ethers.utils.formatEther(tokenAmount),
+              };
+            })
+          );
         }
-
-        return accu;
-      },
-      {
-        natural: [] as TokenItem[],
-        disabled: [] as TokenItem[],
-        ignored: [] as TokenItem[],
+        setDisplayList(resultList);
       }
-    );
-
-    return [...varied.natural, ...varied.disabled];
+    })();
   }, [list, supportChains, chainServerId]);
+
+  // const displayList = useMemo(async () => {
+  //   if (!supportChains?.length) {
+  //     let resultList = list || [];
+  //     if (!chainServerId) return resultList.filter(filterTestnetTokenItem);
+  //     if(!conlaAcc) return resultList
+  //     resultList = await Promise.all(
+  //       resultList.map(async (token) => {
+  //         const tokenAmount = await wallet.getAccountContractBalance(token.id)
+  //         return {...token,amount:ethers.utils.formatEther(tokenAmount)}
+  //       })
+  //     );
+  //     return resultList;
+  //   }
+
+  //   // const varied = (list || []).reduce(
+  //   //   (accu, token) => {
+  //   //     const chainItem = findChainByServerID(token.chain);
+  //   //     const disabled =
+  //   //       !!supportChains?.length &&
+  //   //       chainItem &&
+  //   //       !supportChains.includes(chainItem.enum);
+
+  //   //     if (!disabled) {
+  //   //       accu.natural.push(token);
+  //   //     } else if (chainItem?.isTestnet && !chainServerId) {
+  //   //       accu.ignored.push(token);
+  //   //     } else {
+  //   //       accu.disabled.push(token);
+  //   //     }
+
+  //   //     return accu;
+  //   //   },
+  //   //   {
+  //   //     natural: [] as TokenItem[],
+  //   //     disabled: [] as TokenItem[],
+  //   //     ignored: [] as TokenItem[],
+  //   //   }
+  //   // );
+
+  //   return [...varied.natural, ...varied.disabled];
+  // }, [list, supportChains, chainServerId]);
 
   const handleInputFocus = () => {
     setIsInputActive(true);
@@ -419,7 +453,6 @@ const TokenSelector = ({
                   chainItem &&
                   !supportChains.includes(chainItem.enum);
                 if (token.id === displayList[index + 1]?.id) return;
-
                 return (
                   <Tooltip
                     key={`${token.chain}-${token.id}`}

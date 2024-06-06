@@ -46,7 +46,7 @@
   --rabby-dark-blue-light-1: rgba(66, 73, 98, 1);
   --rabby-dark-blue-light2: rgba(66, 73, 98, 1);
   --rabby-dark-blue-light-2: rgba(66, 73, 98, 1);
-  --rabby-dark-blue-disable: rgba(76, 86, 133, 1);
+  --rabby-dark-blue-disable: rgba(219, 224, 255, 1);
   --rabby-dark-green-default: rgba(42, 187, 127, 1);
   --rabby-dark-green-light: rgba(57, 90, 90, 1);
   --rabby-dark-orange-default: rgba(255, 198, 74, 1);
@@ -164,7 +164,7 @@ html.dark, body.dark {
   --r-blue-light2: var(--rabby-dark-blue-light2);
   --r-blue-light-2-rgb: 66, 73, 98;
   --r-blue-light-2: var(--rabby-dark-blue-light-2);
-  --r-blue-disable-rgb: 76, 86, 133;
+  --r-blue-disable-rgb: 219, 224, 255;
   --r-blue-disable: var(--rabby-dark-blue-disable);
   --r-green-default-rgb: 42, 187, 127;
   --r-green-default: var(--rabby-dark-green-default);

@@ -5,7 +5,7 @@ import { findChainByServerID, DisplayChainWithWhiteLogo } from '@/utils/chain';
 import { filterChainWithBalance, normalizeChainList } from '@/utils/account';
 import useConlaAccount from './useConlaAccount';
 import { ethers } from 'ethers';
-import { useRabbySelector } from '../store';
+import store, { useRabbySelector } from '../store';
 
 /** @deprecated import from '@/utils/chain' directly  */
 export type { DisplayChainWithWhiteLogo };
@@ -96,7 +96,7 @@ export default function useCurrentBalance(
 
       if (update) {
         if (apiLevel < 2) {
-          setBalanceLoading(true);
+          // setBalanceLoading(true);
           await getInMemoryAddressBalance(account, force);
         } else {
           setBalanceLoading(false);
@@ -112,6 +112,7 @@ export default function useCurrentBalance(
       } else {
         setBalanceLoading(false);
       }
+      store.dispatch.customRPC.setConlaLoading(false);
       setBalance(+conlaBalance);
     }
   };
@@ -140,14 +141,20 @@ export default function useCurrentBalance(
     //   });
     // }
     (async () => {
-      let conlaBalance: string;
-      console.log('conlaAccount', conlaAcc);
-      if (conlaAcc) {
-        const balanceAccountContract = await wallet.getAccountContractBalance();
-        conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
-      } else conlaBalance = await wallet.getConchaBalance(account as string);
-      console.log('conlaBalance', conlaBalance, conlaAcc);
-      setBalance(+conlaBalance);
+      try {
+        let conlaBalance: string;
+        console.log('conlaAccount', conlaAcc);
+        if (conlaAcc) {
+          const balanceAccountContract = await wallet.getAccountContractBalance();
+          conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
+        } else conlaBalance = await wallet.getConchaBalance(account as string);
+        console.log('conlaBalance', conlaBalance, conlaAcc);
+        setBalance(+conlaBalance);
+        setBalanceLoading(false);
+        store.dispatch.customRPC.setConlaLoading(false);
+      } catch (e) {
+        console.log('conlaBalance error', e);
+      }
     })();
     console.log('conla account changed', conlaAcc);
     return () => {

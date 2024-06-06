@@ -79,6 +79,7 @@ import { copyAddress } from '@/ui/utils/clipboard';
 import { conlaLogo, rabbyNetworkName } from '@/utils/const';
 import { ethers } from 'ethers';
 import useConlaAccount from '@/ui/hooks/useConlaAccount';
+import { parseEther } from 'viem';
 
 const abiCoder = (abiCoderInst as unknown) as AbiCoder;
 
@@ -309,9 +310,9 @@ const SendToken = () => {
   );
   const [currentToken, setCurrentToken] = useState<TokenItem>({
     id: 'eth',
-    chain: 'custom_1337',
+    chain: rabbyNetworkName,
     name: 'ETH',
-    symbol: 'ETH',
+    symbol: 'BSC',
     display_symbol: null,
     optimized_symbol: 'ETH',
     decimals: 18,
@@ -402,7 +403,10 @@ const SendToken = () => {
     };
   }, [whitelist, isAddrOnContactBook, formSnapshot]);
 
-  const { conlaAccount } = useConlaAccount();
+  const { conlaAcc } = useRabbySelector((state) => state.customRPC);
+
+  console.log('conla account', conlaAcc);
+  console.log('current token', currentToken);
 
   const handleGetAccountContractBalance = async (tokenId: string) => {
     try {
@@ -417,14 +421,16 @@ const SendToken = () => {
         .div(ethers.BigNumber.from(10).pow(currentToken.decimals))
         .toNumber();
 
-      return conlaAccount
+      return conlaAcc
         ? {
             amount,
             raw_amount_hex_str: contractBalance.hex,
             raw_amount,
           }
         : {};
-    } catch (e) {}
+    } catch (e) {
+      console.log({ e });
+    }
   };
 
   const whitelistAlertContent = useMemo(() => {
@@ -565,6 +571,7 @@ const SendToken = () => {
     const sendValue = new BigNumber(amount)
       .multipliedBy(10 ** currentToken.decimals)
       .decimalPlaces(0, BigNumber.ROUND_DOWN);
+    const newSendVal = parseEther(amount);
     const dataInput = [
       {
         name: 'transfer',
@@ -592,7 +599,7 @@ const SendToken = () => {
       isSend: true,
       userTo: form.getFieldValue('to'),
       sendValue,
-      conlaAccount,
+      conlaAccount: conlaAcc,
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
@@ -821,6 +828,7 @@ const SendToken = () => {
     const tokenAccountBalance = await handleGetAccountContractBalance(token.id);
 
     token = { ...token, ...(tokenAccountBalance || {}) };
+    console.log('token 831', token);
     setCurrentToken(token);
     await persistPageStateCache({ currentToken: token });
     setBalanceError(null);
@@ -920,7 +928,7 @@ const SendToken = () => {
     }
     setChain(val);
     const accountBalance = await handleGetAccountContractBalance('eth');
-
+    console.log('chain 930', chain);
     setCurrentToken({
       id: chain.nativeTokenAddress,
       decimals: chain.nativeTokenDecimals,
@@ -987,7 +995,7 @@ const SendToken = () => {
     address: string
   ) => {
     const chain = findChain({
-      serverId: chainId === 'eth' ? 'custom_1337' : chainId,
+      serverId: chainId === 'eth' ? rabbyNetworkName : chainId,
     });
     let result: TokenItem | null = null;
     if (chain?.isTestnet) {
@@ -1008,6 +1016,7 @@ const SendToken = () => {
       );
 
       result = { ...result, ...(tokenAccountBalance || {}) };
+      console.log('result', result);
       setCurrentToken(result);
     }
     setIsLoading(false);
@@ -1028,7 +1037,7 @@ const SendToken = () => {
       });
       if (tokenChain === 'eth') {
         target = findChain({
-          serverId: 'custom_1337',
+          serverId: rabbyNetworkName,
         });
       }
       if (!target) {
@@ -1038,7 +1047,7 @@ const SendToken = () => {
       setChain(target.enum);
       loadCurrentToken(
         id,
-        tokenChain === 'eth' ? 'custom_1337' : tokenChain,
+        tokenChain === 'eth' ? rabbyNetworkName : tokenChain,
         account.address
       );
     } else if ((history.location.state as any)?.safeInfo) {
@@ -1072,6 +1081,7 @@ const SendToken = () => {
         );
 
         lastTimeToken = { ...lastTimeToken, ...(tokenAccountBalance || {}) };
+        console.log('last time token', lastTimeToken);
         setCurrentToken(lastTimeToken);
       } else {
         const { firstChain } = await dispatch.chains.getOrderedChainList({
@@ -1094,6 +1104,8 @@ const SendToken = () => {
             });
           }
           if (cache.states.currentToken) {
+            console.log('cache current token', lastTimeToken);
+
             setCurrentToken(cache.states.currentToken);
             needLoadToken = cache.states.currentToken;
           }

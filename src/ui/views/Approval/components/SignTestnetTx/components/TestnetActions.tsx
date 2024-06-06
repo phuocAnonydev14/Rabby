@@ -160,12 +160,12 @@ export const TestnetActions = ({
         className={clsx(
           'absolute bottom-[72px] right-0',
           'px-[16px] py-[12px] rotate-[-23deg]',
-          'border-rabby-neutral-title1 border-[1px] rounded-[6px]',
-          'text-r-neutral-title1 text-[20px] leading-[24px]',
+          'border-rabby-blue-default border-[1px] rounded-[6px]',
+          'text-r-blue-default text-[20px] leading-[24px]',
           'opacity-30'
         )}
       >
-        Custom Network
+        Conla Network
       </div>
     </div>
   );

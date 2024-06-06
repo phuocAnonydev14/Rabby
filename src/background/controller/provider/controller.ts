@@ -530,7 +530,7 @@ class ProviderController extends BaseController {
         }
 
         statsData.submit = true;
-        statsData.submitSuccess = true;
+        // statsData.submitSuccess = true;
         if (isSend) {
           pageStateCacheService.clear();
         }
@@ -732,7 +732,6 @@ class ProviderController extends BaseController {
             }
           }
         } else {
-          console.log('come to else testnet');
           const chainData = findChain({
             enum: chain,
           })!;
@@ -765,7 +764,7 @@ class ProviderController extends BaseController {
           // start custom send feature
           const rpcUrl = CONLA_RPC;
           const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
-          const provider = new JsonRpcProvider(rpcUrl);
+          const provider = new JsonRpcProvider(rpcUrl) as any;
           const currentAcc = await wallet.getCurrentAccount();
           const currentKeyRing = await keyringService.getKeyringForAccount(
             currentAcc?.address || ''
@@ -776,7 +775,9 @@ class ProviderController extends BaseController {
           const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
           // create instance wallet
-          const sender = new ethers.Wallet(privateKeyHex).connect(provider);
+          const sender = new ethers.Wallet(privateKeyHex).connect(
+            provider
+          ) as any;
           const dep = new DeterministicDeployer(provider, sender);
 
           let factoryAddress = DeterministicDeployer.getAddress(
@@ -805,13 +806,13 @@ class ProviderController extends BaseController {
             factoryAddress,
             paymasterAPI,
           });
-          const accountContract = await accountAPI._getAccountContract();
+          // const accountContract = await accountAPI._getAccountContract();
 
-          const signer = provider.getSigner();
-          await signer.sendTransaction({
-            to: accountContract.address,
-            value: parseEther('1000000000000'),
-          });
+          // const signer = provider.getSigner();
+          // await signer.sendTransaction({
+          //   to: accountContract.address,
+          //   value: parseEther('1000000000000'),
+          // });
 
           const chainId = await provider
             .getNetwork()
@@ -851,6 +852,7 @@ class ProviderController extends BaseController {
               // chrome.notifications;
               const conTractAddr = value.args[0] || '';
               const copyText = () => {
+                alert('Copy to clipboard');
                 const textarea = document.createElement('textarea');
                 textarea.value = conTractAddr;
                 document.body.appendChild(textarea);
@@ -858,6 +860,14 @@ class ProviderController extends BaseController {
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
               };
+              chrome.notifications.onButtonClicked.addListener(function (
+                notifId,
+                btnIdx
+              ) {
+                if (btnIdx === 0) {
+                  copyText();
+                }
+              });
 
               chrome.notifications.create({
                 type: 'basic',
@@ -899,18 +909,8 @@ class ProviderController extends BaseController {
             if (isErc20Token) {
               console.log('erc20: come encode tx', decimalVal);
 
-              const accountContract = await accountAPI._getAccountContract();
               const erc20 = new Contract(txData.to, ERC20_ABI, aaProvider);
 
-              const erc20Admin = new ethers.Contract(
-                txData.to,
-                ERC20_ABI,
-                sender
-              );
-
-              const ercBalanceAcc = await erc20Admin.balanceOf(
-                currentAcc?.address
-              );
               const transfer = erc20.interface.encodeFunctionData('transfer', [
                 txParams.userTo,
                 decimalVal,
@@ -927,11 +927,13 @@ class ProviderController extends BaseController {
               );
               hash = transactionHash as string;
             } else {
+              console.log('come native decimal', decimalVal, txParams.value);
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
                 data: '0x',
-                value: decimalVal,
+                value: parseEther('1'),
               });
+              console.log('op', op);
               const userOpHash = await clientRpc.sendUserOpToBundler(op);
               const transactionHash = await accountAPI.getUserOpReceipt(
                 userOpHash

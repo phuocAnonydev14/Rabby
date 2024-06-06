@@ -1,15 +1,20 @@
 import { useCommonPopupView } from '@/ui/utils';
-import { Button } from 'antd';
+import { Button, Typography } from 'antd';
 import React from 'react';
 import { useInterval } from 'react-use';
 
 export interface Props {
   onDone: () => void;
   hide?: boolean;
+  deployerAddress?: string;
 }
 
-export const FooterDoneButton: React.FC<Props> = ({ onDone, hide }) => {
-  const [counter, setCounter] = React.useState(0.5);
+export const FooterDoneButton: React.FC<Props> = ({
+  onDone,
+  hide,
+  deployerAddress,
+}) => {
+  const [counter, setCounter] = React.useState(4);
   const { visible } = useCommonPopupView();
 
   useInterval(() => {
@@ -24,7 +29,7 @@ export const FooterDoneButton: React.FC<Props> = ({ onDone, hide }) => {
 
   React.useEffect(() => {
     if (!visible) {
-      onDone();
+      // onDone();
     }
   }, [visible]);
 

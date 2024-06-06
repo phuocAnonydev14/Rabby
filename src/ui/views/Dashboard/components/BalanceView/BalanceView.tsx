@@ -97,6 +97,7 @@ const BalanceView = ({
   const [curvePoint, setCurvePoint] = useState<CurvePoint>();
   const [isDebounceHover, setIsDebounceHover] = useState(false);
   const [accountDeployed, setAccountDeployed] = useState('');
+  const [isCheckingDeploy, setIsCheckingDeploy] = useState(true);
 
   const {
     balance,
@@ -151,6 +152,7 @@ const BalanceView = ({
   useEffect(() => {
     const handleCheckDeployed = async () => {
       try {
+        setIsCheckingDeploy(true);
         const isDeployed = await wallet.checkIsDeployedAccountContract();
         if (isDeployed) {
           const accountContract = await wallet.getAccountContract();
@@ -158,6 +160,8 @@ const BalanceView = ({
         }
       } catch (e) {
         console.log({ e });
+      } finally {
+        setIsCheckingDeploy(false);
       }
     };
 
@@ -330,9 +334,9 @@ const BalanceView = ({
   const couldShowLoadingDueToUpdateSource =
     !currentHomeBalanceCache?.balance || isManualRefreshing;
 
-  const shouldShowBalanceLoading =
-    couldShowLoadingDueToBalanceNil ||
-    (couldShowLoadingDueToUpdateSource && balanceLoading);
+  const { conlaLoading } = useRabbySelector((state) => state.customRPC);
+
+  const shouldShowBalanceLoading = balanceLoading || conlaLoading;
   const shouldShowCurveLoading =
     couldShowLoadingDueToBalanceNil ||
     (couldShowLoadingDueToUpdateSource && curveLoading);
@@ -416,34 +420,34 @@ const BalanceView = ({
           </div>
         </div>
         <div>
-          {conlaAcc &&
-            (!accountDeployed ? (
-              <div className="flex gap-4 items-center">
-                <span style={{ color: 'rgba(229,228,228,0.83)' }}>
-                  Account not deployed
-                </span>
-                <Button
-                  onClick={() => wallet.deployAccountContract()}
-                  type={'ghost'}
-                  size={'small'}
-                  className="text-white"
+          {conlaAcc && accountDeployed && (
+            <>
+              <span>
+                <strong>Account contract: </strong>{' '}
+                <Typography.Paragraph
+                  style={{ color: '#fff' }}
+                  copyable={{ text: accountDeployed }}
                 >
-                  Deploy
-                </Button>
-              </div>
-            ) : (
-              <>
-                <span>
-                  <strong>Account contract: </strong>{' '}
-                  <Typography.Paragraph
-                    style={{ color: '#fff' }}
-                    copyable={{ text: accountDeployed }}
-                  >
-                    {accountDeployed}
-                  </Typography.Paragraph>
-                </span>
-              </>
-            ))}
+                  {accountDeployed}
+                </Typography.Paragraph>
+              </span>
+            </>
+          )}
+          {!isCheckingDeploy && !accountDeployed && (
+            <div className="flex gap-4 items-center">
+              <span style={{ color: 'rgba(229,228,228,0.83)' }}>
+                Account not deployed
+              </span>
+              <Button
+                onClick={() => wallet.deployAccountContract()}
+                type={'ghost'}
+                size={'small'}
+                className="text-white"
+              >
+                Deploy
+              </Button>
+            </div>
+          )}
         </div>
         {/*<div*/}
         {/*  onClick={onClickViewAssets}*/}

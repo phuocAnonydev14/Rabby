@@ -23,7 +23,6 @@ export default function SwitchAccount(props: SwitchAccountProps) {
   const accountAddr = useRabbySelector(
     (state) => state.account.currentAccount?.address
   );
-  const { refreshBalance } = useCurrentBalance(accountAddr);
   const currentAccount = useRabbySelector(
     (state) => state.account.currentAccount
   );
@@ -44,6 +43,7 @@ export default function SwitchAccount(props: SwitchAccountProps) {
       store.dispatch.customRPC.setConlaAcc(
         isAccountContract ? accountContract : ''
       );
+      store.dispatch.customRPC.setConlaLoading(true);
       message.success('Switch account successfully');
       onClose();
     } catch (err) {

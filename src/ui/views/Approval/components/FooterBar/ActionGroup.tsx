@@ -12,6 +12,8 @@ import { ImKeyProcessActions } from './ImKeyProcessActions';
 export const ActionGroup: React.FC<Props> = (props) => {
   const { account } = props;
 
+  console.log('account in action group', account);
+
   if (
     account.type === KEYRING_CLASS.PRIVATE_KEY ||
     account.type === KEYRING_CLASS.MNEMONIC ||

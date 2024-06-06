@@ -110,7 +110,12 @@ import {
   SimpleAccountFactory__factory,
 } from 'account-abstraction-anony-utils';
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { CONLA_RPC, bundlerUrl, entryPointAddr } from '@/utils/const';
+import {
+  CONLA_RPC,
+  bundlerUrl,
+  entryPointAddr,
+  rabbyNetworkName,
+} from '@/utils/const';
 import {
   PaymasterAPI,
   SimpleAccountAPI,
@@ -305,9 +310,7 @@ export class WalletController extends BaseController {
   };
 
   seedAccountContract = async () => {
-    const paymaster = '0x01711D53eC9f165f3242627019c41CcA7028e7A5';
     const rpcUrl = CONLA_RPC;
-    const bundlerUrl = 'http://localhost:3000/rpc';
 
     const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
 
@@ -720,26 +723,33 @@ export class WalletController extends BaseController {
   };
 
   approveTokenCustom = async () => {
-    const provider = new ethers.providers.JsonRpcProvider(
-      'http://localhost:8545'
-    );
-    const currentAcc = await wallet.getCurrentAccount();
-    const currentKeyRing = await keyringService.getKeyringForAccount(
-      currentAcc?.address || ''
-    );
-    // create instance wallet
-    const sender = new ethers.Wallet(
-      currentKeyRing?.wallets[0]?.privateKey || '',
-      provider
-    );
-    // seed fund
-    const signer = provider.getSigner();
-    console.log({ signer });
-    await signer.sendTransaction({
-      to: await sender.getAddress(),
-      value: parseEther('100'),
-    });
-    await this.seedAccountContract();
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(CONLA_RPC);
+      const currentAcc = await wallet.getCurrentAccount();
+      const currentKeyRing = await keyringService.getKeyringForAccount(
+        currentAcc?.address || ''
+      );
+      // create instance wallet
+      const sender = new ethers.Wallet(
+        currentKeyRing?.wallets[0]?.privateKey || '',
+        provider
+      );
+
+      console.log('sender address', await sender.getAddress());
+      // seed fund
+      const signer = provider.getSigner();
+      console.log({ signer });
+      // await signer.sendTransaction({
+      //   to: await sender.getAddress(),
+      //   value: parseEther('100'),
+      // });
+      const balance = await provider.getBalance(await signer.getAddress());
+      console.log('balance', balance.toString());
+
+      // await this.seedAccountContract();
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   getCurrentWallet = async () => {
@@ -852,8 +862,14 @@ export class WalletController extends BaseController {
 
     const accountContract = await this.getAccountContract();
 
-    if (!tokenAddr || tokenAddr === 'eth' || tokenAddr === 'custom_1337') {
-      return provider.getBalance(accountContract.address);
+    if (
+      !tokenAddr ||
+      tokenAddr === 'eth' ||
+      tokenAddr === rabbyNetworkName.toLowerCase()
+    ) {
+      const balance = await provider.getBalance(accountContract.address);
+      console.log('balance', balance);
+      return balance;
     }
     // check balance erc20 contract
     const erc20Contract = new ethers.Contract(tokenAddr, ERC20ABI, provider);
