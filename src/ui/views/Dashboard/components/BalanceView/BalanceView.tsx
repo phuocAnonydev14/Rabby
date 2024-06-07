@@ -337,10 +337,12 @@ const BalanceView = ({
   const { conlaLoading } = useRabbySelector((state) => state.customRPC);
 
   const shouldShowBalanceLoading = balanceLoading || conlaLoading;
+
+  console.log('loading state', currentBalance, balanceLoading, conlaLoading);
   const shouldShowCurveLoading =
     couldShowLoadingDueToBalanceNil ||
     (couldShowLoadingDueToUpdateSource && curveLoading);
-  const shouldShowLoading = shouldShowBalanceLoading || shouldShowCurveLoading;
+  const shouldShowLoading = shouldShowBalanceLoading;
   const shouldHidePercentChange =
     !currentChangePercent ||
     hiddenBalance ||
@@ -352,6 +354,7 @@ const BalanceView = ({
 
   useEffect(() => {
     (async () => {
+      store.dispatch.customRPC.setConlaLoading(true);
       const currentAccountContract = localStorage.getItem('conlaAccount');
       if (currentAccountContract) {
         store.dispatch.customRPC.setConlaAcc(currentAccountContract);

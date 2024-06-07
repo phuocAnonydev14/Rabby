@@ -735,16 +735,13 @@ export class WalletController extends BaseController {
         provider
       );
 
-      console.log('sender address', await sender.getAddress());
       // seed fund
       const signer = provider.getSigner();
-      console.log({ signer });
       // await signer.sendTransaction({
       //   to: await sender.getAddress(),
       //   value: parseEther('100'),
       // });
       const balance = await provider.getBalance(await signer.getAddress());
-      console.log('balance', balance.toString());
 
       // await this.seedAccountContract();
     } catch (e) {

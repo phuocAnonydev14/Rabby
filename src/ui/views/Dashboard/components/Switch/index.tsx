@@ -2,7 +2,6 @@ import { Field, Popup } from '@/ui/component';
 import store, { useRabbySelector } from '@/ui/store';
 import { Button, message } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import './style.less';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import IconSettingsRabbyBadge from 'ui/assets/badge/rabby-badge-s.svg';
@@ -10,8 +9,6 @@ import { ReactComponent as RcIconArrowBlueRight } from 'ui/assets/dashboard/sett
 import { ReactComponent as RcIconArrowOrangeRight } from 'ui/assets/dashboard/settings/icon-right-arrow-orange.svg';
 import { useWallet } from '@/ui/utils';
 import useConlaAccount from '@/ui/hooks/useConlaAccount';
-import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
-import { theme } from 'webextension-polyfill';
 
 interface SwitchAccountProps {
   visible: boolean;
@@ -21,9 +18,6 @@ interface SwitchAccountProps {
 export default function SwitchAccount(props: SwitchAccountProps) {
   const { onClose, visible } = props;
   const [accountContract, setAccountContract] = useState('');
-  const accountAddr = useRabbySelector(
-    (state) => state.account.currentAccount?.address
-  );
   const currentAccount = useRabbySelector(
     (state) => state.account.currentAccount
   );

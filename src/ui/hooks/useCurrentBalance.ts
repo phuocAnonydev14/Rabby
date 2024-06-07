@@ -32,7 +32,7 @@ export default function useCurrentBalance(
   const wallet = useWallet();
   const [balance, setBalance] = useState<number | null>(null);
   const [success, setSuccess] = useState(true);
-  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(true);
   const [balanceFromCache, setBalanceFromCache] = useState(
     initBalanceFromLocalCache
   );
@@ -143,12 +143,11 @@ export default function useCurrentBalance(
     (async () => {
       try {
         let conlaBalance: string;
-        console.log('conlaAccount', conlaAcc);
-        if (conlaAcc) {
+        const conlaStorage = localStorage.getItem('conlaAccount');
+        if (conlaStorage) {
           const balanceAccountContract = await wallet.getAccountContractBalance();
           conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
         } else conlaBalance = await wallet.getConchaBalance(account as string);
-        console.log('conlaBalance', conlaBalance, conlaAcc);
         setBalance(+conlaBalance);
         setBalanceLoading(false);
         store.dispatch.customRPC.setConlaLoading(false);
