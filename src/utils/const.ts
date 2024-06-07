@@ -4,7 +4,7 @@ const CONLA = {
   id: 11118,
   name: 'Conla',
   rpcUrl: CONLA_RPC,
-  nativeTokenSymbol: 'ETH',
+  nativeTokenSymbol: 'BTC',
   logo_url: 'https://i.imgur.com/OZGdsJ8.png',
   logo: 'https://i.imgur.com/OZGdsJ8.png',
 };

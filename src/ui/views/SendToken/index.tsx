@@ -405,9 +405,6 @@ const SendToken = () => {
 
   const { conlaAcc } = useRabbySelector((state) => state.customRPC);
 
-  console.log('conla account', conlaAcc);
-  console.log('current token', currentToken);
-
   const handleGetAccountContractBalance = async (tokenId: string) => {
     try {
       const contractBalance = await wallet.getAccountContractBalance(tokenId);

@@ -12,7 +12,7 @@ import { useCommonPopupView, useWallet } from 'ui/utils';
 import { KEYRING_TYPE } from 'consts';
 import { SvgIconOffline } from '@/ui/assets';
 import clsx from 'clsx';
-import { Button, Skeleton, Typography } from 'antd';
+import { Button, Skeleton, Typography, message } from 'antd';
 import { Chain } from '@debank/common';
 import { ChainList } from './ChainList';
 import { formChartData, useCurve } from './useCurve';
@@ -98,7 +98,7 @@ const BalanceView = ({
   const [isDebounceHover, setIsDebounceHover] = useState(false);
   const [accountDeployed, setAccountDeployed] = useState('');
   const [isCheckingDeploy, setIsCheckingDeploy] = useState(true);
-
+  const [isDeploying, setIsDeploying] = useState(false);
   const {
     balance,
     curveChartData,
@@ -359,6 +359,20 @@ const BalanceView = ({
     })();
   }, []);
 
+  const handleDeployContract = async () => {
+    try {
+      setIsDeploying(true);
+      await wallet.deployAccountContract();
+      await refreshBalance();
+      message.success('Deploy success');
+    } catch (e) {
+      console.log(e);
+      message.error('Deploy failed');
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   return (
     <div onMouseLeave={onMouseLeave} className={clsx('assets flex')}>
       <div className="left relative overflow-x-hidden mx-10">
@@ -439,7 +453,8 @@ const BalanceView = ({
                 Account not deployed
               </span>
               <Button
-                onClick={() => wallet.deployAccountContract()}
+                loading={isDeploying}
+                onClick={handleDeployContract}
                 type={'ghost'}
                 size={'small'}
                 className="text-white"

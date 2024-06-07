@@ -11,6 +11,7 @@ import { ReactComponent as RcIconArrowOrangeRight } from 'ui/assets/dashboard/se
 import { useWallet } from '@/ui/utils';
 import useConlaAccount from '@/ui/hooks/useConlaAccount';
 import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
+import { theme } from 'webextension-polyfill';
 
 interface SwitchAccountProps {
   visible: boolean;
@@ -76,7 +77,7 @@ export default function SwitchAccount(props: SwitchAccountProps) {
                 />
               }
               onClick={() => handleSwitch(false)}
-              className={`text-blue-light font-medium mb-2 ${
+              className={`text-blue-light font-medium mb-4 ${
                 !conlaAccount && 'bg-r-blue-light-1'
               }`}
             >
