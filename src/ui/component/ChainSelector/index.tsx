@@ -9,6 +9,7 @@ import './style.less';
 import clsx from 'clsx';
 import { findChainByEnum } from '@/utils/chain';
 import { ChainSelectorPurpose } from '@/ui/hooks/useChain';
+import { rabbyNetworkName } from '@/utils/const';
 
 interface ChainSelectorProps {
   value: CHAINS_ENUM;
@@ -59,6 +60,10 @@ const ChainSelector = ({
   };
 
   useEffect(() => {
+    setTimeout(() => onChange(rabbyNetworkName), 1000);
+  }, []);
+
+  useEffect(() => {
     getCustomRPC();
   }, [value]);
 
@@ -82,7 +87,7 @@ const ChainSelector = ({
         </span>
         <ArrowDownSVG className={clsx('icon')} />
       </div>
-      <ChainSelectorModal
+      {/* <ChainSelectorModal
         title={title}
         value={value}
         visible={showSelectorModal}
@@ -91,7 +96,7 @@ const ChainSelector = ({
         connection={connection}
         showRPCStatus={showRPCStatus}
         height={modalHeight}
-      />
+      /> */}
     </>
   );
 };

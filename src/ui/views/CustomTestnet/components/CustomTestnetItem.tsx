@@ -6,12 +6,10 @@ import styled from 'styled-components';
 import { ReactComponent as RcIconEdit } from '@/ui/assets/custom-testnet/icon-edit.svg';
 import { ReactComponent as RcIconDelete } from '@/ui/assets/custom-testnet/cc-delete.svg';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
-import {
-  TestnetChain,
-  TestnetChainBase,
-} from '@/background/service/customTestnet';
+import { TestnetChain } from '@/background/service/customTestnet';
 import { TestnetChainLogo } from '@/ui/component/TestnetChainLogo';
 import { useTranslation } from 'react-i18next';
+import { CONLA } from '@/utils/const';
 
 export const CustomTestnetItem = ({
   className,
@@ -74,11 +72,13 @@ export const CustomTestnetItem = ({
             }}
           ></ThemeIcon>
           <div className="cursor-pointer text-r-red-default">
-            <RcIconDelete
-              onClick={() => {
-                onRemove?.(item);
-              }}
-            />
+            {item.id !== CONLA.id && (
+              <RcIconDelete
+                onClick={() => {
+                  onRemove?.(item);
+                }}
+              />
+            )}
           </div>
         </div>
       ) : null}

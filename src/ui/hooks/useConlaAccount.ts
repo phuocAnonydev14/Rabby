@@ -12,7 +12,7 @@ export default function useConlaAccount() {
 
   const handleChangeConlaAccount = (address?: string) => {
     if (!address) {
-      localStorage.removeItem('conlaAccount');
+      localStorage.setItem('conlaAccount', '');
       setConlaAccount('');
     } else {
       localStorage.setItem('conlaAccount', address);

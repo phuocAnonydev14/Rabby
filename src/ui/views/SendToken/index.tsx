@@ -21,7 +21,11 @@ import {
   ARB_LIKE_L2_CHAINS,
   L2_ENUMS,
 } from 'consts';
-import { useRabbyDispatch, useRabbySelector, connectStore } from 'ui/store';
+import store, {
+  useRabbyDispatch,
+  useRabbySelector,
+  connectStore,
+} from 'ui/store';
 import { Account, ChainGas } from 'background/service/preference';
 import { isSameAddress, useWallet } from 'ui/utils';
 import { query2obj } from 'ui/utils/url';
@@ -309,12 +313,12 @@ const SendToken = () => {
     null
   );
   const [currentToken, setCurrentToken] = useState<TokenItem>({
-    id: 'eth',
+    id: rabbyNetworkName,
     chain: rabbyNetworkName,
-    name: 'ETH',
-    symbol: 'BSC',
+    name: 'BTC',
+    symbol: 'BTC',
     display_symbol: null,
-    optimized_symbol: 'ETH',
+    optimized_symbol: 'BTC',
     decimals: 18,
     logo_url: conlaLogo,
     price: 0,
@@ -376,7 +380,6 @@ const SendToken = () => {
     Record<string, { list: GasLevel[]; expireAt: number }>
   >({});
   const [isGnosisSafe, setIsGnosisSafe] = useState(false);
-  const [conlaBalance, setConlaBalance] = useState('');
 
   const { whitelist, whitelistEnabled } = useRabbySelector((s) => ({
     whitelist: s.whitelist.whitelist,
@@ -807,6 +810,18 @@ const SendToken = () => {
       setContactInfo(null);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      const currentAccountContract = localStorage.getItem('conlaAccount');
+      console.log('currentAccountContract', currentAccountContract);
+
+      if (currentAccountContract) {
+        store.dispatch.customRPC.setConlaAcc(currentAccountContract);
+      }
+    })();
+  }, []);
+  console.log('account contract', conlaAcc);
 
   const handleCurrentTokenChange = async (token: TokenItem) => {
     if (showGasReserved) {
@@ -1241,23 +1256,12 @@ const SendToken = () => {
   }, []);
 
   useEffect(() => {
-    handleChainChanged(rabbyNetworkName);
+    handleChainChanged(rabbyNetworkName as any);
     if (currentAccount) {
       getAlianName();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAccount]);
-
-  useEffect(() => {
-    const handleGetBalance = async () => {
-      try {
-        const balance = await wallet.getAccountContractBalance();
-        setConlaBalance(balance.hex as any);
-      } catch (e) {}
-    };
-
-    handleGetBalance().then();
-  }, []);
 
   return (
     <div className="send-token">

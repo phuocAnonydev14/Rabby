@@ -14,6 +14,7 @@ import { getOriginFromUrl } from '@/utils';
 import IconMetamaskBadge from 'ui/assets/dashboard/icon-metamask-badge.svg';
 import { useRequest } from 'ahooks';
 import { matomoRequestEvent } from '@/utils/matomo-request';
+import { rabbyNetworkName } from '@/utils/const';
 
 interface CurrentConnectionProps {
   onChainChange?: (chain: CHAINS_ENUM) => void;
@@ -63,9 +64,9 @@ export const CurrentConnection = memo((props: CurrentConnectionProps) => {
       ...site!,
       chain,
     };
+    console.log(chain);
     setSite(_site);
     setVisible(false);
-    onChainChange?.(chain);
     await wallet.setSite(_site);
     const rpc = await wallet.getCustomRpcByChain(chain);
     if (rpc) {
