@@ -841,6 +841,11 @@ class ProviderController extends BaseController {
             config,
             sender
           )) as any;
+          const entryPoint = IEntryPoint__factory.connect(
+            entryPointAddr,
+            sender
+          );
+          const gasPrice = await provider.getGasPrice();
 
           if (!txData.to) {
             // handle deploy contract
@@ -899,14 +904,22 @@ class ProviderController extends BaseController {
               target: proxyFactory,
               data: transfer,
               value: 0,
+              maxFeePerGas: gasPrice,
+              maxPriorityFeePerGas: gasPrice,
             });
 
-            const userOpHash = await clientRpc.sendUserOpToBundler(op);
-            const transactionHash = await accountAPI.getUserOpReceipt(
-              userOpHash
+            const packedUserOp = packUserOp(op);
+            const transactionHash = await entryPoint.handleOps(
+              [packedUserOp],
+              beneficiary
             );
-            console.log(`Transaction hash: ${transactionHash}`);
-            hash = transactionHash as string;
+
+            // const userOpHash = await clientRpc.sendUserOpToBundler(op);
+            // const transactionHash = await accountAPI.getUserOpReceipt(
+            //   userOpHash
+            // );
+            // console.log(`Transaction hash: ${transactionHash}`);
+            hash = transactionHash.hash as string;
           } else {
             const isErc20Token = await isErc20(txData.to);
             if (isErc20Token) {
@@ -923,15 +936,20 @@ class ProviderController extends BaseController {
                 target: txParams.to,
                 data: transfer,
                 value: 0,
+                maxFeePerGas: gasPrice,
+                maxPriorityFeePerGas: gasPrice,
               });
-              const userOpHash = await clientRpc.sendUserOpToBundler(op);
-              const transactionHash = await accountAPI.getUserOpReceipt(
-                userOpHash
+              // const userOpHash = await clientRpc.sendUserOpToBundler(op);
+              // const transactionHash = await accountAPI.getUserOpReceipt(
+              //   userOpHash
+              // );
+              const packedUserOp = packUserOp(op);
+              const transactionHash = await entryPoint.handleOps(
+                [packedUserOp],
+                beneficiary
               );
-              hash = transactionHash as string;
+              hash = transactionHash.hash as string;
             } else {
-              const gasPrice = await provider.getGasPrice();
-
               console.log('come native decimal', decimalVal, txParams.value);
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
@@ -941,11 +959,8 @@ class ProviderController extends BaseController {
                 maxPriorityFeePerGas: gasPrice,
               });
               console.log('op', op);
-              const entryPoint = IEntryPoint__factory.connect(
-                entryPointAddr,
-                sender
-              );
-              const packedUserOp = await packUserOp(op);
+
+              const packedUserOp = packUserOp(op);
               const transactionHash = await entryPoint.handleOps(
                 [packedUserOp],
                 beneficiary
