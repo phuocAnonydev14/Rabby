@@ -60,7 +60,7 @@ const ChainSelector = ({
   };
 
   useEffect(() => {
-    setTimeout(() => onChange(rabbyNetworkName), 1000);
+    // setTimeout(() => onChange(rabbyNetworkName as any), 2000);
   }, []);
 
   useEffect(() => {

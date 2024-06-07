@@ -4,6 +4,7 @@ import { useWallet } from 'ui/utils';
 import { useEffect } from 'react';
 import React from 'react';
 import { CONLA } from '@/utils/const';
+import { useRabbySelector } from 'ui/store';
 
 export const ConlaCustom = () => {
   const wallet = useWallet();

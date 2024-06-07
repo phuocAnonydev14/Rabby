@@ -65,6 +65,8 @@ import {
 } from 'account-abstraction-anony-sdk';
 import {
   DeterministicDeployer,
+  IEntryPoint__factory,
+  packUserOp,
   SimpleAccountFactory__factory,
 } from 'account-abstraction-anony-utils';
 // // import { customTestnetService } from '@/background/service/customTestnet';
@@ -78,6 +80,7 @@ import {
   bundlerUrl,
   entryPointAddr,
   proxyFactory,
+  beneficiary,
 } from '@/utils/const';
 
 const reportSignText = (params: {
@@ -927,19 +930,28 @@ class ProviderController extends BaseController {
               );
               hash = transactionHash as string;
             } else {
+              const gasPrice = await provider.getGasPrice();
+
               console.log('come native decimal', decimalVal, txParams.value);
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
                 data: '0x',
                 value: parseEther('1'),
+                maxFeePerGas: gasPrice,
+                maxPriorityFeePerGas: gasPrice,
               });
               console.log('op', op);
-              const userOpHash = await clientRpc.sendUserOpToBundler(op);
-              const transactionHash = await accountAPI.getUserOpReceipt(
-                userOpHash
+              const entryPoint = IEntryPoint__factory.connect(
+                entryPointAddr,
+                sender
+              );
+              const packedUserOp = await packUserOp(op);
+              const transactionHash = await entryPoint.handleOps(
+                [packedUserOp],
+                beneficiary
               );
 
-              hash = transactionHash as string;
+              hash = transactionHash.hash;
             }
           }
         }
