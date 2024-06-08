@@ -84,7 +84,7 @@ import { ProviderRequest } from './provider/type';
 import { QuoteResult } from '@rabby-wallet/rabby-swap/dist/quote';
 import transactionWatcher from '../service/transactionWatcher';
 import Safe from '@rabby-wallet/gnosis-sdk';
-import { Chain } from '@debank/common';
+import { Chain, CHAINS_ENUM } from '@debank/common';
 import { isAddress } from 'web3-utils';
 import { findChain, findChainByEnum, getChainList } from '@/utils/chain';
 import { cached } from '../utils/cache';
@@ -111,16 +111,12 @@ import {
 } from 'account-abstraction-anony-utils';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import {
-  CONLA_RPC,
   bundlerUrl,
+  CONLA_RPC,
   entryPointAddr,
   rabbyNetworkName,
 } from '@/utils/const';
-import {
-  PaymasterAPI,
-  SimpleAccountAPI,
-  wrapProvider,
-} from 'account-abstraction-anony-sdk';
+import { PaymasterAPI, SimpleAccountAPI } from 'account-abstraction-anony-sdk';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -807,11 +803,11 @@ export class WalletController extends BaseController {
     return accountContract;
   };
 
-  checkIsDeployedAccountContract = async () => {
+  checkIsDeployedFactory = async () => {
     const provider = new JsonRpcProvider(CONLA_RPC);
-    const wallet = await this.getCurrentWallet();
+    const sender = await this.getCurrentWallet();
 
-    const dep = new DeterministicDeployer(provider, wallet);
+    const dep = new DeterministicDeployer(provider, sender);
 
     const factoryAddress = DeterministicDeployer.getAddress(
       new SimpleAccountFactory__factory(),
@@ -819,11 +815,61 @@ export class WalletController extends BaseController {
       [entryPointAddr]
     );
     const isDeployed = await dep.isContractDeployed(factoryAddress);
-
     return isDeployed ? factoryAddress : '';
   };
 
+  checkIsDeployedAccountContract = async () => {
+    const provider = new JsonRpcProvider(CONLA_RPC);
+    const sender = await this.getCurrentWallet();
+
+    // const dep = new DeterministicDeployer(provider, wallet);
+    //
+    // const factoryAddress = DeterministicDeployer.getAddress(
+    //   new SimpleAccountFactory__factory(),
+    //   0,
+    //   [entryPointAddr]
+    // );
+    // const isDeployed = await dep.isContractDeployed(factoryAddress);
+    // return isDeployed ? factoryAddress : '';
+
+    await this.deployFactory();
+
+    const factoryAddress = DeterministicDeployer.getAddress(
+      new SimpleAccountFactory__factory(),
+      0,
+      [entryPointAddr]
+    );
+
+    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+
+    const accountAPI = new SimpleAccountAPI({
+      provider,
+      entryPointAddress: entryPointAddr,
+      owner: sender,
+      factoryAddress,
+      paymasterAPI,
+    });
+
+    const isDeployed = await accountAPI.checkAccountPhantom();
+    return isDeployed;
+  };
+
   deployAccountContract = async () => {
+    const sender = await this.getCurrentWallet();
+    const factoryAddress = DeterministicDeployer.getAddress(
+      new SimpleAccountFactory__factory(),
+      0,
+      [entryPointAddr]
+    );
+    const accountFactory = new SimpleAccountFactory__factory(sender).attach(
+      factoryAddress
+    );
+    await accountFactory.createAccount(sender.address, 0);
+  };
+
+  deployFactory = async () => {
+    const isDeployedFactory = await this.checkIsDeployedFactory();
+    if (isDeployedFactory) return;
     const wallet = await this.getCurrentWallet();
     const provider = new JsonRpcProvider(CONLA_RPC);
 
@@ -1518,7 +1564,7 @@ export class WalletController extends BaseController {
       origin,
       name: name!,
       icon: icon!,
-      chain: CHAINS_ENUM.ETH,
+      chain: CHAINS_ENUM[rabbyNetworkName],
       isConnected: false,
       isSigned: false,
       isTop: false,

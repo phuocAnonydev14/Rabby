@@ -60,10 +60,6 @@ const ChainSelector = ({
   };
 
   useEffect(() => {
-    // setTimeout(() => onChange(rabbyNetworkName as any), 2000);
-  }, []);
-
-  useEffect(() => {
     getCustomRPC();
   }, [value]);
 
@@ -83,7 +79,8 @@ const ChainSelector = ({
           />
         </div>
         <span className="flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis">
-          {findChainByEnum(value)?.name}
+          {/*{findChainByEnum(value)?.name}*/}
+          Conla
         </span>
         <ArrowDownSVG className={clsx('icon')} />
       </div>

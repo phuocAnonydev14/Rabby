@@ -60,20 +60,24 @@ export const CurrentConnection = memo((props: CurrentConnectionProps) => {
   };
 
   const handleChangeDefaultChain = async (chain: CHAINS_ENUM) => {
-    const _site = {
-      ...site!,
-      chain,
-    };
-    console.log(chain);
-    setSite(_site);
-    setVisible(false);
-    await wallet.setSite(_site);
-    const rpc = await wallet.getCustomRpcByChain(chain);
-    if (rpc) {
-      const avaliable = await wallet.pingCustomRPC(chain);
-      if (!avaliable) {
-        message.error(t('page.dashboard.recentConnection.rpcUnavailable'));
+    try {
+      const _site = {
+        ...site!,
+        chain,
+      };
+      console.log('chain', chain);
+      setSite(_site);
+      setVisible(false);
+      await wallet.setSite(_site);
+      const rpc = await wallet.getCustomRpcByChain(chain);
+      if (rpc) {
+        const avaliable = await wallet.pingCustomRPC(chain);
+        if (!avaliable) {
+          message.error(t('page.dashboard.recentConnection.rpcUnavailable'));
+        }
       }
+    } catch (e) {
+      console.log('error', e);
     }
   };
 
