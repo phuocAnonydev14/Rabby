@@ -64,7 +64,10 @@
     "alarms",
     "activeTab",
     "notifications",
-    "offscreen"
+    "offscreen",
+    "contextMenus",
+    "activeTab",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "<all_urls>"

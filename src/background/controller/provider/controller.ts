@@ -855,45 +855,45 @@ class ProviderController extends BaseController {
               aaProvider
             );
 
-            proxyContract.on('ProxyCreated', (from, value) => {
-              console.log(`Event received: from ${from}, value`, value);
-              // chrome.notifications;
-              const conTractAddr = value.args[0] || '';
-              const copyText = () => {
-                alert('Copy to clipboard');
-                const textarea = document.createElement('textarea');
-                textarea.value = conTractAddr;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-              };
-              chrome.notifications.onButtonClicked.addListener(function (
-                notifId,
-                btnIdx
-              ) {
-                if (btnIdx === 0) {
-                  copyText();
-                }
-              });
-
-              chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'https://i.imgur.com/OZGdsJ8.png',
-                title: 'Contract deployed successfully',
-                message: 'Contract address: ' + conTractAddr,
-                priority: 1,
-                buttons: [{ title: 'Copy address' }],
-              });
-              onTransactionCreated({
-                hash: value.transactionHash,
-                reqId,
-                pushType,
-              });
-              notificationService.setStatsData(statsData);
-              const tx = provider.getTransaction(value.transactionHash);
-              console.log({ tx });
-            });
+            // proxyContract.on('ProxyCreated', (from, value) => {
+            //   console.log(`Event received: from ${from}, value`, value);
+            //   // chrome.notifications;
+            //   const conTractAddr = value.args[0] || '';
+            //   const copyText = () => {
+            //     alert('Copy to clipboard');
+            //     const textarea = document.createElement('textarea');
+            //     textarea.value = conTractAddr;
+            //     document.body.appendChild(textarea);
+            //     textarea.select();
+            //     document.execCommand('copy');
+            //     document.body.removeChild(textarea);
+            //   };
+            //   chrome.notifications.onButtonClicked.addListener(function (
+            //     notifId,
+            //     btnIdx
+            //   ) {
+            //     if (btnIdx === 0) {
+            //       copyText();
+            //     }
+            //   });
+            //
+            //   chrome.notifications.create({
+            //     type: 'basic',
+            //     iconUrl: 'https://i.imgur.com/OZGdsJ8.png',
+            //     title: 'Contract deployed successfully',
+            //     message: 'Contract address: ' + conTractAddr,
+            //     priority: 1,
+            //     buttons: [{ title: 'Copy address' }],
+            //   });
+            //   onTransactionCreated({
+            //     hash: value.transactionHash,
+            //     reqId,
+            //     pushType,
+            //   });
+            //   notificationService.setStatsData(statsData);
+            //   const tx = provider.getTransaction(value.transactionHash);
+            //   console.log({ tx });
+            // });
 
             const transfer = proxyContract.interface.encodeFunctionData(
               'createProxy',
@@ -954,13 +954,17 @@ class ProviderController extends BaseController {
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
                 data: '0x',
-                value: parseEther('1'),
+                value: decimalVal,
                 maxFeePerGas: gasPrice,
                 maxPriorityFeePerGas: gasPrice,
               });
               console.log('op', op);
+              const addr = (await accountAPI._getAccountContract()).address;
+              console.log(addr);
+              console.log(await provider.getBalance(addr));
 
               const packedUserOp = packUserOp(op);
+              console.log({ packedUserOp });
               const transactionHash = await entryPoint.handleOps(
                 [packedUserOp],
                 beneficiary

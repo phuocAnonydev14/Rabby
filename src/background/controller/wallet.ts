@@ -850,8 +850,8 @@ export class WalletController extends BaseController {
       paymasterAPI,
     });
 
-    const isDeployed = await accountAPI.checkAccountPhantom();
-    return isDeployed;
+    const isNotDeployed = await accountAPI.checkAccountPhantom();
+    return isNotDeployed;
   };
 
   deployAccountContract = async () => {
@@ -908,7 +908,7 @@ export class WalletController extends BaseController {
     if (
       !tokenAddr ||
       tokenAddr === 'eth' ||
-      tokenAddr === rabbyNetworkName.toLowerCase()
+      tokenAddr.toLowerCase() === rabbyNetworkName.toLowerCase()
     ) {
       const balance = await provider.getBalance(accountContract.address);
       console.log('balance', balance);

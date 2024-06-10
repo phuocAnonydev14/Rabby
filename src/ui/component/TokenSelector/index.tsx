@@ -21,7 +21,7 @@ import { isNil } from 'lodash';
 import ThemeIcon from '../ThemeMode/ThemeIcon';
 import { useWallet } from 'ui/utils';
 import { useRabbySelector } from 'ui/store';
-import { CONLA } from '@/utils/const';
+import { CONLA, rabbyNetworkName } from '@/utils/const';
 import { ethers } from 'ethers';
 
 export const isSwapTokenType = (s: string) =>
@@ -71,6 +71,7 @@ const TokenSelector = ({
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [isInputActive, setIsInputActive] = useState(false);
+  const [displayList, setDisplayList] = useState<TokenItem[]>([]);
 
   const { chainItem, chainSearchCtx, isTestnet } = useMemo(() => {
     const chain = !chainServerId
@@ -91,15 +92,60 @@ const TokenSelector = ({
     (state) => state.account.currentAccount
   );
 
+  useEffect(() => {
+    setDisplayList((state) => [
+      ...state,
+      {
+        id: rabbyNetworkName,
+        chain: rabbyNetworkName,
+        name: 'BTC',
+        symbol: 'BTC',
+        display_symbol: null,
+        optimized_symbol: 'BTC',
+        decimals: 18,
+        logo_url: '',
+        price: 0,
+        is_verified: true,
+        is_core: true,
+        is_wallet: true,
+        time_at: 0,
+        amount: 0,
+      },
+    ]);
+  }, [currentAccount]);
+
   useDebounce(
     async () => {
       if (!query.trim()) return;
+      if (query.trim().toLowerCase() === 'btc') {
+        const tokenAmount = await wallet.getAccountContractBalance();
+        setDisplayList((state) => [
+          ...state,
+          {
+            id: rabbyNetworkName,
+            chain: rabbyNetworkName,
+            name: 'BTC',
+            symbol: 'BTC',
+            display_symbol: null,
+            optimized_symbol: 'BTC',
+            decimals: 18,
+            logo_url: '',
+            price: 0,
+            is_verified: true,
+            is_core: true,
+            is_wallet: true,
+            time_at: 0,
+            amount: +ethers.utils.formatEther(tokenAmount),
+          },
+        ]);
+      }
       const token = await wallet.getCustomTestnetToken({
         address: currentAccount!.address,
         chainId: CONLA.id,
         tokenId: query.trim(),
       });
       if (token) {
+        console.log('token found');
         try {
           await wallet.addCustomTestnetToken({
             chainId: CONLA.id,
@@ -122,8 +168,6 @@ const TokenSelector = ({
   };
 
   const { conlaAcc } = useRabbySelector((state) => state.customRPC);
-
-  const [displayList, setDisplayList] = useState<TokenItem[]>([]);
 
   useEffect(() => {
     (async () => {

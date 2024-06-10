@@ -28,6 +28,7 @@ export default function SwitchAccount(props: SwitchAccountProps) {
   useEffect(() => {
     (async () => {
       const contract = await wallet.getAccountContract();
+      console.log('contract', contract);
       setAccountContract(contract.address);
     })();
   }, [currentAccount]);

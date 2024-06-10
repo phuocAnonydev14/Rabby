@@ -153,8 +153,8 @@ const BalanceView = ({
     const handleCheckDeployed = async () => {
       try {
         setIsCheckingDeploy(true);
-        const isDeployed = await wallet.checkIsDeployedAccountContract();
-        if (isDeployed) {
+        const isNotDeployed = await wallet.checkIsDeployedAccountContract();
+        if (!isNotDeployed) {
           const accountContract = await wallet.getAccountContract();
           setAccountDeployed(accountContract.address);
         }

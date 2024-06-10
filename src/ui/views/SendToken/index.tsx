@@ -320,7 +320,7 @@ const SendToken = () => {
     display_symbol: null,
     optimized_symbol: 'BTC',
     decimals: 18,
-    logo_url: conlaLogo,
+    logo_url: '',
     price: 0,
     is_verified: true,
     is_core: true,
@@ -846,7 +846,8 @@ const SendToken = () => {
     setBalanceError(null);
     setBalanceWarn(null);
     setIsLoading(true);
-    loadCurrentToken(token.id, token.chain, account.address);
+    await loadCurrentToken(token.id, token.chain, account.address);
+    localStorage.setItem('currentToken', token.id);
   };
 
   const handleClickTokenBalance = async () => {
@@ -939,36 +940,35 @@ const SendToken = () => {
       return;
     }
     setChain(val);
-    const accountBalance = await handleGetAccountContractBalance('eth');
+    // const accountBalance = await handleGetAccountContractBalance('eth');
     console.log('chain 930', chain);
-    setCurrentToken({
-      id: chain.nativeTokenAddress,
-      decimals: chain.nativeTokenDecimals,
-      logo_url: conlaLogo,
-      symbol: 'ETH',
-      display_symbol: 'ETH',
-      optimized_symbol: 'ETH',
-      is_core: true,
-      is_verified: true,
-      is_wallet: true,
-      amount: 0,
-      price: 0,
-      name: 'ETH',
-      chain: chain.serverId,
-      time_at: 0,
-      ...(accountBalance || {}),
-    });
+    // setCurrentToken({
+    //   id: chain.nativeTokenAddress,
+    //   decimals: chain.nativeTokenDecimals,
+    //   logo_url: '',
+    //   symbol: 'BTC',
+    //   display_symbol: 'BTC',
+    //   optimized_symbol: 'BTC',
+    //   is_core: true,
+    //   is_verified: true,
+    //   is_wallet: true,
+    //   price: 0,
+    //   name: 'BTC',
+    //   chain: chain.serverId,
+    //   time_at: 0,
+    //   ...(accountBalance || {}),
+    // } as any);
 
-    let nextToken: TokenItem | null = null;
-    try {
-      nextToken = await loadCurrentToken(
-        chain.nativeTokenAddress,
-        chain.serverId,
-        account.address
-      );
-    } catch (error) {
-      console.error(error);
-    }
+    // let nextToken: TokenItem | null = null;
+    // try {
+    //   nextToken = await loadCurrentToken(
+    //     chain.nativeTokenAddress,
+    //     chain.serverId,
+    //     account.address
+    //   );
+    // } catch (error) {
+    //   console.error(error);
+    // }
 
     const values = form.getFieldsValue();
     form.setFieldsValue({
@@ -981,10 +981,10 @@ const SendToken = () => {
       {
         ...values,
         amount: '',
-      },
-      {
-        ...(nextToken && { token: nextToken }),
       }
+      // {
+      //   ...(nextToken && { token: nextToken }),
+      // }
     );
   };
 
@@ -1036,107 +1036,6 @@ const SendToken = () => {
     return result;
   };
 
-  const initByCache = async () => {
-    const account = (await wallet.syncGetCurrentAccount())!;
-    const qs = query2obj(history.location.search);
-
-    if (qs.token) {
-      const [tokenChain, id] = qs.token.split(':');
-      if (!tokenChain || !id) return;
-
-      let target = findChain({
-        serverId: tokenChain,
-      });
-      if (tokenChain === 'eth') {
-        target = findChain({
-          serverId: rabbyNetworkName,
-        });
-      }
-      if (!target) {
-        loadCurrentToken(currentToken.id, currentToken.chain, account.address);
-        return;
-      }
-      setChain(target.enum);
-      loadCurrentToken(
-        id,
-        tokenChain === 'eth' ? rabbyNetworkName : tokenChain,
-        account.address
-      );
-    } else if ((history.location.state as any)?.safeInfo) {
-      const safeInfo: {
-        nonce: number;
-        chainId: number;
-      } = (history.location.state as any)?.safeInfo;
-
-      const chain = findChainByID(safeInfo.chainId);
-      let nativeToken: TokenItem | null = null;
-      if (chain) {
-        setChain(chain.enum);
-        nativeToken = await loadCurrentToken(
-          chain.nativeTokenAddress,
-          chain.serverId,
-          account.address
-        );
-      }
-      setSafeInfo(safeInfo);
-      persistPageStateCache({
-        safeInfo,
-        currentToken: nativeToken || currentToken,
-      });
-    } else {
-      let tokenFromOrder: TokenItem | null = null;
-
-      let lastTimeToken = await wallet.getLastTimeSendToken(account.address);
-      if (lastTimeToken) {
-        const tokenAccountBalance = await handleGetAccountContractBalance(
-          lastTimeToken.id
-        );
-
-        lastTimeToken = { ...lastTimeToken, ...(tokenAccountBalance || {}) };
-        console.log('last time token', lastTimeToken);
-        setCurrentToken(lastTimeToken);
-      } else {
-        const { firstChain } = await dispatch.chains.getOrderedChainList({
-          supportChains: undefined,
-        });
-        tokenFromOrder = firstChain ? makeTokenFromChain(firstChain) : null;
-        if (firstChain) setCurrentToken(tokenFromOrder!);
-      }
-
-      let needLoadToken: TokenItem =
-        lastTimeToken || tokenFromOrder || currentToken;
-      if (await wallet.hasPageStateCache()) {
-        const cache = await wallet.getPageStateCache();
-        if (cache?.path === history.location.pathname) {
-          if (cache.states.values) {
-            form.setFieldsValue(cache.states.values);
-            handleFormValuesChange(cache.states.values, form.getFieldsValue(), {
-              token: cache.states.currentToken,
-              isInitFromCache: true,
-            });
-          }
-          if (cache.states.currentToken) {
-            console.log('cache current token', lastTimeToken);
-
-            setCurrentToken(cache.states.currentToken);
-            needLoadToken = cache.states.currentToken;
-          }
-          if (cache.states.safeInfo) {
-            setSafeInfo(cache.states.safeInfo);
-          }
-        }
-      }
-
-      if (chainItem && needLoadToken.chain !== chainItem.serverId) {
-        const target = findChain({ serverId: needLoadToken.chain });
-        if (target?.enum) {
-          setChain(target.enum);
-        }
-      }
-      loadCurrentToken(needLoadToken.id, needLoadToken.chain, account.address);
-    }
-  };
-
   const init = async () => {
     const account = await wallet.syncGetCurrentAccount();
     dispatch.whitelist.getWhitelistEnabled();
@@ -1158,9 +1057,17 @@ const SendToken = () => {
   useEffect(() => {
     handleGetAccountContractBalance(currentToken.id);
     if (inited) {
-      initByCache();
+      // initByCache();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // store current token in  localstorage
+    const currentTokenId = localStorage.getItem('currentToken');
+    const conlaAcc = localStorage.getItem('conlaAccount');
+    loadCurrentToken(
+      currentTokenId || rabbyNetworkName.toLowerCase(),
+      rabbyNetworkName.toLowerCase(),
+      conlaAcc || currentAccount!.address
+    );
   }, [inited]);
 
   const getAlianName = async () => {
@@ -1248,7 +1155,7 @@ const SendToken = () => {
 
   useEffect(() => {
     init();
-    wallet.approveTokenCustom();
+    // wallet.approveTokenCustom();
     return () => {
       wallet.clearPageStateCache();
     };
