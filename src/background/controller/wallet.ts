@@ -885,22 +885,11 @@ export class WalletController extends BaseController {
     const rpcUrl = CONLA_RPC;
     const provider = new JsonRpcProvider(rpcUrl);
 
-    const currentAcc = await wallet.getCurrentAccount();
-    const currentKeyRing = await keyringService.getKeyringForAccount(
-      currentAcc?.address || ''
-    );
-
-    const privateKeyBuffer = Uint8Array.from(
-      currentKeyRing?.wallets[0]?.privateKey
-    );
-
-    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
-
     // create instance wallet
-    let factoryAddress = await this.checkIsDeployedAccountContract();
+    const factoryAddress = await this.checkIsDeployedAccountContract();
 
     if (!factoryAddress) {
-      factoryAddress = await this.deployAccountContract();
+      await this.deployAccountContract();
     }
 
     const accountContract = await this.getAccountContract();
@@ -910,6 +899,7 @@ export class WalletController extends BaseController {
       tokenAddr === 'eth' ||
       tokenAddr.toLowerCase() === rabbyNetworkName.toLowerCase()
     ) {
+      console.log('this is native token');
       const balance = await provider.getBalance(accountContract.address);
       console.log('balance', balance);
       return balance;

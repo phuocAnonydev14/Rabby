@@ -149,22 +149,34 @@ const BalanceView = ({
     isExpired: getCacheExpired,
   });
 
-  useEffect(() => {
-    const handleCheckDeployed = async () => {
-      try {
-        setIsCheckingDeploy(true);
-        const isNotDeployed = await wallet.checkIsDeployedAccountContract();
-        if (!isNotDeployed) {
-          const accountContract = await wallet.getAccountContract();
-          setAccountDeployed(accountContract.address);
-        }
-      } catch (e) {
-        console.log({ e });
-      } finally {
+  const handleCheckDeployed = async () => {
+    try {
+      const currentAccountContract = localStorage.getItem(
+        `accountContract:${currentAccount?.address}`
+      );
+      console.log('currentAccountContract', currentAccountContract);
+      if (currentAccountContract) {
+        setAccountDeployed(currentAccountContract);
         setIsCheckingDeploy(false);
+        return;
       }
-    };
+      setIsCheckingDeploy(true);
+      const isNotDeployed = await wallet.checkIsDeployedAccountContract();
+      console.log('is not deployed', isNotDeployed);
+      if (!isNotDeployed) {
+        const accountContract = await wallet.getAccountContract();
+        console.log('is deployed', isNotDeployed, accountContract);
 
+        setAccountDeployed(accountContract.address);
+      }
+    } catch (e) {
+      console.log({ e });
+    } finally {
+      setIsCheckingDeploy(false);
+    }
+  };
+
+  useEffect(() => {
     handleCheckDeployed().finally();
   }, [currentAccount]);
 
@@ -366,6 +378,7 @@ const BalanceView = ({
     try {
       setIsDeploying(true);
       await wallet.deployAccountContract();
+      await handleCheckDeployed();
       await refreshBalance();
       message.success('Deploy success');
     } catch (e) {

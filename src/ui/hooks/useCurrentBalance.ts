@@ -149,10 +149,11 @@ export default function useCurrentBalance(
           conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
         } else conlaBalance = await wallet.getConchaBalance(account as string);
         setBalance(+conlaBalance);
-        setBalanceLoading(false);
-        store.dispatch.customRPC.setConlaLoading(false);
       } catch (e) {
         console.log('conlaBalance error', e);
+      } finally {
+        store.dispatch.customRPC.setConlaLoading(false);
+        setBalanceLoading(false);
       }
     })();
     console.log('conla account changed', conlaAcc);

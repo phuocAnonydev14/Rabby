@@ -1,6 +1,6 @@
 import { TestnetChainBase } from '@/background/service/customTestnet';
 
-const CONLA_RPC = 'https://testnet-rpc.conla.com';
+const CONLA_RPC = 'https://rpc.testnet.conla.com ';
 // 'http://localhost:8545';
 const CONLA: TestnetChainBase = {
   id: 11118,

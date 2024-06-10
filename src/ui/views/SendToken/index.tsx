@@ -410,8 +410,8 @@ const SendToken = () => {
 
   const handleGetAccountContractBalance = async (tokenId: string) => {
     try {
+      console.log('token id', tokenId);
       const contractBalance = await wallet.getAccountContractBalance(tokenId);
-
       const contractBalanceBigNumber = ethers.BigNumber.from(
         contractBalance.hex
       );
@@ -421,6 +421,7 @@ const SendToken = () => {
         .div(ethers.BigNumber.from(10).pow(currentToken.decimals))
         .toNumber();
 
+      console.log('sendToken contractBalance', contractBalance);
       return conlaAcc
         ? {
             amount,
@@ -821,7 +822,6 @@ const SendToken = () => {
       }
     })();
   }, []);
-  console.log('account contract', conlaAcc);
 
   const handleCurrentTokenChange = async (token: TokenItem) => {
     if (showGasReserved) {
@@ -988,6 +988,8 @@ const SendToken = () => {
     );
   };
 
+  console.log('current token ', currentToken);
+
   const handleCopyContactAddress = () => {
     copyAddress(currentToken.id);
   };
@@ -1006,34 +1008,42 @@ const SendToken = () => {
     chainId: string,
     address: string
   ) => {
-    const chain = findChain({
-      serverId: chainId === 'eth' ? rabbyNetworkName : chainId,
-    });
-    let result: TokenItem | null = null;
-    if (chain?.isTestnet) {
-      const res = await wallet.getCustomTestnetToken({
-        address,
-        chainId: chain.id,
-        tokenId: id,
+    try {
+      const chain = findChain({
+        serverId: chainId === 'eth' ? rabbyNetworkName : chainId,
       });
-      if (res) {
-        result = customTestnetTokenToTokenItem(res);
+      console.log('chain', chain);
+
+      let result: TokenItem | null = null;
+      if (chain?.isTestnet) {
+        const res = await wallet.getCustomTestnetToken({
+          address,
+          chainId: chain.id,
+          tokenId: id,
+        });
+        if (res) {
+          result = customTestnetTokenToTokenItem(res);
+        }
+      } else {
+        result = await wallet.openapi.getToken(address, chainId, id);
       }
-    } else {
-      result = await wallet.openapi.getToken(address, chainId, id);
-    }
-    if (result) {
-      const tokenAccountBalance = await handleGetAccountContractBalance(
-        result.id
-      );
+      if (result) {
+        const tokenAccountBalance = await handleGetAccountContractBalance(
+          result.id
+        );
 
-      result = { ...result, ...(tokenAccountBalance || {}) };
-      console.log('result', result);
-      setCurrentToken(result);
-    }
-    setIsLoading(false);
+        result = { ...result, ...(tokenAccountBalance || {}) };
+        console.log('result', result);
+        setCurrentToken(result);
+      }
 
-    return result;
+      return result;
+    } catch (e) {
+      console.log(e);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const init = async () => {
@@ -1058,16 +1068,15 @@ const SendToken = () => {
     handleGetAccountContractBalance(currentToken.id);
     if (inited) {
       // initByCache();
+      // store current token in  localstorage
+      const currentTokenId = localStorage.getItem('currentToken');
+      const conlaAcc = localStorage.getItem('conlaAccount');
+      loadCurrentToken(
+        currentTokenId || rabbyNetworkName.toLowerCase(),
+        rabbyNetworkName.toLowerCase(),
+        conlaAcc || currentAccount!.address
+      );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // store current token in  localstorage
-    const currentTokenId = localStorage.getItem('currentToken');
-    const conlaAcc = localStorage.getItem('conlaAccount');
-    loadCurrentToken(
-      currentTokenId || rabbyNetworkName.toLowerCase(),
-      rabbyNetworkName.toLowerCase(),
-      conlaAcc || currentAccount!.address
-    );
   }, [inited]);
 
   const getAlianName = async () => {

@@ -41,6 +41,12 @@ export default function SwitchAccount(props: SwitchAccountProps) {
       );
       store.dispatch.customRPC.setConlaLoading(true);
       message.success('Switch account successfully');
+      if (isAccountContract) {
+        localStorage.setItem(
+          `accountContract:${currentAccount?.address}`,
+          accountContract
+        );
+      }
       onClose();
     } catch (err) {
       console.log(err);
