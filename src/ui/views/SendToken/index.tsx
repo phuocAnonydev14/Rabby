@@ -84,6 +84,7 @@ import { conlaLogo, rabbyNetworkName } from '@/utils/const';
 import { ethers } from 'ethers';
 import useConlaAccount from '@/ui/hooks/useConlaAccount';
 import { parseEther } from 'viem';
+import getAccountStorage from '@/ui/utils/getAccountStorage';
 
 const abiCoder = (abiCoderInst as unknown) as AbiCoder;
 
@@ -410,8 +411,12 @@ const SendToken = () => {
 
   const handleGetAccountContractBalance = async (tokenId: string) => {
     try {
-      console.log('token id', tokenId);
-      const contractBalance = await wallet.getAccountContractBalance(tokenId);
+      const accountContractAddr = getAccountStorage(currentAccount?.address);
+
+      const contractBalance = await wallet.getAccountContractBalance(
+        tokenId,
+        accountContractAddr
+      );
       const contractBalanceBigNumber = ethers.BigNumber.from(
         contractBalance.hex
       );
@@ -421,7 +426,6 @@ const SendToken = () => {
         .div(ethers.BigNumber.from(10).pow(currentToken.decimals))
         .toNumber();
 
-      console.log('sendToken contractBalance', contractBalance);
       return conlaAcc
         ? {
             amount,
@@ -815,8 +819,6 @@ const SendToken = () => {
   useEffect(() => {
     (async () => {
       const currentAccountContract = localStorage.getItem('conlaAccount');
-      console.log('currentAccountContract', currentAccountContract);
-
       if (currentAccountContract) {
         store.dispatch.customRPC.setConlaAcc(currentAccountContract);
       }
@@ -840,7 +842,6 @@ const SendToken = () => {
     const tokenAccountBalance = await handleGetAccountContractBalance(token.id);
 
     token = { ...token, ...(tokenAccountBalance || {}) };
-    console.log('token 831', token);
     setCurrentToken(token);
     await persistPageStateCache({ currentToken: token });
     setBalanceError(null);
@@ -941,7 +942,6 @@ const SendToken = () => {
     }
     setChain(val);
     // const accountBalance = await handleGetAccountContractBalance('eth');
-    console.log('chain 930', chain);
     // setCurrentToken({
     //   id: chain.nativeTokenAddress,
     //   decimals: chain.nativeTokenDecimals,
@@ -988,8 +988,6 @@ const SendToken = () => {
     );
   };
 
-  console.log('current token ', currentToken);
-
   const handleCopyContactAddress = () => {
     copyAddress(currentToken.id);
   };
@@ -1012,7 +1010,6 @@ const SendToken = () => {
       const chain = findChain({
         serverId: chainId === 'eth' ? rabbyNetworkName : chainId,
       });
-      console.log('chain', chain);
 
       let result: TokenItem | null = null;
       if (chain?.isTestnet) {
@@ -1033,7 +1030,6 @@ const SendToken = () => {
         );
 
         result = { ...result, ...(tokenAccountBalance || {}) };
-        console.log('result', result);
         setCurrentToken(result);
       }
 

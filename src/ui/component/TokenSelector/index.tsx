@@ -23,6 +23,7 @@ import { useWallet } from 'ui/utils';
 import { useRabbySelector } from 'ui/store';
 import { CONLA, rabbyNetworkName } from '@/utils/const';
 import { ethers } from 'ethers';
+import getAccountStorage from '@/ui/utils/getAccountStorage';
 
 export const isSwapTokenType = (s: string) =>
   ['swapFrom', 'swapTo'].includes(s);
@@ -118,7 +119,13 @@ const TokenSelector = ({
     async () => {
       if (!query.trim()) return;
       if (query.trim().toLowerCase() === 'btc') {
-        const tokenAmount = await wallet.getAccountContractBalance();
+        const accountContractAddr = getAccountStorage(
+          currentAccount?.address || ''
+        );
+        const tokenAmount = await wallet.getAccountContractBalance(
+          undefined,
+          accountContractAddr
+        );
         setDisplayList((state) => [
           ...state,
           {
@@ -145,7 +152,6 @@ const TokenSelector = ({
         tokenId: query.trim(),
       });
       if (token) {
-        console.log('token found');
         try {
           await wallet.addCustomTestnetToken({
             chainId: CONLA.id,
@@ -177,8 +183,12 @@ const TokenSelector = ({
         if (conlaAcc) {
           resultList = await Promise.all(
             resultList.map(async (token) => {
+              const accountContractAddr = getAccountStorage(
+                currentAccount?.address || ''
+              );
               const tokenAmount = await wallet.getAccountContractBalance(
-                token.id
+                token.id,
+                accountContractAddr
               );
               return {
                 ...token,

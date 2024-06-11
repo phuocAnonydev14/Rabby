@@ -16,7 +16,7 @@ const entryPointAddr = '0x3bFc49341Aae93e30F6e2BE5a7Fa371cEbd5bea4';
 
 const conlaLogo = 'https://i.imgur.com/OZGdsJ8.png';
 
-const proxyFactory = '0xd2362a44ba6c0b93121ebe99048cf31e8a20f242';
+const proxyFactory = '0xEE35dA6bA29cc1A60d0d9042fa8c88CbEA6d12c0';
 const bundlerUrl = 'http://34.172.46.5:3000/rpc';
 const beneficiary = '0xEE35dA6bA29cc1A60d0d9042fa8c88CbEA6d12c0';
 export {

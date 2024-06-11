@@ -110,8 +110,6 @@ export const AddCustomTestnetTokenPopup = ({
   const { t } = useTranslation();
   const [form] = useForm();
 
-  console.log('chain id', chain?.id);
-
   const { data: token, runAsync: runGetToken, loading, error } = useRequest(
     async () => {
       const currentAccount = await wallet.getCurrentAccount();

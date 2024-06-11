@@ -65,7 +65,6 @@ export const CurrentConnection = memo((props: CurrentConnectionProps) => {
         ...site!,
         chain,
       };
-      console.log('chain', chain);
       setSite(_site);
       setVisible(false);
       await wallet.setSite(_site);

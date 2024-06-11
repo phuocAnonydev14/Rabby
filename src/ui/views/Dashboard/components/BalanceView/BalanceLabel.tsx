@@ -11,6 +11,7 @@ import { useAsync } from 'react-use';
 import { ConnectedSite } from 'background/service/permission';
 import { CHAINS, CHAINS_ENUM } from '@debank/common';
 import { conlaLogo } from '@/utils/const';
+import useCurrentBalance from '@/ui/hooks/useCurrentBalance';
 
 interface Props {
   isCache: boolean;
@@ -36,12 +37,19 @@ export const BalanceLabel: React.FC<Props> = ({ isCache, balance }) => {
   );
   const wallet = useWallet();
 
+  const { refreshBalance } = useCurrentBalance(account.address);
+
   useEffect(() => {
     (async () => {
       const chain = await wallet.getChain();
       setCurrentConnectedSiteChain(chain);
     })();
   }, []);
+  useEffect(() => {
+    if (!balance) {
+      refreshBalance();
+    }
+  }, [balance]);
 
   const currentConnectedSiteChainNativeToken = useMemo(
     () =>

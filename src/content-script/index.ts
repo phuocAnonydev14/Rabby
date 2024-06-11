@@ -40,18 +40,4 @@ document.addEventListener('beforeunload', () => {
   pm.dispose();
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'copyText') {
-    console.log('handle copy');
-    const textarea = document.createElement('textarea');
-    textarea.value = request.text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    alert('Text copied to clipboard: ' + request.text);
-    sendResponse({ success: true });
-  }
-});
-
 injectProviderScript(false);

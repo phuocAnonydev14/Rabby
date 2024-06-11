@@ -6,6 +6,7 @@ import { filterChainWithBalance, normalizeChainList } from '@/utils/account';
 import useConlaAccount from './useConlaAccount';
 import { ethers } from 'ethers';
 import store, { useRabbySelector } from '../store';
+import getAccountStorage from '../utils/getAccountStorage';
 
 /** @deprecated import from '@/utils/chain' directly  */
 export type { DisplayChainWithWhiteLogo };
@@ -82,12 +83,13 @@ export default function useCurrentBalance(
     if (!account || noNeedBalance) return;
     setBalanceLoading(true);
     const cacheData = await wallet.getAddressCacheBalance(account);
-    let conlaBalance: string;
-    if (conlaAcc) {
-      const balanceAccountContract = (await wallet.getAccountContractBalance()) as any;
-      conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
-    } else conlaBalance = await wallet.getConchaBalance(account);
+
+    // if (conlaStorage) {
+    //   const balanceAccountContract = (await wallet.getAccountContractBalance()) as any;
+    //   conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
+    // } else conlaBalance = await wallet.getConchaBalance(account);
     const apiLevel = await wallet.getAPIConfig([], 'ApiLevel', false);
+    // setBalance(+conlaBalance);
     if (cacheData) {
       setBalanceFromCache(true);
       // setBalance(cacheData.total_usd_value);
@@ -113,7 +115,7 @@ export default function useCurrentBalance(
         setBalanceLoading(false);
       }
       store.dispatch.customRPC.setConlaLoading(false);
-      setBalance(+conlaBalance);
+      // setBalance(+conlaBalance);
     }
   };
 
@@ -141,22 +143,28 @@ export default function useCurrentBalance(
     //   });
     // }
     (async () => {
-      try {
+      const handleGetBalance = async () => {
         let conlaBalance: string;
         const conlaStorage = localStorage.getItem('conlaAccount');
         if (conlaStorage) {
-          const balanceAccountContract = await wallet.getAccountContractBalance();
+          const accountContractAddr = getAccountStorage(account);
+          const balanceAccountContract = await wallet.getAccountContractBalance(
+            undefined,
+            accountContractAddr
+          );
           conlaBalance = ethers.utils.formatEther(balanceAccountContract.hex);
         } else conlaBalance = await wallet.getConchaBalance(account as string);
         setBalance(+conlaBalance);
+      };
+      try {
+        await handleGetBalance();
       } catch (e) {
-        console.log('conlaBalance error', e);
+        await handleGetBalance();
       } finally {
         store.dispatch.customRPC.setConlaLoading(false);
         setBalanceLoading(false);
       }
     })();
-    console.log('conla account changed', conlaAcc);
     return () => {
       isCanceled = true;
     };

@@ -113,7 +113,6 @@ const Actions = ({
   };
 
   const isUnknown = data?.contractCall;
-
   return (
     <>
       <SignTitle>

@@ -684,7 +684,6 @@ class ProviderController extends BaseController {
         let hash: string | undefined = undefined;
         let reqId: string | undefined = undefined;
         if (!findChain({ enum: chain })?.isTestnet) {
-          console.log('come to if testnet');
           if (RPCService.hasCustomRPC(chain)) {
             const txData: any = {
               ...approvalRes,
@@ -820,22 +819,13 @@ class ProviderController extends BaseController {
           const chainId = await provider
             .getNetwork()
             .then((res) => res.chainId);
-
-          const clientRpc = new HttpRpcClient(
-            bundlerUrl,
-            entryPointAddr,
-            CONLA.id
-          );
-
           const decimalVal = txParams.sendValue || 0;
-
           const config = {
             chainId,
             entryPointAddress: entryPointAddr,
             bundlerUrl,
             paymasterAPI,
           };
-
           const aaProvider = (await wrapProvider(
             provider,
             config,
@@ -855,45 +845,28 @@ class ProviderController extends BaseController {
               aaProvider
             );
 
-            // proxyContract.on('ProxyCreated', (from, value) => {
-            //   console.log(`Event received: from ${from}, value`, value);
-            //   // chrome.notifications;
-            //   const conTractAddr = value.args[0] || '';
-            //   const copyText = () => {
-            //     alert('Copy to clipboard');
-            //     const textarea = document.createElement('textarea');
-            //     textarea.value = conTractAddr;
-            //     document.body.appendChild(textarea);
-            //     textarea.select();
-            //     document.execCommand('copy');
-            //     document.body.removeChild(textarea);
-            //   };
-            //   chrome.notifications.onButtonClicked.addListener(function (
-            //     notifId,
-            //     btnIdx
-            //   ) {
-            //     if (btnIdx === 0) {
-            //       copyText();
-            //     }
-            //   });
-            //
-            //   chrome.notifications.create({
-            //     type: 'basic',
-            //     iconUrl: 'https://i.imgur.com/OZGdsJ8.png',
-            //     title: 'Contract deployed successfully',
-            //     message: 'Contract address: ' + conTractAddr,
-            //     priority: 1,
-            //     buttons: [{ title: 'Copy address' }],
-            //   });
-            //   onTransactionCreated({
-            //     hash: value.transactionHash,
-            //     reqId,
-            //     pushType,
-            //   });
-            //   notificationService.setStatsData(statsData);
-            //   const tx = provider.getTransaction(value.transactionHash);
-            //   console.log({ tx });
-            // });
+            proxyContract.on('ProxyCreated', (from, value) => {
+              console.log(`Event received: from ${from}, value`, value);
+              // chrome.notifications;
+              const conTractAddr = value.args[0] || '';
+
+              chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'https://i.imgur.com/OZGdsJ8.png',
+                title: 'Contract deployed successfully',
+                message: 'Contract address: ' + conTractAddr,
+                priority: 1,
+                buttons: [{ title: 'Copy address' }],
+              });
+              onTransactionCreated({
+                hash: value.transactionHash,
+                reqId,
+                pushType,
+              });
+              notificationService.setStatsData(statsData);
+              const tx = provider.getTransaction(value.transactionHash);
+              console.log({ tx });
+            });
 
             const transfer = proxyContract.interface.encodeFunctionData(
               'createProxy',
@@ -923,8 +896,6 @@ class ProviderController extends BaseController {
           } else {
             const isErc20Token = await isErc20(txData.to);
             if (isErc20Token) {
-              console.log('erc20: come encode tx', decimalVal);
-
               const erc20 = new Contract(txData.to, ERC20_ABI, aaProvider);
 
               const transfer = erc20.interface.encodeFunctionData('transfer', [
@@ -950,21 +921,14 @@ class ProviderController extends BaseController {
               );
               hash = transactionHash.hash as string;
             } else {
-              console.log('come native decimal', decimalVal, txParams.value);
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
-                data: '0x',
+                data: txParams.data || '0x',
                 value: decimalVal,
                 maxFeePerGas: gasPrice,
                 maxPriorityFeePerGas: gasPrice,
               });
-              console.log('op', op);
-              const addr = (await accountAPI._getAccountContract()).address;
-              console.log(addr);
-              console.log(await provider.getBalance(addr));
-
               const packedUserOp = packUserOp(op);
-              console.log({ packedUserOp });
               const transactionHash = await entryPoint.handleOps(
                 [packedUserOp],
                 beneficiary

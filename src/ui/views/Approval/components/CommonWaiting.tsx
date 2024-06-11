@@ -144,7 +144,6 @@ export const CommonWaiting = ({ params }: { params: ApprovalParams }) => {
       setConnectStatus(WALLETCONNECT_STATUS_MAP.SUBMITTING);
     });
     eventBus.addEventListener(EVENTS.SIGN_FINISHED, async (data) => {
-      console.log('finished', data);
       if (data.success) {
         let sig = data.data;
         setResult(sig);

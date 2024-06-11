@@ -471,7 +471,6 @@ class PreferenceService {
 
   getConchaBalance = async (address: string): Promise<string> => {
     const balance = await this.provider.getBalance(address);
-    console.log('balance ne', ethers.utils.formatEther(balance));
     return ethers.utils.formatEther(balance);
   };
 

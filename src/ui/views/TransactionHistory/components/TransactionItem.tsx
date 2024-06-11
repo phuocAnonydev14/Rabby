@@ -220,7 +220,6 @@ export const TransactionItem = ({
       hash = completedTx!.hash;
     } else {
       const maxGasTx = findMaxGasTx(item.txs)!;
-      console.log(maxGasTx);
       hash = maxGasTx.hash;
     }
     if (!hash) {

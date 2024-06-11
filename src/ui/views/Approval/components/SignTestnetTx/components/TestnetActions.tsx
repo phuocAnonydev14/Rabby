@@ -1,6 +1,6 @@
 import { Chain } from '@debank/common';
 import ViewRawModal from '../../TxComponents/ViewRawModal';
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { TooltipWithMagnetArrow } from '@/ui/component/Tooltip/TooltipWithMagnetArrow';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,6 @@ import IconArrowRight, {
 } from 'ui/assets/approval/edit-arrow-right.svg';
 import { ActionWrapper } from '../../ActionWrapper';
 import clsx from 'clsx';
-import { Table, Col, Row } from '../../Actions/components/Table';
 import Loading from '../../TxComponents/Loading';
 import IconCheck, {
   ReactComponent as RcIconCheck,
@@ -66,6 +65,14 @@ export const TestnetActions = ({
   const { t } = useTranslation();
   const isUnknown = true;
   const actionName = t('page.signTx.unknownActionType');
+  const [txDataShow, setTxDataShow] = React.useState(raw);
+
+  useEffect(() => {
+    const currentConlaAcc = localStorage.getItem('conlaAccount');
+    if (currentConlaAcc) {
+      setTxDataShow((state) => ({ ...state, from: currentConlaAcc }));
+    }
+  });
 
   if (!isReady) {
     return <Loading />;
@@ -139,11 +146,11 @@ export const TestnetActions = ({
               fontFamily: 'Roboto Mono, sans-serif',
             }}
           >
-            {JSON.stringify(raw, null, 2)}
+            {JSON.stringify(txDataShow, null, 2)}
           </div>
         </div>
       </ActionWrapper>
-      <div className="token-balance-change">
+      {/* <div className="token-balance-change">
         <div className="token-balance-change-content">
           <Table>
             <Col>
@@ -155,7 +162,7 @@ export const TestnetActions = ({
             </Col>
           </Table>
         </div>
-      </div>
+      </div> */}
       <div
         className={clsx(
           'absolute bottom-[72px] right-0',

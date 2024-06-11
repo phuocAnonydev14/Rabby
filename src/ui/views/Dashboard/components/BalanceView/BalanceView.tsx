@@ -154,7 +154,6 @@ const BalanceView = ({
       const currentAccountContract = localStorage.getItem(
         `accountContract:${currentAccount?.address}`
       );
-      console.log('currentAccountContract', currentAccountContract);
       if (currentAccountContract) {
         setAccountDeployed(currentAccountContract);
         setIsCheckingDeploy(false);
@@ -162,11 +161,8 @@ const BalanceView = ({
       }
       setIsCheckingDeploy(true);
       const isNotDeployed = await wallet.checkIsDeployedAccountContract();
-      console.log('is not deployed', isNotDeployed);
       if (!isNotDeployed) {
         const accountContract = await wallet.getAccountContract();
-        console.log('is deployed', isNotDeployed, accountContract);
-
         setAccountDeployed(accountContract.address);
       }
     } catch (e) {
@@ -350,7 +346,6 @@ const BalanceView = ({
 
   const shouldShowBalanceLoading = balanceLoading || conlaLoading;
 
-  console.log('loading state', currentBalance, balanceLoading, conlaLoading);
   const shouldShowCurveLoading =
     couldShowLoadingDueToBalanceNil ||
     (couldShowLoadingDueToUpdateSource && curveLoading);
@@ -380,7 +375,7 @@ const BalanceView = ({
       await wallet.deployAccountContract();
       await handleCheckDeployed();
       await refreshBalance();
-      message.success('Deploy success');
+      message.success('Deploy successfully');
     } catch (e) {
       console.log(e);
       message.error('Deploy failed');
@@ -399,7 +394,7 @@ const BalanceView = ({
             ) : (
               <BalanceLabel
                 isCache={balanceFromCache}
-                balance={currentBalance || 0}
+                balance={latestBalance || 0}
               />
             )}
           </div>

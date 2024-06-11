@@ -937,8 +937,8 @@ const SettingsInner = ({
               <img src={IconLock} className="icon icon-lock" />{' '}
               {'Lock Wallet'}
             </Button> */}
-        <ClaimRabbyBadge onClick={onOpenBadgeModal} />
-        <RequestDeBankTestnetGasToken />
+        {/* <ClaimRabbyBadge onClick={onOpenBadgeModal} /> */}
+        {/* <RequestDeBankTestnetGasToken /> */}
         {Object.values(renderData).map((group, idxl1) => {
           return (
             <div key={`g-${idxl1}`} className="setting-block">

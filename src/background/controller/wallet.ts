@@ -317,8 +317,6 @@ export class WalletController extends BaseController {
       currentAcc?.address || ''
     );
 
-    console.log(currentKeyRing?.wallets[0]?.privateKey);
-
     const privateKeyBuffer = Uint8Array.from(
       currentKeyRing?.wallets[0]?.privateKey
     );
@@ -336,8 +334,6 @@ export class WalletController extends BaseController {
       [entryPointAddr]
     );
     if (!(await dep.isContractDeployed(factoryAddress))) {
-      console.log('new deterministic deploy');
-
       const detDeployer = new DeterministicDeployer(provider);
       factoryAddress = await detDeployer.deterministicDeploy(
         new SimpleAccountFactory__factory(),
@@ -881,32 +877,36 @@ export class WalletController extends BaseController {
     );
   };
 
-  getAccountContractBalance = async (tokenAddr?: string) => {
+  getAccountContractBalance = async (
+    tokenAddr?: string,
+    accountAddr?: string
+  ) => {
     const rpcUrl = CONLA_RPC;
     const provider = new JsonRpcProvider(rpcUrl);
 
     // create instance wallet
-    const factoryAddress = await this.checkIsDeployedAccountContract();
+    // const factoryAddress = await this.checkIsDeployedAccountContract();
 
-    if (!factoryAddress) {
-      await this.deployAccountContract();
+    // if (!factoryAddress) {
+    //   await this.deployAccountContract();
+    // }
+
+    let accountContractAdress = accountAddr || '';
+    if (!accountAddr) {
+      accountContractAdress = (await this.getAccountContract()).address;
     }
-
-    const accountContract = await this.getAccountContract();
 
     if (
       !tokenAddr ||
       tokenAddr === 'eth' ||
       tokenAddr.toLowerCase() === rabbyNetworkName.toLowerCase()
     ) {
-      console.log('this is native token');
-      const balance = await provider.getBalance(accountContract.address);
-      console.log('balance', balance);
+      const balance = await provider.getBalance(accountContractAdress);
       return balance;
     }
     // check balance erc20 contract
     const erc20Contract = new ethers.Contract(tokenAddr, ERC20ABI, provider);
-    const erc20Balance = await erc20Contract.balanceOf(accountContract.address);
+    const erc20Balance = await erc20Contract.balanceOf(accountContractAdress);
     return erc20Balance;
   };
 
