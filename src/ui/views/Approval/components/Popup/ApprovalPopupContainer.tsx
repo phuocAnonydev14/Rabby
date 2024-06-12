@@ -95,7 +95,6 @@ export const ApprovalPopupContainer: React.FC<Props> = ({
       );
       proxyContract.on('ProxyCreated', (from, value) => {
         console.log(`Event received: from ${from}, value`, value);
-        alert(`ProxyCreated: from ${from}, value`);
         setDeployedAddress(value.args[0] || '');
       });
     };

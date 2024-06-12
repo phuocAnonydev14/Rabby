@@ -407,6 +407,8 @@ class ProviderController extends BaseController {
     delete txParams.isCoboSafe;
     delete approvalRes.isGasLess;
 
+    console.log('options', options);
+
     let is1559 = is1559Tx(approvalRes);
     if (
       is1559 &&
@@ -752,15 +754,17 @@ class ProviderController extends BaseController {
           const client = customTestnetService.getClient(chainData.id);
 
           // case is wallet owner send
-          if (txParams.to && !txParams.conlaAccount?.trim()) {
-            hash = await client.request({
-              method: 'eth_sendRawTransaction',
-              params: [rawTx as any],
-            });
-            onTransactionCreated({ hash, reqId, pushType });
-            notificationService.setStatsData(statsData);
-            return;
-          }
+          // if (txParams.to && !txParams.conlaAccount?.trim()) {
+          //   hash = await client.request({
+          //     method: 'eth_sendRawTransaction',
+          //     params: [rawTx as any],
+          //   });
+          //   console.log({ hash, reqId, pushType });
+          //   console.log('stastData', statsData);
+          //   onTransactionCreated({ hash, reqId, pushType });
+          //   notificationService.setStatsData(statsData);
+          //   return hash;
+          // }
 
           // case account contract
           // start custom send feature
@@ -808,13 +812,6 @@ class ProviderController extends BaseController {
             factoryAddress,
             paymasterAPI,
           });
-          // const accountContract = await accountAPI._getAccountContract();
-
-          // const signer = provider.getSigner();
-          // await signer.sendTransaction({
-          //   to: accountContract.address,
-          //   value: parseEther('1000000000000'),
-          // });
 
           const chainId = await provider
             .getNetwork()
@@ -838,7 +835,7 @@ class ProviderController extends BaseController {
           const gasPrice = await provider.getGasPrice();
 
           if (!txData.to) {
-            // handle deploy contract
+            // *handle deploy contract
             const proxyContract = new Contract(
               proxyFactory,
               PROXY_FACTORY_ABI,
@@ -893,9 +890,42 @@ class ProviderController extends BaseController {
             // );
             // console.log(`Transaction hash: ${transactionHash}`);
             hash = transactionHash.hash as string;
+          } else if (txParams.contractSwap) {
+            // *handle swap token
+            console.log('come to swap');
+            console.log('txParams', txParams);
+            const packedList: any = [];
+            if (txParams.txDataApprove) {
+              console.log('come to approve');
+              const approveOp = await accountAPI.createSignedUserOp({
+                target: txParams.contractApprove,
+                data: txParams.txDataApprove,
+                value: 0,
+                maxFeePerGas: gasPrice,
+                maxPriorityFeePerGas: gasPrice,
+              });
+              const packedApproveUserOp = packUserOp(approveOp);
+              packedList.push(packedApproveUserOp);
+            }
+            const swapOp = await accountAPI.createSignedUserOp({
+              target: txParams.contractSwap,
+              data: txParams.data,
+              value: 0,
+              maxFeePerGas: gasPrice,
+              maxPriorityFeePerGas: gasPrice,
+            });
+            const packedSwapUserOp = packUserOp(swapOp);
+            console.log(packedList);
+            packedList.push(packedSwapUserOp);
+            const transactionHash = await entryPoint.handleOps(
+              packedList,
+              beneficiary
+            );
+            hash = transactionHash.hash as string;
           } else {
             const isErc20Token = await isErc20(txData.to);
             if (isErc20Token) {
+              // *handle send erc20 token
               const erc20 = new Contract(txData.to, ERC20_ABI, aaProvider);
 
               const transfer = erc20.interface.encodeFunctionData('transfer', [
@@ -938,7 +968,8 @@ class ProviderController extends BaseController {
             }
           }
         }
-        if (!txParams.to) return;
+        console.log({ hash, reqId, pushType });
+        console.log('stastData', statsData);
         onTransactionCreated({ hash, reqId, pushType });
         notificationService.setStatsData(statsData);
         return hash;

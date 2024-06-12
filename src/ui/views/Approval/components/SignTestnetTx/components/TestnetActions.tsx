@@ -68,11 +68,11 @@ export const TestnetActions = ({
   const [txDataShow, setTxDataShow] = React.useState(raw);
 
   useEffect(() => {
-    const currentConlaAcc = localStorage.getItem('conlaAccount');
+    const currentConlaAcc = localStorage.getItem('conlaAcc');
     if (currentConlaAcc) {
       setTxDataShow((state) => ({ ...state, from: currentConlaAcc }));
     }
-  });
+  }, []);
 
   if (!isReady) {
     return <Loading />;

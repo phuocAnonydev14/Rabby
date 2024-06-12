@@ -41,6 +41,7 @@ const flowContext = flow
       data: { method },
     } = ctx.request;
     ctx.mapMethod = underline2Camelcase(method);
+    console.log('come to this ctx first', ctx);
     if (Reflect.getMetadata('PRIVATE', providerController, ctx.mapMethod)) {
       // Reject when dapp try to call private controller function
       throw ethErrors.rpc.methodNotFound({
