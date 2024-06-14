@@ -602,9 +602,10 @@ const SendToken = () => {
       value: '0x0',
       data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
       isSend: true,
+      // custom data send tx
       userTo: form.getFieldValue('to'),
       sendValue,
-      conlaAccount: conlaAcc,
+      isOwnerMode: conlaAcc ? false : true,
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;

@@ -75,6 +75,7 @@ export class EthereumProvider extends EventEmitter {
       data,
       session: INTERNAL_REQUEST_SESSION,
     };
+    console.log('come to buildin request?');
     const mapMethod = underline2Camelcase(method);
     const currentAccount = preferenceService.getCurrentAccount()!;
     const networkId = this.chainId || CHAINS[CHAINS_ENUM.ETH].id.toString();
@@ -88,12 +89,14 @@ export class EthereumProvider extends EventEmitter {
     if (!providerController[mapMethod]) {
       // TODO: make rpc whitelist
       if (method.startsWith('eth_') || method === 'net_version') {
+        console.log('come with eth_rpc', chain.serverId, request);
         return providerController.ethRpc(request, chain.serverId);
       }
     }
     switch (data.method) {
       case 'eth_accounts':
       case 'eth_requestAccounts':
+        console.log('buildinProvider', data);
         return [this.currentAccount];
       case 'personal_sign':
         return new Promise((resolve, reject) => {

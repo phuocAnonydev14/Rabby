@@ -1,6 +1,6 @@
 {
-  "name": "rabby",
-  "version": "0.92.71",
+  "name": "Conla",
+  "version": "0.1.0",
   "description": "A browser plugin for DeFi users",
   "scripts": {
     "clean": "",
@@ -76,8 +76,8 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "@zxing/browser": "0.0.10",
     "@zxing/library": "0.8.0",
-    "account-abstraction-anony-sdk": "^0.6.7",
-    "account-abstraction-anony-utils": "^0.6.6",
+    "account-abstraction-anony-sdk": "^0.6.8",
+    "account-abstraction-anony-utils": "^0.6.7",
     "ahooks": "3.7.8",
     "antd": "4.15.3",
     "bignumber.js": "9.0.1",

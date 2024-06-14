@@ -142,8 +142,8 @@ const v1SignTypedDataVlidation = ({
   const currentAddress = preferenceService
     .getCurrentAccount()
     ?.address.toLowerCase();
-  if (from.toLowerCase() !== currentAddress)
-    throw ethErrors.rpc.invalidParams('from should be same as current address');
+  // if (from.toLowerCase() !== currentAddress)
+  //   throw ethErrors.rpc.invalidParams('from should be same as current address');
 };
 
 const signTypedDataVlidation = ({
@@ -174,8 +174,8 @@ const signTypedDataVlidation = ({
   const currentAddress = preferenceService
     .getCurrentAccount()
     ?.address.toLowerCase();
-  if (from.toLowerCase() !== currentAddress)
-    throw ethErrors.rpc.invalidParams('from should be same as current address');
+  // if (from.toLowerCase() !== currentAddress)
+  //   throw ethErrors.rpc.invalidParams('from should be same as current address');
 };
 
 class ProviderController extends BaseController {
@@ -276,9 +276,51 @@ class ProviderController extends BaseController {
       throw ethErrors.provider.unauthorized();
     }
 
+    console.log('come to ethRequestAccounts?', origin);
+
     const _account = await this.getCurrentAccount();
     const account = _account ? [_account.address.toLowerCase()] : [];
     sessionService.broadcastEvent('accountsChanged', account);
+    const rpcUrl = CONLA_RPC;
+    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+    const provider = new JsonRpcProvider(rpcUrl) as any;
+    const currentAcc = await wallet.getCurrentAccount();
+    const currentKeyRing = await keyringService.getKeyringForAccount(
+      currentAcc?.address || ''
+    );
+    const privateKeyBuffer = Uint8Array.from(
+      currentKeyRing?.wallets[0]?.privateKey
+    );
+    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
+
+    // create instance wallet
+    const sender = new ethers.Wallet(privateKeyHex).connect(provider) as any;
+    const dep = new DeterministicDeployer(provider, sender);
+
+    let factoryAddress = DeterministicDeployer.getAddress(
+      new SimpleAccountFactory__factory(),
+      0,
+      [entryPointAddr]
+    );
+    if (!(await dep.isContractDeployed(factoryAddress))) {
+      const detDeployer = new DeterministicDeployer(provider);
+      factoryAddress = await detDeployer.deterministicDeploy(
+        new SimpleAccountFactory__factory(),
+        0,
+        [entryPointAddr]
+      );
+    }
+
+    const accountAPI = new SimpleAccountAPI({
+      provider,
+      entryPointAddress: entryPointAddr,
+      owner: sender,
+      factoryAddress,
+      paymasterAPI,
+    });
+
+    const accountContract = await accountAPI._getAccountContract();
+
     const connectSite = permissionService.getConnectedSite(origin);
     if (connectSite) {
       const chain = findChain({ enum: connectSite.chain });
@@ -296,7 +338,7 @@ class ProviderController extends BaseController {
       }
     }
 
-    return account;
+    return [accountContract.address];
   };
 
   @Reflect.metadata('SAFE', true)
@@ -341,9 +383,9 @@ class ProviderController extends BaseController {
         ? findChain({ id: tx.chainId })!.enum
         : permissionService.getConnectedSite(session.origin)?.chain;
       if (tx.from.toLowerCase() !== currentAddress) {
-        throw ethErrors.rpc.invalidParams(
-          'from should be same as current address'
-        );
+        // throw ethErrors.rpc.invalidParams(
+        //   'from should be same as current address'
+        // );
       }
       if (
         'chainId' in tx &&
@@ -366,6 +408,8 @@ class ProviderController extends BaseController {
     pushed: boolean;
     result: any;
   }) => {
+    // try {
+    console.log({ options });
     if (options.pushed) return options.result;
     const {
       data: {
@@ -374,7 +418,9 @@ class ProviderController extends BaseController {
       session: { origin },
       approvalRes,
     } = cloneDeep(options);
-    const keyring = await this._checkAddress(txParams.from);
+    const currentAccountUpdate = preferenceService.getCurrentAccount()!;
+
+    const keyring = await this._checkAddress(currentAccountUpdate.address);
     const isSend = !!txParams.isSend;
     const isSpeedUp = !!txParams.isSpeedUp;
     const isCancel = !!txParams.isCancel;
@@ -385,8 +431,6 @@ class ProviderController extends BaseController {
     const lowGasDeadline = approvalRes.lowGasDeadline;
     const preReqId = approvalRes.reqId;
     const isGasLess = approvalRes.isGasLess || false;
-
-    console.log({ options });
 
     let signedTransactionSuccess = false;
     delete txParams.isSend;
@@ -498,7 +542,7 @@ class ProviderController extends BaseController {
       const signedTx = await keyringService.signTransaction(
         keyring,
         tx,
-        txParams.from,
+        currentAccountUpdate.address,
         opts
       );
       if (
@@ -564,7 +608,7 @@ class ProviderController extends BaseController {
         transactionHistoryService.removeSigningTx(signingTxId!);
         if (hash) {
           transactionWatchService.addTx(
-            `${txParams.from}_${approvalRes.nonce}_${chain}`,
+            `${currentAccountUpdate.address}_${approvalRes.nonce}_${chain}`,
             {
               nonce: approvalRes.nonce,
               hash,
@@ -575,7 +619,7 @@ class ProviderController extends BaseController {
         if (reqId && !hash) {
           transactionBroadcastWatchService.addTx(reqId, {
             reqId,
-            address: txParams.from,
+            address: currentAccountUpdate.address,
             chainId: findChain({ enum: chain })!.id,
             nonce: approvalRes.nonce,
           });
@@ -753,18 +797,18 @@ class ProviderController extends BaseController {
           const rawTx = bufferToHex(tx.serialize());
           const client = customTestnetService.getClient(chainData.id);
 
-          // case is wallet owner send
-          // if (txParams.to && !txParams.conlaAccount?.trim()) {
-          //   hash = await client.request({
-          //     method: 'eth_sendRawTransaction',
-          //     params: [rawTx as any],
-          //   });
-          //   console.log({ hash, reqId, pushType });
-          //   console.log('stastData', statsData);
-          //   onTransactionCreated({ hash, reqId, pushType });
-          //   notificationService.setStatsData(statsData);
-          //   return hash;
-          // }
+          // // case is wallet owner send
+          if (txParams.to && txParams.isOwnerMode) {
+            hash = await client.request({
+              method: 'eth_sendRawTransaction',
+              params: [rawTx as any],
+            });
+            console.log({ hash, reqId, pushType });
+            console.log('stastData', statsData);
+            onTransactionCreated({ hash, reqId, pushType });
+            notificationService.setStatsData(statsData);
+            return hash;
+          }
 
           // case account contract
           // start custom send feature
@@ -890,33 +934,35 @@ class ProviderController extends BaseController {
             // );
             // console.log(`Transaction hash: ${transactionHash}`);
             hash = transactionHash.hash as string;
-          } else if (txParams.contractSwap) {
+          } else if (
+            txParams?.requestFrom &&
+            txParams.requestFrom == 'external'
+          ) {
             // *handle swap token
             console.log('come to swap');
             console.log('txParams', txParams);
             const packedList: any = [];
-            if (txParams.txDataApprove) {
-              console.log('come to approve');
-              const approveOp = await accountAPI.createSignedUserOp({
-                target: txParams.contractApprove,
-                data: txParams.txDataApprove,
-                value: 0,
+            const unit8Array = ethers.utils.arrayify(txParams.data);
+            const jsonString = ethers.utils.toUtf8String(unit8Array);
+            const dataArray = JSON.parse(jsonString);
+            // each object: {data, value, target}
+            console.log('array is : ', dataArray);
+            for (let i = 0; i < dataArray.length; i++) {
+              const obj = dataArray[i];
+              if (!obj.data) continue;
+              const op = await accountAPI.createSignedUserOp({
+                target: obj.target,
+                data: obj.data,
+                value: obj.value ? ethers.BigNumber.from(obj.value.hex) : 0,
                 maxFeePerGas: gasPrice,
                 maxPriorityFeePerGas: gasPrice,
               });
-              const packedApproveUserOp = packUserOp(approveOp);
-              packedList.push(packedApproveUserOp);
+              const packedUserOp = packUserOp(op);
+              console.log('op ' + i, op);
+
+              packedList.push(packedUserOp);
             }
-            const swapOp = await accountAPI.createSignedUserOp({
-              target: txParams.contractSwap,
-              data: txParams.data,
-              value: 0,
-              maxFeePerGas: gasPrice,
-              maxPriorityFeePerGas: gasPrice,
-            });
-            const packedSwapUserOp = packUserOp(swapOp);
-            console.log(packedList);
-            packedList.push(packedSwapUserOp);
+
             const transactionHash = await entryPoint.handleOps(
               packedList,
               beneficiary
@@ -925,6 +971,7 @@ class ProviderController extends BaseController {
           } else {
             const isErc20Token = await isErc20(txData.to);
             if (isErc20Token) {
+              console.log('erc20 token');
               // *handle send erc20 token
               const erc20 = new Contract(txData.to, ERC20_ABI, aaProvider);
 
@@ -951,6 +998,7 @@ class ProviderController extends BaseController {
               );
               hash = transactionHash.hash as string;
             } else {
+              console.log('handle send native token');
               const op = await accountAPI.createSignedUserOp({
                 target: txParams.to,
                 data: txParams.data || '0x',
@@ -959,10 +1007,12 @@ class ProviderController extends BaseController {
                 maxPriorityFeePerGas: gasPrice,
               });
               const packedUserOp = packUserOp(op);
+              console.log('packedUserOp', packedUserOp);
               const transactionHash = await entryPoint.handleOps(
                 [packedUserOp],
                 beneficiary
               );
+              console.log('tx hash', transactionHash);
 
               hash = transactionHash.hash;
             }
@@ -988,6 +1038,9 @@ class ProviderController extends BaseController {
       notificationService.setStatsData(statsData);
       throw typeof e === 'object' ? e : new Error(e);
     }
+    // } catch (e) {
+    //   console.log('error global', e);
+    // }
   };
 
   @Reflect.metadata('SAFE', true)
@@ -1020,10 +1073,10 @@ class ProviderController extends BaseController {
       const currentAddress = preferenceService
         .getCurrentAccount()
         ?.address.toLowerCase();
-      if (from.toLowerCase() !== currentAddress)
-        throw ethErrors.rpc.invalidParams(
-          'from should be same as current address'
-        );
+      // if (from.toLowerCase() !== currentAddress)
+      // throw ethErrors.rpc.invalidParams(
+      //   'from should be same as current address'
+      // );
     },
   ])
   personalSign = async ({ data, approvalRes, session }) => {
@@ -1456,10 +1509,10 @@ class ProviderController extends BaseController {
       !currentAddress ||
       currentAddress !== normalizeAddress(address).toLowerCase()
     ) {
-      throw ethErrors.rpc.invalidParams({
-        message:
-          'Invalid parameters: must use the current user address to sign',
-      });
+      // throw ethErrors.rpc.invalidParams({
+      //   message:
+      //     'Invalid parameters: must use the current user address to sign',
+      // });
     }
     const keyring = await keyringService.getKeyringForAccount(
       currentAddress,
@@ -1480,10 +1533,10 @@ class ProviderController extends BaseController {
       const account = preferenceService.getCurrentAccount();
 
       if (address?.toLowerCase() !== account?.address?.toLowerCase()) {
-        throw ethErrors.rpc.invalidParams({
-          message:
-            'Invalid parameters: must use the current user address to sign',
-        });
+        // throw ethErrors.rpc.invalidParams({
+        //   message:
+        //     'Invalid parameters: must use the current user address to sign',
+        // });
       }
     },
     { height: 390 },
