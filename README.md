@@ -1,14 +1,14 @@
-# Rabby Wallet
+# Conla Wallet
 
-Rabby Wallet is an open source browser plugin for the DeFi ecosystem, providing users with a better-to-use and more secure multi-chain experience.
+Conla Wallet is an open source browser plugin for the DeFi ecosystem, providing users with a better-to-use and more secure multi-chain experience.
 
 ## Install
 
 You can Download the latest Rabby [here](https://github.com/RabbyHub/Rabby/releases/latest).
 
-## Guideline for integrating Rabby Wallet
+## Guideline for integrating Conla Wallet
 
-To help dapp developers support and integrate Rabby Wallet more easily, we recommend you use our integration solution that has almost NO development cost and does not introduce any uncertainty:
+To help dapp developers support and integrate Conla Wallet more easily, we recommend you use our integration solution that has almost NO development cost and does not introduce any uncertainty:
 
 ### Problem
 
@@ -25,15 +25,15 @@ The problem is that many dapps will wrongly display this detected "Ethereum" obj
 
 We recommend you to solve above problem with simple modifications as follows:
 
-1. On your connection page, display both connection buttons for "MetaMask" & "Rabby Wallet" when the "Ethereum" object is detected: these two buttons basically have the same function. Users can click any of them to interact with the "Ethereum" object and perform the connection operation. These two buttons are only used to display both brands' logos to help users understand their operation path. 
-2. If the "Ethereum" object is not detected, then suggest the users go download the extension wallet and provide download links for both "MetaMask" and "Rabby Wallet".
+1. On your connection page, display both connection buttons for "MetaMask" & "Conla Wallet" when the "Ethereum" object is detected: these two buttons basically have the same function. Users can click any of them to interact with the "Ethereum" object and perform the connection operation. These two buttons are only used to display both brands' logos to help users understand their operation path. 
+2. If the "Ethereum" object is not detected, then suggest the users go download the extension wallet and provide download links for both "MetaMask" and "Conla Wallet".
 
 This solution does not involve any change to your actual business logic and is just simple UI adjustments. It does not introduce any uncertainty and is with rather low cost.
 
 You can refer to "[https://debank.com](https://debank.com)" for final display effect.
 
 ### Potential issues:
-According to the above solution, if a user is using the "Rabby Wallet" and clicks the "connect to MetaMask" button, he will still interact with the "Rabby Wallet" and vice versa which might be a little bit weird.
+According to the above solution, if a user is using the "Conla Wallet" and clicks the "connect to MetaMask" button, he will still interact with the "Conla Wallet" and vice versa which might be a little bit weird.
 
 However, above issue is a very rare scenario and very unlikely to happen because users are not likely to click and interact with an extension wallet that he hasn't installed. Even it happens, it's not a real problem from the user's perspective.
 

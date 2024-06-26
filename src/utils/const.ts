@@ -17,7 +17,7 @@ const entryPointAddr = '0x3bFc49341Aae93e30F6e2BE5a7Fa371cEbd5bea4';
 const conlaLogo = 'https://i.imgur.com/OZGdsJ8.png';
 
 const proxyFactory = '0x9b7463999321c8551e53faf2062c77993B025fDC';
-const bundlerUrl = 'http://34.172.46.5:3000/rpc';
+const bundlerUrl = 'https://aa-bundler.conla.com/rpc';
 const beneficiary = '0xEE35dA6bA29cc1A60d0d9042fa8c88CbEA6d12c0';
 export {
   conlaLogo,

@@ -62,13 +62,14 @@ import {
   PaymasterAPI,
   HttpRpcClient,
   wrapProvider,
-} from 'account-abstraction-anony-sdk';
+} from 'aa-conla-sdk';
 import {
   DeterministicDeployer,
   IEntryPoint__factory,
   packUserOp,
   SimpleAccountFactory__factory,
-} from 'account-abstraction-anony-utils';
+  UserOperation,
+} from 'aa-conla-utils';
 // // import { customTestnetService } from '@/background/service/customTestnet';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import ERC20_ABI from '@/abi/ERC20.json';
@@ -82,6 +83,7 @@ import {
   proxyFactory,
   beneficiary,
 } from '@/utils/const';
+import { maxUint256 } from 'viem';
 
 const reportSignText = (params: {
   method: string;
@@ -271,56 +273,66 @@ class ProviderController extends BaseController {
     }
   };
 
-  ethRequestAccounts = async ({ session: { origin } }) => {
-    if (!permissionService.hasPermission(origin)) {
-      throw ethErrors.provider.unauthorized();
-    }
+  ethGetAccountContract = async () => {
+    try {
+      const rpcUrl = CONLA_RPC;
+      const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+      const provider = new JsonRpcProvider(rpcUrl) as any;
+      const currentAcc = await wallet.getCurrentAccount();
+      const currentKeyRing = await keyringService.getKeyringForAccount(
+        currentAcc?.address || ''
+      );
+      const privateKeyBuffer = Uint8Array.from(
+        currentKeyRing?.wallets[0]?.privateKey
+      );
+      const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
-    console.log('come to ethRequestAccounts?', origin);
+      // create instance wallet
+      const sender = new ethers.Wallet(privateKeyHex).connect(provider) as any;
+      const dep = new DeterministicDeployer(provider, sender);
 
-    const _account = await this.getCurrentAccount();
-    const account = _account ? [_account.address.toLowerCase()] : [];
-    sessionService.broadcastEvent('accountsChanged', account);
-    const rpcUrl = CONLA_RPC;
-    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
-    const provider = new JsonRpcProvider(rpcUrl) as any;
-    const currentAcc = await wallet.getCurrentAccount();
-    const currentKeyRing = await keyringService.getKeyringForAccount(
-      currentAcc?.address || ''
-    );
-    const privateKeyBuffer = Uint8Array.from(
-      currentKeyRing?.wallets[0]?.privateKey
-    );
-    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
-
-    // create instance wallet
-    const sender = new ethers.Wallet(privateKeyHex).connect(provider) as any;
-    const dep = new DeterministicDeployer(provider, sender);
-
-    let factoryAddress = DeterministicDeployer.getAddress(
-      new SimpleAccountFactory__factory(),
-      0,
-      [entryPointAddr]
-    );
-    if (!(await dep.isContractDeployed(factoryAddress))) {
-      const detDeployer = new DeterministicDeployer(provider);
-      factoryAddress = await detDeployer.deterministicDeploy(
+      let factoryAddress = DeterministicDeployer.getAddress(
         new SimpleAccountFactory__factory(),
         0,
         [entryPointAddr]
       );
+      if (!(await dep.isContractDeployed(factoryAddress))) {
+        const detDeployer = new DeterministicDeployer(provider);
+        factoryAddress = await detDeployer.deterministicDeploy(
+          new SimpleAccountFactory__factory(),
+          0,
+          [entryPointAddr]
+        );
+      }
+
+      const accountAPI = new SimpleAccountAPI({
+        provider,
+        entryPointAddress: entryPointAddr,
+        owner: sender,
+        factoryAddress,
+        paymasterAPI,
+      });
+
+      const accountContract = await accountAPI._getAccountContract();
+      return accountContract;
+    } catch (e) {
+      console.log(e);
+      return { address: '' };
+    }
+  };
+
+  ethRequestAccounts = async ({ session }) => {
+    const { origin } = session;
+    if (!permissionService.hasPermission(origin)) {
+      throw ethErrors.provider.unauthorized();
     }
 
-    const accountAPI = new SimpleAccountAPI({
-      provider,
-      entryPointAddress: entryPointAddr,
-      owner: sender,
-      factoryAddress,
-      paymasterAPI,
-    });
+    console.log('come to ethRequestAccounts?', session);
 
-    const accountContract = await accountAPI._getAccountContract();
-
+    const _account = await this.getCurrentAccount();
+    const account = _account ? [_account.address.toLowerCase()] : [];
+    const accountContract = await this.ethGetAccountContract();
+    sessionService.broadcastEvent('accountsChanged', [accountContract.address]);
     const connectSite = permissionService.getConnectedSite(origin);
     if (connectSite) {
       const chain = findChain({ enum: connectSite.chain });
@@ -338,17 +350,21 @@ class ProviderController extends BaseController {
       }
     }
 
-    return [accountContract.address];
+    return session?.name === 'BirdSwap' ? [accountContract.address] : account;
   };
 
   @Reflect.metadata('SAFE', true)
-  ethAccounts = async ({ session: { origin } }) => {
+  ethAccounts = async ({ session }) => {
+    const { origin } = session;
     if (!permissionService.hasPermission(origin) || !Wallet.isUnlocked()) {
       return [];
     }
 
     const account = await this.getCurrentAccount();
-    return account ? [account.address.toLowerCase()] : [];
+    const accountContract = await this.ethGetAccountContract();
+    return session?.name === 'BirdSwap'
+      ? [accountContract.address]
+      : [account?.address.toLowerCase()];
   };
 
   ethCoinbase = async ({ session: { origin } }) => {
@@ -897,7 +913,7 @@ class ProviderController extends BaseController {
                 title: 'Contract deployed successfully',
                 message: 'Contract address: ' + conTractAddr,
                 priority: 1,
-                buttons: [{ title: 'Copy address' }],
+                // buttons: [{ title: 'Copy address' }],
               });
               onTransactionCreated({
                 hash: value.transactionHash,
@@ -948,17 +964,17 @@ class ProviderController extends BaseController {
             // each object: {data, value, target}
             console.log('array is : ', dataArray);
             for (let i = 0; i < dataArray.length; i++) {
-              const obj = dataArray[i];
-              if (!obj.data) continue;
-              const op = await accountAPI.createSignedUserOp({
-                target: obj.target,
-                data: obj.data,
-                value: obj.value ? ethers.BigNumber.from(obj.value.hex) : 0,
-                maxFeePerGas: gasPrice,
-                maxPriorityFeePerGas: gasPrice,
-              });
-              const packedUserOp = packUserOp(op);
-              console.log('op ' + i, op);
+              const obj = {
+                ...dataArray[i],
+                nonce: new BigNumber(dataArray[i].nonce.hex).plus(i).toNumber(),
+              } as Partial<UserOperation>;
+              if (!obj.sender) continue;
+              let userOp = (await accountAPI.addPaymasterToUserOp(
+                obj
+              )) as UserOperation;
+              userOp = await accountAPI.signUserOp(userOp);
+              const packedUserOp = packUserOp(userOp);
+              console.log('op ' + i, userOp);
 
               packedList.push(packedUserOp);
             }
@@ -991,6 +1007,7 @@ class ProviderController extends BaseController {
               // const transactionHash = await accountAPI.getUserOpReceipt(
               //   userOpHash
               // );
+              console.log('userOpHash', op);
               const packedUserOp = packUserOp(op);
               const transactionHash = await entryPoint.handleOps(
                 [packedUserOp],
@@ -1086,6 +1103,7 @@ class ProviderController extends BaseController {
     await new Promise((r) => setTimeout(r, SIGN_TIMEOUT));
 
     const currentAccount = preferenceService.getCurrentAccount()!;
+    const accountContract = await this.ethGetAccountContract();
     try {
       const [string, from] = data.params;
       const hex = isHexString(string) ? string : stringToHex(string);

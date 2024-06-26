@@ -51,6 +51,17 @@ const Unlock = () => {
     <div className="unlock page-has-ant-input">
       <div className="header">
         <img src="./images/welcome-image.svg" className="image" />
+        <div className="content">
+          <img
+            src="./images/conla-logo.png"
+            className="w-[100px]"
+            alt="Conla logo"
+          />
+          <h1 className="text-24 font-bold text-[#fff]">Conla Wallet</h1>
+          <p className="text-16 font-semibold text-[#fff] mt-14">
+            The game-changing wallet for Conla network
+          </p>
+        </div>
       </div>
       <Form
         autoComplete="off"

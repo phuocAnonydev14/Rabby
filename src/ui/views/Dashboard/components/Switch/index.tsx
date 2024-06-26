@@ -7,6 +7,9 @@ import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
 import IconSettingsRabbyBadge from 'ui/assets/badge/rabby-badge-s.svg';
 import { ReactComponent as RcIconArrowBlueRight } from 'ui/assets/dashboard/settings/icon-right-arrow-blue.svg';
 import { ReactComponent as RcIconArrowOrangeRight } from 'ui/assets/dashboard/settings/icon-right-arrow-orange.svg';
+import { ReactComponent as WalletIcon } from 'ui/assets/wallet.svg';
+import ConlaLogo from 'ui/assets/conla/conla-logo.png';
+import ConlaWallet from 'ui/assets/conla/conla-wallet.svg';
 import { useWallet } from '@/ui/utils';
 import useConlaAccount from '@/ui/hooks/useConlaAccount';
 
@@ -67,16 +70,14 @@ export default function SwitchAccount(props: SwitchAccountProps) {
         <div className="setting-block">
           <div className="setting-items">
             <Field
-              leftIcon={
-                <ThemeIcon src={IconSettingsRabbyBadge} className="w-28 h-28" />
-              }
+              leftIcon={<ThemeIcon src={ConlaWallet} className="w-28 h-28" />}
               rightIcon={
                 <ThemeIcon
                   src={RcIconArrowBlueRight}
                   className="icon icon-arrow-right w-20 h-20"
                 />
               }
-              onClick={() => handleSwitch(false)}
+              onClick={() => conlaAccount && handleSwitch(false)}
               className={`text-blue-light font-medium mb-4 ${
                 !conlaAccount && 'bg-r-blue-light-1'
               }`}
@@ -87,19 +88,16 @@ export default function SwitchAccount(props: SwitchAccountProps) {
           <div className="setting-items">
             {accountContract && (
               <Field
-                leftIcon={
-                  <ThemeIcon
-                    src={IconSettingsRabbyBadge}
-                    className="w-28 h-28"
-                  />
-                }
+                leftIcon={<ThemeIcon src={ConlaLogo} className="w-28 h-28" />}
                 rightIcon={
                   <ThemeIcon
                     src={RcIconArrowOrangeRight}
                     className="icon icon-arrow-right w-20 h-20"
                   />
                 }
-                onClick={() => handleSwitch(true)}
+                onClick={() => {
+                  !conlaAccount && handleSwitch(true);
+                }}
                 className={`text-blue-light font-medium ${
                   conlaAccount && 'bg-r-blue-light-1'
                 }`}

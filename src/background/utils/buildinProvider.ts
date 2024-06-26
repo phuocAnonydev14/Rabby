@@ -182,6 +182,7 @@ export class EthereumProvider extends EventEmitter {
     let result;
     switch (payload.method) {
       case 'eth_accounts':
+        console.log('come to get eth accounts nek');
         result = this.selectedAddress ? [this.selectedAddress] : [];
         break;
 

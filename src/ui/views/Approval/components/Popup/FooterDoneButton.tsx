@@ -14,7 +14,7 @@ export const FooterDoneButton: React.FC<Props> = ({
   hide,
   deployerAddress,
 }) => {
-  const [counter, setCounter] = React.useState(8);
+  const [counter, setCounter] = React.useState(4);
   const { visible } = useCommonPopupView();
 
   useInterval(() => {
@@ -22,6 +22,9 @@ export const FooterDoneButton: React.FC<Props> = ({
   }, 500);
 
   React.useEffect(() => {
+    if (deployerAddress) {
+      setCounter(6);
+    }
     if (counter <= 0) {
       onDone();
     }

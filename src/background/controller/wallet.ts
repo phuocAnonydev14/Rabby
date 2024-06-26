@@ -4009,9 +4009,10 @@ export class WalletController extends BaseController {
   }) => {
     const { code, claimSnapshot } = params || {};
     const account = await preferenceService.getCurrentAccount();
+    console.log(account);
     if (!account) throw new Error(t('background.error.noCurrentAccount'));
     const claimText = `${account?.address} Claims Rabby Points`;
-    const verifyAddr = `Rabby Wallet wants you to sign in with your address:\n${account?.address}`;
+    const verifyAddr = `Conla Wallet wants you to sign in with your address:\n${account?.address}`;
     const msg = `0x${Buffer.from(
       claimSnapshot ? claimText : verifyAddr,
       'utf-8'

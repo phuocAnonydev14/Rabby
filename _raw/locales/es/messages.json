@@ -726,11 +726,11 @@
       "feedback": {
         "directMessage": {
           "content": "Mensaje Directo",
-          "description": "Chatea con Rabby Wallet Oficial en DeBank"
+          "description": "Chatea con Conla Wallet Oficial en DeBank"
         },
         "proposal": {
           "content": "Propuesta",
-          "description": "Envía una propuesta para Rabby Wallet en DeBank"
+          "description": "Envía una propuesta para Conla Wallet en DeBank"
         },
         "title": "Comentarios"
       },
@@ -758,7 +758,7 @@
         "imageLabel": "distintivo de Rabby",
         "title": "Reclama el distintivo de Rabby para",
         "enterClaimCode": "Ingresa el código de reclamo",
-        "swapTip": "Primero necesitas completar un intercambio en un notable dex dentro de Rabby Wallet.",
+        "swapTip": "Primero necesitas completar un intercambio en un notable dex dentro de Conla Wallet.",
         "goToSwap": "Ir a Swap",
         "claim": "Reclamar",
         "viewYourClaimCode": "Ver tu código de reclamo",
@@ -809,7 +809,7 @@
         "warning": "Advertencia",
         "clearWatchAddressContent": "¿Estás seguro de que deseas eliminar todas las direcciones en modo de observación?",
         "updateVersion": {
-          "content": "Hay una nueva actualización para Rabby Wallet disponible. Haz clic para ver cómo actualizar manualmente.",
+          "content": "Hay una nueva actualización para Conla Wallet disponible. Haz clic para ver cómo actualizar manualmente.",
           "okText": "Ver Tutorial",
           "successTip": "Estás usando la última versión"
         },
@@ -1532,7 +1532,7 @@
     }
   },
   "global": {
-    "appName": "Rabby Wallet",
+    "appName": "Conla Wallet",
     "appDescription": "La billetera revolucionaria para Ethereum y todas las cadenas EVM",
     "copied": "Copiado",
     "confirm": "Confirmar",

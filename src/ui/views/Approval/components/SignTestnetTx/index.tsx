@@ -396,9 +396,12 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
       setIsCoboArugsAccount(true);
     }
     checkCanProcess();
+
+    const conlaAcc = localStorage.getItem('conlaAccount');
+
     const balance = await wallet.getCustomTestnetToken({
       chainId,
-      address: currentAccount.address,
+      address: conlaAcc ? conlaAcc : currentAccount.address,
     });
 
     setNativeTokenBalance(balance.rawAmount);

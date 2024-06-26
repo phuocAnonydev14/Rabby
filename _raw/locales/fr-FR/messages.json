@@ -187,7 +187,7 @@
     "Save": "Sauvegarder",
     "addButton": "Ajouter",
     "appDescription": "Le wallet révolutionnaire pour Ethereum et toutes les chaînes EVM",
-    "appName": "Rabby Wallet",
+    "appName": "Conla Wallet",
     "assets": "actifs",
     "back": "Retour",
     "backButton": "Retour",
@@ -548,11 +548,11 @@
       "feedback": {
         "directMessage": {
           "content": "Message direct",
-          "description": "Discuter avec Rabby Wallet Official sur DeBank"
+          "description": "Discuter avec Conla Wallet Official sur DeBank"
         },
         "proposal": {
           "content": "Proposition",
-          "description": "Soumettre une proposition pour Rabby Wallet sur DeBank"
+          "description": "Soumettre une proposition pour Conla Wallet sur DeBank"
         },
         "title": "Feedback"
       },
@@ -642,7 +642,7 @@
         "learnMoreOnDebank": "En savoir plus sur DeBank",
         "noCode": "Vous n'avez pas activé le code de réclamation pour cette adresse",
         "rabbyValuedUserNo": "Utilisateur Rabby estimé n°{{num}}",
-        "swapTip": "Vous devez d’abord effectuer un échange avec un DEX notable dans Rabby Wallet.",
+        "swapTip": "Vous devez d’abord effectuer un échange avec un DEX notable dans Conla Wallet.",
         "title": "Réclamer le badge Rabby pour",
         "viewOnDebank": "Voir sur DeBank",
         "viewYourClaimCode": "Afficher votre code de réclamation"
@@ -726,7 +726,7 @@
         "testnetBackendServiceUrl": "URL du service backend testnet",
         "updateAvailable": "Mise à jour disponible",
         "updateVersion": {
-          "content": "Une nouvelle mise à jour pour Rabby Wallet est disponible. Cliquer pour voir comment mettre à jour manuellement.",
+          "content": "Une nouvelle mise à jour pour Conla Wallet est disponible. Cliquer pour voir comment mettre à jour manuellement.",
           "okText": "Voir Tutoriel",
           "successTip": "Vous utilisez la dernière version",
           "title": "Mise à jour disponible"
@@ -1685,7 +1685,7 @@
         "safeWalletTitle": "Safe{Wallet}",
         "title": "Soumettre la modification d'approbation du token"
       },
-      "decodedTooltip": "Cette signature est décodée par Rabby Wallet",
+      "decodedTooltip": "Cette signature est décodée par Conla Wallet",
       "importedAddress": "Adresse importée",
       "l2GasEstimateTooltip": "L'estimation du gaz pour la chaîne L2 n'inclut pas les frais de gaz L1. Les frais réels seront plus élevés que l’estimation actuelle."
     },

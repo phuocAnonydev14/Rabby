@@ -424,7 +424,7 @@ class PreferenceService {
     };
   };
 
-  setCurrentAccount = (account: Account | null) => {
+  setCurrentAccount = async (account: Account | null) => {
     this.store.currentAccount = account;
     if (account) {
       sessionService.broadcastEvent('accountsChanged', [

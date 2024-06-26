@@ -751,11 +751,11 @@
       "feedback": {
         "directMessage": {
           "content": "ダイレクトメッセージ",
-          "description": "DeBankのRabby Wallet公式とチャット"
+          "description": "DeBankのConla Wallet公式とチャット"
         },
         "proposal": {
           "content": "提案",
-          "description": "Rabby Walletに関する提案をDeBankに提出"
+          "description": "Conla Walletに関する提案をDeBankに提出"
         },
         "title": "フィードバック"
       },
@@ -783,7 +783,7 @@
         "imageLabel": "Rabby バッジ",
         "title": "Rabby バッジをクレームする",
         "enterClaimCode": "クレームコードを入力",
-        "swapTip": "Rabby Wallet内で注目のDEXでスワップを完了する必要があります。",
+        "swapTip": "Conla Wallet内で注目のDEXでスワップを完了する必要があります。",
         "goToSwap": "スワップに進む",
         "claim": "クレーム",
         "viewYourClaimCode": "クレームコードを表示",
@@ -834,7 +834,7 @@
         "warning": "警告",
         "clearWatchAddressContent": "すべてのウォッチモードアドレスを削除してもよろしいですか？",
         "updateVersion": {
-          "content": "新しいRabby Walletのアップデートが利用可能です。手動でアップデート方法を確認するにはクリックしてください。",
+          "content": "新しいConla Walletのアップデートが利用可能です。手動でアップデート方法を確認するにはクリックしてください。",
           "okText": "チュートリアルを見る",
           "successTip": "最新バージョンを使用中です"
         },

@@ -1635,10 +1635,12 @@ const SignTx = ({ params, origin }: SignTxProps) => {
           (item) => item.type === currentAccount.type
         )
       );
+
+      const conlaAcc = localStorage.getItem('conlaAccount');
       const balance = await getNativeTokenBalance({
         wallet,
         chainId,
-        address: currentAccount.address,
+        address: conlaAcc ? conlaAcc : currentAccount.address,
       });
 
       setNativeTokenBalance(balance);

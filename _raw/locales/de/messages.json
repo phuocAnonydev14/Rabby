@@ -779,11 +779,11 @@
       "feedback": {
         "directMessage": {
           "content": "Direkte Nachricht",
-          "description": "Chatten Sie mit Rabby Wallet Official auf DeBank"
+          "description": "Chatten Sie mit Conla Wallet Official auf DeBank"
         },
         "proposal": {
           "content": "Vorschlag",
-          "description": "Vorschlag für Rabby Wallet auf DeBank einreichen"
+          "description": "Vorschlag für Conla Wallet auf DeBank einreichen"
         },
         "title": "Feedback"
       },
@@ -811,7 +811,7 @@
         "imageLabel": "Rabby Abzeichen",
         "title": "Beanspruchen Sie das Rabby Abzeichen für",
         "enterClaimCode": "Geben Sie den Anspruchscode ein",
-        "swapTip": "Sie müssen zuerst einen Tausch mit einem bekannten DEX innerhalb von Rabby Wallet abschließen.",
+        "swapTip": "Sie müssen zuerst einen Tausch mit einem bekannten DEX innerhalb von Conla Wallet abschließen.",
         "goToSwap": "Zum Tauschen gehen",
         "claim": "Beanspruchen",
         "viewYourClaimCode": "Sehen Sie Ihren Anspruchscode",
@@ -862,7 +862,7 @@
         "warning": "Warnung",
         "clearWatchAddressContent": "Sind Sie sicher, dass Sie alle Adressen im Beobachtungsmodus löschen möchten?",
         "updateVersion": {
-          "content": "Ein neues Update für Rabby Wallet ist verfügbar. Klicken Sie hier, um zu erfahren, wie Sie manuell aktualisieren können.",
+          "content": "Ein neues Update für Conla Wallet ist verfügbar. Klicken Sie hier, um zu erfahren, wie Sie manuell aktualisieren können.",
           "okText": "Anleitung",
           "successTip": "Sie verwenden die neueste Version"
         },
@@ -1617,7 +1617,7 @@
     }
   },
   "global": {
-    "appName": "Rabby Wallet",
+    "appName": "Conla Wallet",
     "appDescription": "Die bahnbrechende Wallet für Ethereum und alle EVM-Blockchains",
     "copied": "Kopiert",
     "confirm": "Bestätigen",

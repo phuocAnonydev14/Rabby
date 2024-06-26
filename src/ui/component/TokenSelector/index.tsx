@@ -118,6 +118,8 @@ const TokenSelector = ({
   useDebounce(
     async () => {
       if (!query.trim()) return;
+      console.log('query', query);
+
       if (query.trim().toLowerCase() === 'btc') {
         const accountContractAddr = getAccountStorage(
           currentAccount?.address || ''
@@ -127,7 +129,7 @@ const TokenSelector = ({
           accountContractAddr
         );
         setDisplayList((state) => [
-          ...state,
+          // ...state,
           {
             id: rabbyNetworkName,
             chain: rabbyNetworkName,

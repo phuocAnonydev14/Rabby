@@ -198,11 +198,11 @@
       "noMark": "No mark",
       "markRemoved": "Mark removed",
       "speedUpTooltip": "This accelerated transaction and the original transaction, only one of which will eventually be completed",
-      "decodedTooltip": "This signature is decoded by Rabby Wallet",
+      "decodedTooltip": "This signature is decoded by Conla Wallet",
       "signTransactionOnChain": "Sign {{chain}} Transaction",
       "viewRaw": "View Raw",
       "unknownActionType": "Unknown action type",
-      "sigCantDecode": "This signature can't be decoded by Rabby Wallet",
+      "sigCantDecode": "This signature can't be decoded by Conla Wallet",
       "nftCollection": "NFT Collection",
       "floorPrice": "Floor price",
       "contractAddress": "Contract address",
@@ -936,11 +936,11 @@
       "feedback": {
         "directMessage": {
           "content": "Direct Message",
-          "description": "Chat with Rabby Wallet Official on DeBank"
+          "description": "Chat with Conla Wallet Official on DeBank"
         },
         "proposal": {
           "content": "Proposal",
-          "description": "Submit a proposal for Rabby Wallet on DeBank"
+          "description": "Submit a proposal for Conla Wallet on DeBank"
         },
         "title": "Feedback"
       },
@@ -968,7 +968,7 @@
         "imageLabel": "rabby badge",
         "title": "Claim Rabby Badge for",
         "enterClaimCode": "Enter claim code",
-        "swapTip": "You need to complete a swap with notable dex within Rabby Wallet first.",
+        "swapTip": "You need to complete a swap with notable dex within Conla Wallet first.",
         "goToSwap": "Go to Swap",
         "claim": "Claim",
         "viewYourClaimCode": "View your claim code",
@@ -1019,7 +1019,7 @@
         "warning": "Warning",
         "clearWatchAddressContent": "Do you make sure to delete all Watch Mode address?",
         "updateVersion": {
-          "content": "A new update for Rabby Wallet is available. Click to check how to update manually.",
+          "content": "A new update for Conla Wallet is available. Click to check how to update manually.",
           "okText": "See Tutorial",
           "successTip": "You are using the latest version",
           "title": "Update Available"
@@ -1886,7 +1886,7 @@
         "empty": "No chains found",
         "tips": {
           "added": "You've already added this chain",
-          "supported": "Chain already integrated by Rabby Wallet"
+          "supported": "Chain already integrated by Conla Wallet"
         }
       }
     },
@@ -2028,8 +2028,8 @@
     }
   },
   "global": {
-    "appName": "Rabby Wallet",
-    "appDescription": "The game-changing wallet for Ethereum and all EVM chains",
+    "appName": "Conla Wallet",
+    "appDescription": "The game-changing wallet for Conla network",
     "copied": "Copied",
     "confirm": "Confirm",
     "next": "Next",

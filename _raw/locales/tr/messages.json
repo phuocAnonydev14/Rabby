@@ -723,11 +723,11 @@
       "feedback": {
         "directMessage": {
           "content": "Doğrudan Mesaj",
-          "description": "Rabby Wallet Official ile DeBank'ta sohbet edin"
+          "description": "Conla Wallet Official ile DeBank'ta sohbet edin"
         },
         "proposal": {
           "content": "Öneri",
-          "description": "Rabby Wallet için DeBank'ta bir öneri sunun"
+          "description": "Conla Wallet için DeBank'ta bir öneri sunun"
         },
         "title": "Geri Bildirim"
       },
@@ -1540,7 +1540,7 @@
     }
   },
   "global": {
-    "appName": "Rabby Wallet",
+    "appName": "Conla Wallet",
     "appDescription": "Ethereum ve tüm EVM zincirleri için oyun değiştirici cüzdan",
     "copied": "Kopyalandı",
     "confirm": "Onayla",

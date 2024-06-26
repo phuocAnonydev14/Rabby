@@ -723,11 +723,11 @@
       "feedback": {
         "directMessage": {
           "content": "Mensagem Direta",
-          "description": "Converse com a Equipe Rabby Wallet oficial no DeBank"
+          "description": "Converse com a Equipe Conla Wallet oficial no DeBank"
         },
         "proposal": {
           "content": "Proposta",
-          "description": "Envie uma proposta para a Rabby Wallet no DeBank"
+          "description": "Envie uma proposta para a Conla Wallet no DeBank"
         },
         "title": "Feedback"
       },
@@ -755,7 +755,7 @@
         "imageLabel": "medalha Rabby",
         "title": "Reivindique a Medalha Rabby para",
         "enterClaimCode": "Digite o código de reivindicação",
-        "swapTip": "Você precisa concluir uma troca com uma dex notável dentro da Rabby Wallet primeiro.",
+        "swapTip": "Você precisa concluir uma troca com uma dex notável dentro da Conla Wallet primeiro.",
         "goToSwap": "Ir para a Troca",
         "claim": "Reivindicar",
         "viewYourClaimCode": "Ver seu código de reivindicação",
@@ -806,7 +806,7 @@
         "warning": "Aviso",
         "clearWatchAddressContent": "Você tem certeza de que deseja excluir todos os endereços do modo de observação?",
         "updateVersion": {
-          "content": "Uma nova atualização para a Rabby Wallet está disponível. Clique para verificar como atualizar manualmente.",
+          "content": "Uma nova atualização para a Conla Wallet está disponível. Clique para verificar como atualizar manualmente.",
           "okText": "Ver Tutorial",
           "successTip": "Você está usando a versão mais recente"
         },

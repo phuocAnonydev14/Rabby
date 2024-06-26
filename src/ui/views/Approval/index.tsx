@@ -29,7 +29,7 @@ const Approval: React.FC<{
       return null;
     }
     setApproval(approval);
-    document.title = 'Rabby Wallet Notification';
+    document.title = 'Conla Wallet Notification';
     const account = await wallet.getCurrentAccount();
     if (!account) {
       rejectApproval();

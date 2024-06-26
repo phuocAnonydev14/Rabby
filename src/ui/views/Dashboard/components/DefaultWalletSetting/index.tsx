@@ -2,7 +2,7 @@ import { useWallet } from '@/ui/utils';
 import { message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import IconDefaultMetamask from 'ui/assets/icon-default-metamask.png';
-import IconDefaultRabby from 'ui/assets/icon-default-rabby.png';
+import IconDefaultRabby from 'ui/assets/icon-default-conla.png';
 import './style.less';
 import { useTranslation } from 'react-i18next';
 

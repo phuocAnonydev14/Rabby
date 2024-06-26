@@ -1041,7 +1041,7 @@ function TableByAssetSpenders({
 }
 
 const ApprovalManagePage = () => {
-  useTitle('Approvals - Rabby Wallet');
+  useTitle('Approvals - Conla Wallet');
   useCurrentAccount({
     onChanged: useCallback((ctx) => {
       if (ctx.reason === 'currentAccount') {

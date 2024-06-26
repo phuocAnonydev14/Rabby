@@ -895,11 +895,11 @@
       "feedback": {
         "directMessage": {
           "content": "Прямое сообщение",
-          "description": "Чат с официальным представителем Rabby Wallet на DeBank"
+          "description": "Чат с официальным представителем Conla Wallet на DeBank"
         },
         "proposal": {
           "content": "Предложение",
-          "description": "Отправьте предложение для Rabby Wallet на DeBank"
+          "description": "Отправьте предложение для Conla Wallet на DeBank"
         },
         "title": "Обратная связь"
       },
