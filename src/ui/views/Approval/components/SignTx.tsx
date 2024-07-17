@@ -721,6 +721,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     tokenDetail: s.sign.tokenDetail,
   }));
   const [footerShowShadow, setFooterShowShadow] = useState(false);
+  const { conlaAcc } = useRabbySelector((state) => state.customRPC);
 
   const gaEvent = async (type: 'allow' | 'cancel') => {
     const ga:
@@ -1864,6 +1865,8 @@ const SignTx = ({ params, origin }: SignTxProps) => {
     }
   }, [scrollInfo, scrollRefSize]);
 
+  console.log('conlaAcc', conlaAcc);
+
   return (
     <>
       <div
@@ -1904,47 +1907,49 @@ const SignTx = ({ params, origin }: SignTxProps) => {
                 }}
               />
             ) : (
-              <GasSelector
-                disabled={isGnosisAccount || isCoboArugsAccount}
-                isReady={isReady}
-                gasLimit={gasLimit}
-                noUpdate={isCancel || isSpeedUp}
-                gasList={gasList}
-                selectedGas={selectedGas}
-                version={txDetail.pre_exec_version}
-                gas={{
-                  error: txDetail.gas.error,
-                  success: txDetail.gas.success,
-                  gasCostUsd: gasExplainResponse.gasCostUsd,
-                  gasCostAmount: gasExplainResponse.gasCostAmount,
-                }}
-                gasCalcMethod={(price) => {
-                  return explainGas({
-                    gasUsed,
-                    gasPrice: price,
-                    chainId,
-                    nativeTokenPrice: txDetail?.native_token.price || 0,
-                    tx,
-                    wallet,
-                    gasLimit,
-                  });
-                }}
-                recommendGasLimit={recommendGasLimit}
-                recommendNonce={recommendNonce}
-                chainId={chainId}
-                onChange={handleGasChange}
-                nonce={realNonce || tx.nonce}
-                disableNonce={isSpeedUp || isCancel}
-                isSpeedUp={isSpeedUp}
-                isCancel={isCancel}
-                is1559={support1559}
-                isHardware={isHardware}
-                manuallyChangeGasLimit={manuallyChangeGasLimit}
-                errors={checkErrors}
-                engineResults={engineResults}
-                nativeTokenBalance={nativeTokenBalance}
-                gasPriceMedian={gasPriceMedian}
-              />
+              !conlaAcc && (
+                <GasSelector
+                  disabled={isGnosisAccount || isCoboArugsAccount}
+                  isReady={isReady}
+                  gasLimit={gasLimit}
+                  noUpdate={isCancel || isSpeedUp}
+                  gasList={gasList}
+                  selectedGas={selectedGas}
+                  version={txDetail.pre_exec_version}
+                  gas={{
+                    error: txDetail.gas.error,
+                    success: txDetail.gas.success,
+                    gasCostUsd: gasExplainResponse.gasCostUsd,
+                    gasCostAmount: gasExplainResponse.gasCostAmount,
+                  }}
+                  gasCalcMethod={(price) => {
+                    return explainGas({
+                      gasUsed,
+                      gasPrice: price,
+                      chainId,
+                      nativeTokenPrice: txDetail?.native_token.price || 0,
+                      tx,
+                      wallet,
+                      gasLimit,
+                    });
+                  }}
+                  recommendGasLimit={recommendGasLimit}
+                  recommendNonce={recommendNonce}
+                  chainId={chainId}
+                  onChange={handleGasChange}
+                  nonce={realNonce || tx.nonce}
+                  disableNonce={isSpeedUp || isCancel}
+                  isSpeedUp={isSpeedUp}
+                  isCancel={isCancel}
+                  is1559={support1559}
+                  isHardware={isHardware}
+                  manuallyChangeGasLimit={manuallyChangeGasLimit}
+                  errors={checkErrors}
+                  engineResults={engineResults}
+                  nativeTokenBalance={nativeTokenBalance}
+                  gasPriceMedian={gasPriceMedian}
+                />
+              )
             )}
           </>
         )}

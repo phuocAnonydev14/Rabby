@@ -98,7 +98,10 @@ const ImportPrivateKey = () => {
         custom={isWide}
         spinning={loading}
         form={form}
-        onSubmit={({ key }) => run(key)}
+        onSubmit={({ key }) => {
+          run(key);
+          localStorage.removeItem('conlaAccount');
+        }}
         hasBack={false}
         hasDivider
         noPadding

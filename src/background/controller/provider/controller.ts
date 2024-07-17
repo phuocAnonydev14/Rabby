@@ -1,3 +1,4 @@
+import { PaymasterAPI, SimpleAccountAPI, wrapProvider } from 'aa-conla-sdk';
 import { matomoRequestEvent } from '@/utils/matomo-request';
 import * as Sentry from '@sentry/browser';
 import Common, { Hardfork } from '@ethereumjs/common';
@@ -58,12 +59,6 @@ import { customTestnetService } from '@/background/service/customTestnet';
 import { SIGN_TIMEOUT } from '@/constant/timeout';
 import wallet from '../wallet';
 import {
-  SimpleAccountAPI,
-  PaymasterAPI,
-  HttpRpcClient,
-  wrapProvider,
-} from 'aa-conla-sdk';
-import {
   DeterministicDeployer,
   IEntryPoint__factory,
   packUserOp,
@@ -74,7 +69,6 @@ import {
 import { JsonRpcProvider } from '@ethersproject/providers';
 import ERC20_ABI from '@/abi/ERC20.json';
 import PROXY_FACTORY_ABI from '@/abi/PROXY_FACTORY.json';
-import { parseEther } from 'ethers/lib/utils';
 import {
   CONLA,
   CONLA_RPC,
@@ -84,6 +78,7 @@ import {
   beneficiary,
 } from '@/utils/const';
 import { maxUint256 } from 'viem';
+import { formatEther, parseEther } from 'ethers/lib/utils';
 
 const reportSignText = (params: {
   method: string;
@@ -276,7 +271,7 @@ class ProviderController extends BaseController {
   ethGetAccountContract = async () => {
     try {
       const rpcUrl = CONLA_RPC;
-      const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+      const paymasterAPI = new PaymasterAPI(bundlerUrl);
       const provider = new JsonRpcProvider(rpcUrl) as any;
       const currentAcc = await wallet.getCurrentAccount();
       const currentKeyRing = await keyringService.getKeyringForAccount(
@@ -374,6 +369,88 @@ class ProviderController extends BaseController {
 
     const account = await this.getCurrentAccount();
     return account ? account.address.toLowerCase() : null;
+  };
+
+  testExample = async () => {
+    try {
+      const MNEMONIC =
+        'skate eight behind action easy maximum rigid cycle surround solar warm world';
+      const entryPointAddress = '0x3bFc49341Aae93e30F6e2BE5a7Fa371cEbd5bea4';
+      const rpcUrl = 'https://rpc.testnet.conla.com';
+      const provider = new JsonRpcProvider(rpcUrl);
+      const beneficiary = '0xEE35dA6bA29cc1A60d0d9042fa8c88CbEA6d12c0';
+      const paymaster = '0x26E68f18CE130B8d4A0A6f5A2e628e89d0b51FC6';
+      const bundlerBackendUrl = 'https://aa-bundler.conla.com';
+      const paymasterAPI = new PaymasterAPI(bundlerBackendUrl);
+      const owner = ethers.Wallet.fromMnemonic(
+        MNEMONIC,
+        "m/44'/60'/0'/0/3"
+      ).connect(provider);
+      const entryPoint = IEntryPoint__factory.connect(entryPointAddress, owner);
+      console.log('start example');
+      const detDeployer = new DeterministicDeployer(provider);
+      const factoryAddress = await detDeployer.deterministicDeploy(
+        new SimpleAccountFactory__factory(),
+        0,
+        [entryPointAddress]
+      );
+      const accountFactory = new SimpleAccountFactory__factory(owner).attach(
+        factoryAddress
+      );
+
+      const sendNative = async (
+        owner: ethers.Wallet,
+        factoryAddress: string,
+        paymasterAPI: PaymasterAPI
+      ) => {
+        console.log('--- START SENDING NATIVE TOKEN ---');
+        const accountAPI = new SimpleAccountAPI({
+          provider: provider,
+          entryPointAddress: entryPointAddress,
+          owner: owner,
+          factoryAddress: factoryAddress,
+          paymasterAPI: paymasterAPI,
+          bundlerUrl: bundlerBackendUrl,
+        });
+
+        const gasPrice = await provider.getGasPrice();
+        const value = parseEther('0.1');
+
+        const op = await accountAPI.createSignedUserOp({
+          target: '0xeF2167037aC297fa711FD3bB228543D58c82AFd6',
+          data: '0x',
+          value: value,
+          maxFeePerGas: gasPrice,
+          maxPriorityFeePerGas: gasPrice,
+        });
+
+        const packeUserOp = await packUserOp(op);
+        console.log('packeUserOp', packeUserOp);
+        const tx = await accountAPI.sendHandlerOps([op]);
+        console.log('tx hash: ', tx);
+        console.log('--- COMPLETE SENDING NATIVE TOKEN ---');
+      };
+
+      await sendNative(owner, (await accountFactory).address, paymasterAPI);
+      console.log(
+        'paymaster balance after',
+        formatEther(await entryPoint.balanceOf(paymaster))
+      );
+      console.log(
+        'beneficiary balance after',
+        formatEther(await provider.getBalance(beneficiary))
+      );
+      console.log(
+        'default owner balance after',
+        formatEther(
+          await provider.getBalance(
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+          )
+        )
+      );
+    } catch (e) {
+      console.log('error', e);
+    }
   };
 
   @Reflect.metadata('SAFE', true)
@@ -814,22 +891,22 @@ class ProviderController extends BaseController {
           const client = customTestnetService.getClient(chainData.id);
 
           // // case is wallet owner send
-          if (txParams.to && txParams.isOwnerMode) {
-            hash = await client.request({
-              method: 'eth_sendRawTransaction',
-              params: [rawTx as any],
-            });
-            console.log({ hash, reqId, pushType });
-            console.log('stastData', statsData);
-            onTransactionCreated({ hash, reqId, pushType });
-            notificationService.setStatsData(statsData);
-            return hash;
-          }
+          // if (txParams.to && txParams.isOwnerMode) {
+          //   hash = await client.request({
+          //     method: 'eth_sendRawTransaction',
+          //     params: [rawTx as any],
+          //   });
+          //   console.log({ hash, reqId, pushType });
+          //   console.log('stastData', statsData);
+          //   onTransactionCreated({ hash, reqId, pushType });
+          //   notificationService.setStatsData(statsData);
+          //   return hash;
+          // }
 
           // case account contract
           // start custom send feature
           const rpcUrl = CONLA_RPC;
-          const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+          const paymasterAPI = new PaymasterAPI(bundlerUrl);
           const provider = new JsonRpcProvider(rpcUrl) as any;
           const currentAcc = await wallet.getCurrentAccount();
           const currentKeyRing = await keyringService.getKeyringForAccount(
@@ -871,6 +948,7 @@ class ProviderController extends BaseController {
             owner: sender,
             factoryAddress,
             paymasterAPI,
+            bundlerUrl,
           });
 
           const chainId = await provider
@@ -937,8 +1015,11 @@ class ProviderController extends BaseController {
               maxFeePerGas: gasPrice,
               maxPriorityFeePerGas: gasPrice,
             });
-
             const packedUserOp = packUserOp(op);
+            console.log('op', op);
+
+            console.log('packedUserOp', packedUserOp);
+
             const transactionHash = await entryPoint.handleOps(
               [packedUserOp],
               beneficiary
@@ -1023,15 +1104,14 @@ class ProviderController extends BaseController {
                 maxFeePerGas: gasPrice,
                 maxPriorityFeePerGas: gasPrice,
               });
-              const packedUserOp = packUserOp(op);
-              console.log('packedUserOp', packedUserOp);
-              const transactionHash = await entryPoint.handleOps(
-                [packedUserOp],
-                beneficiary
-              );
+
+              const packedUser = packUserOp(op);
+              console.log('packedUser', packedUser);
+
+              const transactionHash = await accountAPI.sendHandlerOps([op]);
               console.log('tx hash', transactionHash);
 
-              hash = transactionHash.hash;
+              hash = transactionHash;
             }
           }
         }

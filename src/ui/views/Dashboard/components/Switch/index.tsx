@@ -1,13 +1,11 @@
 import { Field, Popup } from '@/ui/component';
 import store, { useRabbySelector } from '@/ui/store';
-import { Button, message } from 'antd';
+import { message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import './style.less';
 import ThemeIcon from '@/ui/component/ThemeMode/ThemeIcon';
-import IconSettingsRabbyBadge from 'ui/assets/badge/rabby-badge-s.svg';
 import { ReactComponent as RcIconArrowBlueRight } from 'ui/assets/dashboard/settings/icon-right-arrow-blue.svg';
 import { ReactComponent as RcIconArrowOrangeRight } from 'ui/assets/dashboard/settings/icon-right-arrow-orange.svg';
-import { ReactComponent as WalletIcon } from 'ui/assets/wallet.svg';
 import ConlaLogo from 'ui/assets/conla/conla-logo.png';
 import ConlaWallet from 'ui/assets/conla/conla-wallet.svg';
 import { useWallet } from '@/ui/utils';
@@ -30,8 +28,20 @@ export default function SwitchAccount(props: SwitchAccountProps) {
 
   useEffect(() => {
     (async () => {
+      // accountContract:accountAddress : check list account to cache
+      const currentAccountContract = localStorage.getItem(
+        `accountContract:${currentAccount?.address}`
+      );
+      if (currentAccountContract) {
+        setAccountContract(currentAccountContract);
+        return;
+      }
+      const isNotDeployed = await wallet.checkIsDeployedAccountContract();
+      if (isNotDeployed) {
+        return;
+      }
       const contract = await wallet.getAccountContract();
-      setAccountContract(contract.address);
+      setAccountContract(contract?.address || '');
     })();
   }, [currentAccount]);
 

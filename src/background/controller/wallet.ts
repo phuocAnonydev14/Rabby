@@ -108,7 +108,7 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   DeterministicDeployer,
   SimpleAccountFactory__factory,
-} from 'account-abstraction-anony-utils';
+} from 'aa-conla-utils';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import {
   bundlerUrl,
@@ -116,7 +116,7 @@ import {
   entryPointAddr,
   rabbyNetworkName,
 } from '@/utils/const';
-import { PaymasterAPI, SimpleAccountAPI } from 'account-abstraction-anony-sdk';
+import { PaymasterAPI, SimpleAccountAPI } from 'aa-conla-sdk';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -305,66 +305,66 @@ export class WalletController extends BaseController {
     return preferenceService.getConchaGasPrice();
   };
 
-  seedAccountContract = async () => {
-    const rpcUrl = CONLA_RPC;
+  // seedAccountContract = async () => {
+  //   const rpcUrl = CONLA_RPC;
 
-    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+  //   const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
 
-    const provider = new JsonRpcProvider(rpcUrl);
+  //   const provider = new JsonRpcProvider(rpcUrl);
 
-    const currentAcc = await wallet.getCurrentAccount();
-    const currentKeyRing = await keyringService.getKeyringForAccount(
-      currentAcc?.address || ''
-    );
+  //   const currentAcc = await wallet.getCurrentAccount();
+  //   const currentKeyRing = await keyringService.getKeyringForAccount(
+  //     currentAcc?.address || ''
+  //   );
 
-    const privateKeyBuffer = Uint8Array.from(
-      currentKeyRing?.wallets[0]?.privateKey
-    );
+  //   const privateKeyBuffer = Uint8Array.from(
+  //     currentKeyRing?.wallets[0]?.privateKey
+  //   );
 
-    const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
+  //   const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
-    // create instance wallet
-    const sender = new ethers.Wallet(privateKeyHex).connect(provider);
+  //   // create instance wallet
+  //   const sender = new ethers.Wallet(privateKeyHex).connect(provider);
 
-    const dep = new DeterministicDeployer(provider, sender);
+  //   const dep = new DeterministicDeployer(provider, sender);
 
-    let factoryAddress = DeterministicDeployer.getAddress(
-      new SimpleAccountFactory__factory(),
-      0,
-      [entryPointAddr]
-    );
-    if (!(await dep.isContractDeployed(factoryAddress))) {
-      const detDeployer = new DeterministicDeployer(provider);
-      factoryAddress = await detDeployer.deterministicDeploy(
-        new SimpleAccountFactory__factory(),
-        0,
-        [entryPointAddr]
-      );
-    }
+  //   let factoryAddress = DeterministicDeployer.getAddress(
+  //     new SimpleAccountFactory__factory(),
+  //     0,
+  //     [entryPointAddr]
+  //   );
+  //   if (!(await dep.isContractDeployed(factoryAddress))) {
+  //     const detDeployer = new DeterministicDeployer(provider);
+  //     factoryAddress = await detDeployer.deterministicDeploy(
+  //       new SimpleAccountFactory__factory(),
+  //       0,
+  //       [entryPointAddr]
+  //     );
+  //   }
 
-    console.log({
-      provider,
-      entryPointAddr,
-      owner: sender,
-      factoryAddress,
-      paymasterAPI,
-    });
+  //   console.log({
+  //     provider,
+  //     entryPointAddr,
+  //     owner: sender,
+  //     factoryAddress,
+  //     paymasterAPI,
+  //   });
 
-    const accountAPI = new SimpleAccountAPI({
-      provider,
-      entryPointAddress: entryPointAddr,
-      owner: sender,
-      factoryAddress,
-      paymasterAPI,
-    });
-    const accountContract = await accountAPI._getAccountContract();
+  //   const accountAPI = new SimpleAccountAPI({
+  //     provider,
+  //     entryPointAddress: entryPointAddr,
+  //     owner: sender,
+  //     factoryAddress,
+  //     paymasterAPI,
+  //   });
+  //   const accountContract = await accountAPI._getAccountContract();
 
-    const signer = provider.getSigner();
-    await signer.sendTransaction({
-      to: accountContract.address,
-      value: parseEther('1000000000000'),
-    });
-  };
+  //   const signer = provider.getSigner();
+  //   await signer.sendTransaction({
+  //     to: accountContract.address,
+  //     value: parseEther('1000000000000'),
+  //   });
+  // };
 
   getSafeVersion = async ({
     address,
@@ -760,7 +760,7 @@ export class WalletController extends BaseController {
 
   getAccountContract = async () => {
     const rpcUrl = CONLA_RPC;
-    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+    const paymasterAPI = new PaymasterAPI(bundlerUrl);
     const provider = new JsonRpcProvider(rpcUrl);
     const currentAcc = await wallet.getCurrentAccount();
     const currentKeyRing = await keyringService.getKeyringForAccount(
@@ -781,12 +781,13 @@ export class WalletController extends BaseController {
       [entryPointAddr]
     );
     if (!(await dep.isContractDeployed(factoryAddress))) {
-      const detDeployer = new DeterministicDeployer(provider);
-      factoryAddress = await detDeployer.deterministicDeploy(
-        new SimpleAccountFactory__factory(),
-        0,
-        [entryPointAddr]
-      );
+      // const detDeployer = new DeterministicDeployer(provider);
+      // factoryAddress = await detDeployer.deterministicDeploy(
+      //   new SimpleAccountFactory__factory(),
+      //   0,
+      //   [entryPointAddr]
+      // );
+      return null;
     }
     const accountAPI = new SimpleAccountAPI({
       provider,
@@ -836,7 +837,7 @@ export class WalletController extends BaseController {
       [entryPointAddr]
     );
 
-    const paymasterAPI = new PaymasterAPI(entryPointAddr, bundlerUrl);
+    const paymasterAPI = new PaymasterAPI(bundlerUrl);
 
     const accountAPI = new SimpleAccountAPI({
       provider,
@@ -857,10 +858,21 @@ export class WalletController extends BaseController {
       0,
       [entryPointAddr]
     );
-    const accountFactory = new SimpleAccountFactory__factory(sender).attach(
-      factoryAddress
+
+    const deployFunc = new SimpleAccountFactory__factory().interface.encodeFunctionData(
+      'createAccount',
+      [sender, ethers.BigNumber.from(0)]
     );
-    await accountFactory.createAccount(sender.address, 0);
+
+    const initCode = ethers.utils.hexConcat([
+      '0x1f79d97f5B4cAe337C564D9314a14992B95D8fac',
+      deployFunc,
+    ]);
+
+    // const accountFactory = new SimpleAccountFactory__factory(sender).attach(
+    //   factoryAddress
+    // );
+    // await accountFactory.createAccount(sender.address, 0);
   };
 
   deployFactory = async () => {
@@ -893,7 +905,7 @@ export class WalletController extends BaseController {
 
     let accountContractAdress = accountAddr || '';
     if (!accountAddr) {
-      accountContractAdress = (await this.getAccountContract()).address;
+      accountContractAdress = (await this.getAccountContract())?.address || '';
     }
 
     if (

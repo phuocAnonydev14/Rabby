@@ -40,6 +40,7 @@ import { getAddress } from 'viem';
 import IconGnosis from 'ui/assets/walletlogo/safe.svg';
 import { matomoRequestEvent } from '@/utils/matomo-request';
 import i18n from '@/i18n';
+import { useRabbySelector } from '@/ui/store';
 
 const { TabPane } = Tabs;
 
@@ -365,6 +366,8 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
       manual: true,
     }
   );
+  
+  const conlaAcc = localStorage.getItem('conlaAccount');
 
   const init = async () => {
     const currentAccount = (await wallet.getCurrentAccount())!;
@@ -396,8 +399,6 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
       setIsCoboArugsAccount(true);
     }
     checkCanProcess();
-
-    const conlaAcc = localStorage.getItem('conlaAccount');
 
     const balance = await wallet.getCustomTestnetToken({
       chainId,
@@ -660,46 +661,48 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
           }}
           isSpeedUp={isSpeedUp}
         />
-        <GasSelector
-          disabled={false}
-          isReady={isReady}
-          gasLimit={gasLimit}
-          noUpdate={isCancel || isSpeedUp}
-          gasList={gasList || []}
-          selectedGas={selectedGas}
-          version={'v0'}
-          gas={{
-            error: null,
-            success: true,
-            gasCostUsd: 0,
-            gasCostAmount: new BigNumber(selectedGas?.price || 0)
-              .multipliedBy(gasUsed || 0)
-              .div(1e18),
-          }}
-          gasCalcMethod={async (price) => {
-            return {
-              gasCostAmount: new BigNumber(price || 0)
+        {!conlaAcc && (
+          <GasSelector
+            disabled={false}
+            isReady={isReady}
+            gasLimit={gasLimit}
+            noUpdate={isCancel || isSpeedUp}
+            gasList={gasList || []}
+            selectedGas={selectedGas}
+            version={'v0'}
+            gas={{
+              error: null,
+              success: true,
+              gasCostUsd: 0,
+              gasCostAmount: new BigNumber(selectedGas?.price || 0)
                 .multipliedBy(gasUsed || 0)
                 .div(1e18),
-              gasCostUsd: new BigNumber(0),
-            };
-          }}
-          recommendGasLimit={gasUsed || ''}
-          recommendNonce={recommendNonce || ''}
-          chainId={chainId}
-          onChange={handleGasChange}
-          nonce={realNonce || tx.nonce}
-          disableNonce={isSpeedUp || isCancel}
-          isSpeedUp={isSpeedUp}
-          isCancel={isCancel}
-          is1559={false}
-          isHardware={isHardware}
-          manuallyChangeGasLimit={false}
-          errors={checkErrors}
-          engineResults={[]}
-          nativeTokenBalance={nativeTokenBalance}
-          gasPriceMedian={null}
-        />
+            }}
+            gasCalcMethod={async (price) => {
+              return {
+                gasCostAmount: new BigNumber(price || 0)
+                  .multipliedBy(gasUsed || 0)
+                  .div(1e18),
+                gasCostUsd: new BigNumber(0),
+              };
+            }}
+            recommendGasLimit={gasUsed || ''}
+            recommendNonce={recommendNonce || ''}
+            chainId={chainId}
+            onChange={handleGasChange}
+            nonce={realNonce || tx.nonce}
+            disableNonce={isSpeedUp || isCancel}
+            isSpeedUp={isSpeedUp}
+            isCancel={isCancel}
+            is1559={false}
+            isHardware={isHardware}
+            manuallyChangeGasLimit={false}
+            errors={checkErrors}
+            engineResults={[]}
+            nativeTokenBalance={nativeTokenBalance}
+            gasPriceMedian={null}
+          />
+        )}
       </div>
       <FooterBar
         // hasShadow={footerShowShadow}

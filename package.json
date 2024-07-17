@@ -1,6 +1,6 @@
 {
   "name": "Conla",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A extension browser plugin for DeFi users",
   "scripts": {
     "clean": "",
@@ -76,10 +76,8 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "@zxing/browser": "0.0.10",
     "@zxing/library": "0.8.0",
-    "aa-conla-sdk": "^0.1.1",
-    "aa-conla-utils": "^0.1.1",
-    "account-abstraction-anony-sdk": "^0.6.9",
-    "account-abstraction-anony-utils": "^0.7.1",
+    "aa-conla-sdk": "^0.1.13",
+    "aa-conla-utils": "^0.1.7",
     "ahooks": "3.7.8",
     "antd": "4.15.3",
     "bignumber.js": "9.0.1",

@@ -120,7 +120,7 @@ const TokenSelector = ({
       if (!query.trim()) return;
       console.log('query', query);
 
-      if (query.trim().toLowerCase() === 'btc') {
+      if (['b', 't', 'c'].includes(query.trim().toLowerCase())) {
         const accountContractAddr = getAccountStorage(
           currentAccount?.address || ''
         );

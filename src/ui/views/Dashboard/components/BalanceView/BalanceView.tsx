@@ -33,6 +33,7 @@ import {
 import { BALANCE_LOADING_TIMES } from '@/constant/timeout';
 import type { Account } from '@/background/service/preference';
 import { IExtractFromPromise } from '@/ui/utils/type';
+import { log } from 'console';
 
 const BalanceView = ({
   currentAccount,
@@ -161,9 +162,12 @@ const BalanceView = ({
       }
       setIsCheckingDeploy(true);
       const isNotDeployed = await wallet.checkIsDeployedAccountContract();
+      console.log({ isNotDeployed });
+      store.dispatch.customRPC.setConlaAcc('');
+      localStorage.setItem('conlaAccount', '');
       if (!isNotDeployed) {
         const accountContract = await wallet.getAccountContract();
-        setAccountDeployed(accountContract.address);
+        setAccountDeployed(accountContract?.address || '');
       }
     } catch (e) {
       console.log({ e });

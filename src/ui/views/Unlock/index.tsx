@@ -71,7 +71,7 @@ const Unlock = () => {
       >
         <Form.Item
           className="mt-[34px] mx-28"
-          name="password"
+          name="password" 
           rules={[
             {
               required: true,

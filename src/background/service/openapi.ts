@@ -12,8 +12,8 @@ const testnetStore = new (class TestnetStore {
     createPersistStore({
       name: 'openapi',
       template: {
-        host: INITIAL_OPENAPI_URL,
-        testnetHost: INITIAL_TESTNET_OPENAPI_URL,
+        host: 'https://api.rabby.io',
+        testnetHost: 'https://api.testnet.rabby.io',
       },
     }).then((res) => {
       this.store = res;
@@ -30,29 +30,19 @@ const testnetStore = new (class TestnetStore {
 const service = new OpenApiService({
   plugin: WebSignApiPlugin,
   adapter: fetchAdapter,
-  store: !process.env.DEBUG
-    ? {
-        host: INITIAL_OPENAPI_URL,
-        testnetHost: INITIAL_TESTNET_OPENAPI_URL,
-      }
-    : createPersistStore({
-        name: 'openapi',
-        template: {
-          host: INITIAL_OPENAPI_URL,
-          testnetHost: INITIAL_TESTNET_OPENAPI_URL,
-        },
-      }),
+  store: {
+    host: 'https://api.rabby.io',
+    testnetHost: 'https://api.testnet.rabby.io',
+  },
 });
 
 export const testnetOpenapiService = new OpenApiService({
   plugin: WebSignApiPlugin,
   adapter: fetchAdapter,
-  store: !process.env.DEBUG
-    ? {
-        host: INITIAL_TESTNET_OPENAPI_URL,
-        testnetHost: INITIAL_TESTNET_OPENAPI_URL,
-      }
-    : testnetStore,
+  store: {
+    host: 'https://api.testnet.rabby.io',
+    testnetHost: 'https://api.testnet.rabby.io',
+  },
 });
 
 export default service;

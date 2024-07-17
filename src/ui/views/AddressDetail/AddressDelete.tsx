@@ -76,6 +76,7 @@ export const AddressDelete = ({
         },
         wallet,
       });
+      localStorage.removeItem('conlaAccount');
     } else {
       setVisible(true);
     }

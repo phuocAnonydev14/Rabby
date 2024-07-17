@@ -3,6 +3,8 @@
     "baseUrl": "./",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "module": "esnext",
     "target": "ES2020",
     "moduleResolution": "node",
@@ -18,7 +20,8 @@
       "consts": ["./src/constant/index"],
       "consts/*": ["./src/constant/*"],
       "assets": ["./src/ui/assets"],
-      "changeLogs": ["./changeLogs"]
+      "changeLogs": ["./changeLogs"],
+      "react": ["./node_modules/@types/react"]
     },
     "types": ["chrome", "node", "react", "react-dom", "jest"],
     "jsx": "react",

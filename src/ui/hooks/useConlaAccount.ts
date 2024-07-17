@@ -12,6 +12,7 @@ export default function useConlaAccount() {
 
   const handleChangeConlaAccount = (address?: string) => {
     if (!address) {
+      // use conlaAccount to check current account
       localStorage.setItem('conlaAccount', '');
       setConlaAccount('');
     } else {

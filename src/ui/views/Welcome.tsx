@@ -3,7 +3,7 @@ import { Button } from 'antd';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
-import WelcomeHeaderImg from 'ui/assets/welcome-header.svg';
+import WelcomeHeaderImg from 'ui/assets/conla/conla-logo.png';
 
 const Container = styled.div`
   .step {
@@ -34,8 +34,25 @@ const Welcome = () => {
 
   return (
     <Container className="h-full">
-      <div className="header">
-        <img src={WelcomeHeaderImg} alt="" />
+      <div
+        className="header py-14 flex justify-center items-center gap-10"
+        style={{ backgroundColor: 'var(--rabby-light-blue-default)' }}
+      >
+        <img
+          src={WelcomeHeaderImg}
+          alt=""
+          style={{ width: '60px', height: '60px' }}
+        />
+        <h1
+          style={{
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: '24px',
+            lineHeight: '32px',
+          }}
+        >
+          Conla Wallet
+        </h1>
       </div>
       {step === 1 ? (
         <section className="step">
