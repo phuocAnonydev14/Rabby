@@ -322,8 +322,6 @@ class ProviderController extends BaseController {
       throw ethErrors.provider.unauthorized();
     }
 
-    console.log('come to ethRequestAccounts?', session);
-
     const _account = await this.getCurrentAccount();
     const account = _account ? [_account.address.toLowerCase()] : [];
     const accountContract = await this.ethGetAccountContract();
@@ -905,9 +903,8 @@ class ProviderController extends BaseController {
 
           // case account contract
           // start custom send feature
-          const rpcUrl = CONLA_RPC;
           const paymasterAPI = new PaymasterAPI(bundlerUrl);
-          const provider = new JsonRpcProvider(rpcUrl) as any;
+          const provider = new JsonRpcProvider(CONLA_RPC) as any;
           const currentAcc = await wallet.getCurrentAccount();
           const currentKeyRing = await keyringService.getKeyringForAccount(
             currentAcc?.address || ''
@@ -1043,7 +1040,6 @@ class ProviderController extends BaseController {
             const jsonString = ethers.utils.toUtf8String(unit8Array);
             const dataArray = JSON.parse(jsonString);
             // each object: {data, value, target}
-            console.log('array is : ', dataArray);
             for (let i = 0; i < dataArray.length; i++) {
               const obj = {
                 ...dataArray[i],
@@ -1055,8 +1051,6 @@ class ProviderController extends BaseController {
               )) as UserOperation;
               userOp = await accountAPI.signUserOp(userOp);
               const packedUserOp = packUserOp(userOp);
-              console.log('op ' + i, userOp);
-
               packedList.push(packedUserOp);
             }
 
@@ -1067,56 +1061,23 @@ class ProviderController extends BaseController {
             hash = transactionHash.hash as string;
           } else {
             const isErc20Token = await isErc20(txData.to);
-            if (isErc20Token) {
-              console.log('erc20 token');
-              // *handle send erc20 token
-              const erc20 = new Contract(txData.to, ERC20_ABI, aaProvider);
+            const op = await accountAPI.createSignedUserOp({
+              target: txParams.to,
+              data: txParams.data || '0x',
+              value: isErc20Token ? 0 : decimalVal,
+              maxFeePerGas: gasPrice,
+              maxPriorityFeePerGas: gasPrice,
+            });
 
-              const transfer = erc20.interface.encodeFunctionData('transfer', [
-                txParams.userTo,
-                decimalVal,
-              ]);
+            const transactionHash = await accountAPI.sendHandlerOps(
+              [op],
+              false
+            );
+            console.log('tx hash', transactionHash);
 
-              const op = await accountAPI.createSignedUserOp({
-                target: txParams.to,
-                data: transfer,
-                value: 0,
-                maxFeePerGas: gasPrice,
-                maxPriorityFeePerGas: gasPrice,
-              });
-              // const userOpHash = await clientRpc.sendUserOpToBundler(op);
-              // const transactionHash = await accountAPI.getUserOpReceipt(
-              //   userOpHash
-              // );
-              console.log('userOpHash', op);
-              const packedUserOp = packUserOp(op);
-              const transactionHash = await entryPoint.handleOps(
-                [packedUserOp],
-                beneficiary
-              );
-              hash = transactionHash.hash as string;
-            } else {
-              console.log('handle send native token');
-              const op = await accountAPI.createSignedUserOp({
-                target: txParams.to,
-                data: txParams.data || '0x',
-                value: decimalVal,
-                maxFeePerGas: gasPrice,
-                maxPriorityFeePerGas: gasPrice,
-              });
-
-              const packedUser = packUserOp(op);
-              console.log('packedUser', packedUser);
-
-              const transactionHash = await accountAPI.sendHandlerOps([op]);
-              console.log('tx hash', transactionHash);
-
-              hash = transactionHash;
-            }
+            hash = transactionHash;
           }
         }
-        console.log({ hash, reqId, pushType });
-        console.log('stastData', statsData);
         onTransactionCreated({ hash, reqId, pushType });
         notificationService.setStatsData(statsData);
         return hash;

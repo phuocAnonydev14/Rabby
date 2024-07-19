@@ -65,12 +65,18 @@ export const TestnetActions = ({
   const { t } = useTranslation();
   const isUnknown = true;
   const actionName = t('page.signTx.unknownActionType');
-  const [txDataShow, setTxDataShow] = React.useState(raw);
+  const [txDataShow, setTxDataShow] = React.useState({
+    ...raw,
+    to: raw.sendToEntryPoint ? raw.to + ' (entry point)' : raw.to,
+  });
 
   useEffect(() => {
     const currentConlaAcc = localStorage.getItem('conlaAcc');
     if (currentConlaAcc) {
-      setTxDataShow((state) => ({ ...state, from: currentConlaAcc }));
+      setTxDataShow((state) => ({
+        ...state,
+        from: currentConlaAcc,
+      }));
     }
   }, []);
 
@@ -102,30 +108,17 @@ export const TestnetActions = ({
       </SignTitle>
       <ActionWrapper>
         {/* <TestnetUnknownAction raw={raw} /> */}
-        <div
-          className={clsx('action-header', {
-            'is-unknown': isUnknown,
-          })}
-        >
-          <div className="left">{actionName}</div>
+        <div className={clsx('action-header')}>
+          <div className="left">Transaction information</div>
           <div className="right">
             <TooltipWithMagnetArrow
               placement="bottom"
               overlayClassName="rectangle w-[max-content] decode-tooltip"
               title={
-                isUnknown ? (
-                  <NoActionAlert
-                    data={{
-                      origin,
-                      text: '',
-                    }}
-                  />
-                ) : (
-                  <span className="flex w-[358px] p-12 items-center">
-                    <ThemeIcon src={RcIconCheck} className="mr-4 w-12" />
-                    {t('page.signTx.decodedTooltip')}
-                  </span>
-                )
+                <span className="flex w-[358px] p-12 items-center">
+                  <ThemeIcon src={RcIconCheck} className="mr-4 w-12" />
+                  {t('page.signTx.decodedTooltip')}
+                </span>
               }
             >
               {isUnknown ? (
@@ -163,7 +156,7 @@ export const TestnetActions = ({
           </Table>
         </div>
       </div> */}
-      <div
+      {/* <div
         className={clsx(
           'absolute bottom-[72px] right-0',
           'px-[16px] py-[12px] rotate-[-23deg]',
@@ -173,7 +166,7 @@ export const TestnetActions = ({
         )}
       >
         Conla Network
-      </div>
+      </div> */}
     </div>
   );
 };

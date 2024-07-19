@@ -576,7 +576,6 @@ const SendToken = () => {
     const sendValue = new BigNumber(amount)
       .multipliedBy(10 ** currentToken.decimals)
       .decimalPlaces(0, BigNumber.ROUND_DOWN);
-    const newSendVal = parseEther(amount);
     const dataInput = [
       {
         name: 'transfer',
@@ -595,17 +594,29 @@ const SendToken = () => {
       [to, sendValue.toFixed(0)] as any[],
     ] as const;
 
+    console.log(sendValue, dataInput[1], currentToken);
+
+    const data = isNativeToken
+      ? '0X'
+      : await wallet.getEncodedTx(
+          currentToken.id,
+          sendValue,
+          form.getFieldValue('to')
+        );
+
+    console.log('data', data);
+
     const params: Record<string, any> = {
       chainId: chain.id,
       from: currentAccount!.address,
       to: currentToken.id,
       value: '0x0',
-      data: abiCoder.encodeFunctionCall(dataInput[0], dataInput[1]),
+      data: data,
       isSend: true,
       // custom data send tx
       userTo: form.getFieldValue('to'),
       sendValue,
-      isOwnerMode: conlaAcc ? false : true,
+      isOwnerMode: !!conlaAcc,
     };
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
@@ -1448,7 +1459,7 @@ const SendToken = () => {
           )}
           <div className="btn-wrapper w-[100%] px-[20px] flex justify-center">
             <Button
-              // disabled={!canSubmit}
+              disabled={!canSubmit}
               type="primary"
               htmlType="submit"
               size="large"

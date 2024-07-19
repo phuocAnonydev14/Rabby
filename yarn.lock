@@ -5748,10 +5748,10 @@ JSONStream@^1.3.5:
     jsonparse "^1.2.0"
     through ">=2.2.7 <3"
 
-aa-conla-sdk@^0.1.13:
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/aa-conla-sdk/-/aa-conla-sdk-0.1.13.tgz#f591041a72362b68c943434aa83a420471be28ca"
-  integrity sha512-okHisNFZ3MLd9AgfKUIOiSkfs527O9nrE6KwW+9A5aX+zYOZIzusc2Y5JJQsr0MSjkb0w1GAde2y5dpfU0UWZA==
+aa-conla-sdk@^0.1.15:
+  version "0.1.15"
+  resolved "https://registry.yarnpkg.com/aa-conla-sdk/-/aa-conla-sdk-0.1.15.tgz#5f035a6ffb5aee87b4d356d654c4425c2c3fe1b7"
+  integrity sha512-jSJKHVSU8yy3bod0DRvIQvKgx4IuhUBEfghf/vYm+4Br6eAxAebJtXJgXY9zVwbPVrva7tesSwfq1DOd1ykPsQ==
   dependencies:
     "@ethersproject/abstract-signer" "^5.7.0"
     "@ethersproject/networks" "^5.7.0"

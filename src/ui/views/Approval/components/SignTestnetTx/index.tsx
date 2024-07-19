@@ -240,6 +240,7 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
     isViewGnosisSafe,
     reqId,
     safeTxGas,
+    sendToEntryPoint,
   } = normalizeTxParams(params.data[0]);
 
   const wallet = useWallet();
@@ -366,7 +367,7 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
       manual: true,
     }
   );
-  
+
   const conlaAcc = localStorage.getItem('conlaAccount');
 
   const init = async () => {
@@ -648,6 +649,8 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
     return null;
   }
 
+  console.log('tx', tx);
+
   return (
     <>
       <div className="approval-tx">
@@ -658,6 +661,7 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
             ...tx,
             nonce: realNonce || tx.nonce,
             gas: gasLimit!,
+            sendToEntryPoint,
           }}
           isSpeedUp={isSpeedUp}
         />

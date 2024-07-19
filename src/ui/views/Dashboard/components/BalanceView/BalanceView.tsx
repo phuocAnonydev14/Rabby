@@ -34,6 +34,10 @@ import { BALANCE_LOADING_TIMES } from '@/constant/timeout';
 import type { Account } from '@/background/service/preference';
 import { IExtractFromPromise } from '@/ui/utils/type';
 import { log } from 'console';
+import { CONLA, entryPointAddr } from '@/utils/const';
+import { getKRCategoryByType } from '@/utils/transaction';
+import { matomoRequestEvent } from '@/utils/matomo-request';
+import { filterRbiSource, useRbiSource } from '@/ui/utils/ga-event';
 
 const BalanceView = ({
   currentAccount,
@@ -373,10 +377,49 @@ const BalanceView = ({
     })();
   }, []);
 
+  const rbisource = useRbiSource();
+
   const handleDeployContract = async () => {
     try {
       setIsDeploying(true);
-      await wallet.deployAccountContract();
+      // await wallet.deployAccountContract();
+      const data = await wallet.getEncodedDeploy();
+      const params = {
+        chainId: CONLA.id,
+        from: currentAccount?.address || '',
+        to: entryPointAddr,
+        value: '0x0',
+        data,
+        isSend: true,
+        userTo: '',
+        sendValue: '',
+        isOwnerMode: false,
+        sendToEntryPoint: true,
+      };
+      matomoRequestEvent({
+        category: 'Send',
+        action: 'createTx',
+        label: [
+          CONLA.name,
+          getKRCategoryByType(currentAccount?.type),
+          currentAccount?.brandName,
+          'token',
+          filterRbiSource('sendToken', rbisource) && rbisource, // mark source module of `sendToken`
+        ].join('|'),
+      });
+
+      wallet.sendRequest({
+        method: 'eth_sendTransaction',
+        params: [params],
+        $ctx: {
+          ga: {
+            category: 'Send',
+            source: 'sendToken',
+            trigger: filterRbiSource('sendToken', rbisource) && rbisource, // mark source module of `sendToken`
+          },
+        },
+      });
+      window.close();
       await handleCheckDeployed();
       await refreshBalance();
       message.success('Deploy successfully');

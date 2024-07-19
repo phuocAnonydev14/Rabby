@@ -1,3 +1,4 @@
+import ERC20_ABI from '@/abi/ERC20.json';
 import * as ethUtil from 'ethereumjs-util';
 import { addHexPrefix, unpadHexString } from 'ethereumjs-util';
 import Wallet, { thirdparty } from 'ethereumjs-wallet';
@@ -84,7 +85,7 @@ import { ProviderRequest } from './provider/type';
 import { QuoteResult } from '@rabby-wallet/rabby-swap/dist/quote';
 import transactionWatcher from '../service/transactionWatcher';
 import Safe from '@rabby-wallet/gnosis-sdk';
-import { Chain, CHAINS_ENUM } from '@debank/common';
+import { Chain } from '@debank/common';
 import { isAddress } from 'web3-utils';
 import { findChain, findChainByEnum, getChainList } from '@/utils/chain';
 import { cached } from '../utils/cache';
@@ -116,7 +117,7 @@ import {
   entryPointAddr,
   rabbyNetworkName,
 } from '@/utils/const';
-import { PaymasterAPI, SimpleAccountAPI } from 'aa-conla-sdk';
+import { PaymasterAPI, SimpleAccountAPI, wrapProvider } from 'aa-conla-sdk';
 
 const stashKeyrings: Record<string | number, any> = {};
 
@@ -917,9 +918,43 @@ export class WalletController extends BaseController {
       return balance;
     }
     // check balance erc20 contract
-    const erc20Contract = new ethers.Contract(tokenAddr, ERC20ABI, provider);
+    const erc20Contract = new ethers.Contract(tokenAddr, ERC20_ABI, provider);
     const erc20Balance = await erc20Contract.balanceOf(accountContractAdress);
     return erc20Balance;
+  };
+
+  getEncodedDeploy = async () => {
+    const sender = await this.getCurrentWallet();
+    console.log('sender', sender.address);
+
+    const deployFunc = new SimpleAccountFactory__factory().interface.encodeFunctionData(
+      'createAccount',
+      [sender.address, ethers.BigNumber.from(0)]
+    );
+    console.log('deployFunc', deployFunc);
+    return deployFunc;
+  };
+
+  getEncodedTx = async (token: string, amount: BigNumber, userTo: string) => {
+    const sender = await this.getCurrentWallet();
+    const provider = new JsonRpcProvider(CONLA_RPC) as any;
+    const chainId = await provider.getNetwork().then((res) => res.chainId);
+    const paymasterAPI = new PaymasterAPI(bundlerUrl);
+    const config = {
+      chainId,
+      entryPointAddress: entryPointAddr,
+      bundlerUrl,
+      paymasterAPI,
+    };
+    console.log('come here', paymasterAPI);
+    const aaProvider = (await wrapProvider(provider, config, sender)) as any;
+    console.log('come here', aaProvider);
+
+    console.log(token, amount, userTo);
+    const erc20 = new Contract(token, ERC20_ABI, aaProvider);
+    console.log('contract', erc20);
+
+    return erc20.interface.encodeFunctionData('transfer', [userTo, amount]);
   };
 
   fetchEstimatedL1Fee = async (
