@@ -611,13 +611,18 @@ const SendToken = () => {
       from: currentAccount!.address,
       to: currentToken.id,
       value: '0x0',
-      data: data,
+      data: isNativeToken
+        ? '0X'
+        : !conlaAcc
+        ? abiCoder.encodeFunctionCall(dataInput[0], dataInput[1])
+        : data,
       isSend: true,
       // custom data send tx
       userTo: form.getFieldValue('to'),
       sendValue,
-      isOwnerMode: !!conlaAcc,
+      isOwnerMode: conlaAcc ? false : true,
     };
+
     if (safeInfo?.nonce != null) {
       params.nonce = safeInfo.nonce;
     }

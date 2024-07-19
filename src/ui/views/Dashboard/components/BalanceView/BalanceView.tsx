@@ -166,12 +166,12 @@ const BalanceView = ({
       }
       setIsCheckingDeploy(true);
       const isNotDeployed = await wallet.checkIsDeployedAccountContract();
-      console.log({ isNotDeployed });
-      store.dispatch.customRPC.setConlaAcc('');
-      localStorage.setItem('conlaAccount', '');
       if (!isNotDeployed) {
         const accountContract = await wallet.getAccountContract();
         setAccountDeployed(accountContract?.address || '');
+      } else {
+        store.dispatch.customRPC.setConlaAcc('');
+        localStorage.setItem('conlaAccount', '');
       }
     } catch (e) {
       console.log({ e });
@@ -389,7 +389,7 @@ const BalanceView = ({
         from: currentAccount?.address || '',
         to: entryPointAddr,
         value: '0x0',
-        data,
+        data: '0x',
         isSend: true,
         userTo: '',
         sendValue: '',

@@ -888,18 +888,21 @@ class ProviderController extends BaseController {
           const rawTx = bufferToHex(tx.serialize());
           const client = customTestnetService.getClient(chainData.id);
 
-          // // case is wallet owner send
-          // if (txParams.to && txParams.isOwnerMode) {
-          //   hash = await client.request({
-          //     method: 'eth_sendRawTransaction',
-          //     params: [rawTx as any],
-          //   });
-          //   console.log({ hash, reqId, pushType });
-          //   console.log('stastData', statsData);
-          //   onTransactionCreated({ hash, reqId, pushType });
-          //   notificationService.setStatsData(statsData);
-          //   return hash;
-          // }
+          // case is wallet owner send
+          console.log(txParams.isOwnerMode, txParams.to);
+
+          if (txParams.to && txParams.isOwnerMode) {
+            console.log('come owner wallet');
+
+            hash = await client.request({
+              method: 'eth_sendRawTransaction',
+              params: [rawTx as any],
+            });
+            console.log({ hash, reqId, pushType });
+            onTransactionCreated({ hash, reqId, pushType });
+            notificationService.setStatsData(statsData);
+            return hash;
+          }
 
           // case account contract
           // start custom send feature
@@ -1064,7 +1067,7 @@ class ProviderController extends BaseController {
             const op = await accountAPI.createSignedUserOp({
               target: txParams.to,
               data: txParams.data || '0x',
-              value: isErc20Token ? 0 : decimalVal,
+              value: decimalVal,
               maxFeePerGas: gasPrice,
               maxPriorityFeePerGas: gasPrice,
             });
