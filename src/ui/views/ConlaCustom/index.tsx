@@ -4,7 +4,7 @@ import { useWallet } from 'ui/utils';
 import { useEffect } from 'react';
 import React from 'react';
 import { CONLA } from '@/utils/const';
-import { useRabbySelector } from 'ui/store';
+import browser from 'webextension-polyfill';
 
 export const ConlaCustom = () => {
   const wallet = useWallet();
@@ -25,15 +25,22 @@ export const ConlaCustom = () => {
     }
   );
 
+  const checkUserRedirectOauth = async () => {
+    const users = await browser.storage.local.get('user_oauth_google');
+    if (users?.user_oauth_google) {
+      console.log('users', users);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        const res = await runAddTestnet(CONLA, {
+        await runAddTestnet(CONLA, {
           ga: {
             source: 'tokenList',
           },
         });
-        console.log({ res });
+        checkUserRedirectOauth();
       } catch (e) {
         console.log({ e });
       }

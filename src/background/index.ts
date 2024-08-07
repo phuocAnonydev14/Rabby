@@ -12,7 +12,7 @@ import {
   EVENTS_IN_BG,
   KEYRING_CATEGORY_MAP,
 } from 'consts';
-import { storage } from './webapi';
+import { storage, winMgr } from './webapi';
 import {
   permissionService,
   preferenceService,
@@ -31,6 +31,7 @@ import {
   securityEngineService,
   transactionBroadcastWatchService,
   HDKeyRingLastAddAddrTimeService,
+  notificationService,
 } from './service';
 import { providerController, walletController } from './controller';
 import { getOriginFromUrl } from '@/utils';
@@ -215,6 +216,40 @@ restoreAppState();
     }
   });
 }
+
+chrome.runtime.onMessageExternal.addListener(async function (
+  request,
+  sender,
+  sendResponse
+) {
+  console.log({ request });
+  // preferenceService.setPopupOpen(true);
+  // chrome.tabs.create({ url: 'popup.html' });
+
+  // await browser.windows.create({
+  //   url: 'popup.html',
+  //   type: 'popup',
+  //   width: 320,
+  //   height: 175,
+  // });
+
+  await notificationService.openNotification({
+    height: 628,
+    url: 'popup.html',
+  });
+
+  storage.set('user_oauth_google', JSON.stringify(request));
+  storage.
+
+  winMgr.openNotification({}).then((winId) => {});
+
+  if (request.session) {
+    console.log(request, sender, sendResponse);
+  } else {
+    console.log(request);
+  }
+  sendResponse('OK');
+});
 
 // for page provider
 browser.runtime.onConnect.addListener((port) => {
