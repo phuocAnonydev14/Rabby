@@ -254,6 +254,17 @@ const AddAddressOptions = () => {
         ? [
             {
               leftIcon: IconAddFromCurrentSeedPhrase,
+              content: 'Get key by Google account',
+              brand: 'AddAddressFromCurrentSeed',
+              onClick: () => {
+                window.open('http://localhost:3000/oauth/google', '_blank');
+                // handleRouter((history) => {
+                // history.push('/import/add-from-current-seed-phrase');
+                // });
+              },
+            },
+            {
+              leftIcon: IconAddFromCurrentSeedPhrase,
               content: t('page.newAddress.addFromCurrentSeedPhrase'),
               brand: 'AddAddressFromCurrentSeedPhrase',
               onClick: () => {
