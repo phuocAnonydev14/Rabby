@@ -37,6 +37,8 @@ const ImportSuccess = ({ isPopup = false }: { isPopup?: boolean }) => {
     supportChainList?: Chain[];
   }>();
 
+  console.log('state', state);
+
   const dispatch = useRabbyDispatch();
   const addressItems = useRef(new Array(state.accounts.length));
   const { t } = useTranslation();

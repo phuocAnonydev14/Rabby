@@ -77,6 +77,7 @@
     "@zxing/browser": "0.0.10",
     "@zxing/library": "0.8.0",
     "aa-conla-sdk": "^0.1.15",
+    "aa-conla-social-sdk": "^0.2.30",
     "aa-conla-utils": "^0.1.7",
     "ahooks": "3.7.8",
     "antd": "4.15.3",

@@ -222,9 +222,24 @@ chrome.runtime.onMessageExternal.addListener(async function (
   sender,
   sendResponse
 ) {
-  console.log({ request });
+  // preferenceService.setPopupOpen(true);
+  // chrome.tabs.create({ url: 'popup.html' });
+
+  // await browser.windows.create({
+  //   url: 'popup.html',
+  //   type: 'popup',
+  //   width: 320,
+  //   height: 175,
+  // });
+
+  // notificationService.openNotification({
+  //   height: 600,
+  //   url: 'popup.html',
+  // });
+
   await storage.set('user_oauth_google', JSON.stringify(request));
-  winMgr.openNotification({}).then((winId) => {});
+  console.log({ request });
+  winMgr.openNotification({ route: 'dashboard' }).then((winId) => {});
 
   if (request.session) {
     console.log(request, sender, sendResponse);
