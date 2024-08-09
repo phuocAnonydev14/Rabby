@@ -6,11 +6,18 @@ import React from 'react';
 import { CONLA } from '@/utils/const';
 import browser from 'webextension-polyfill';
 import { UserOauth } from '@/types/conla-oauth';
-import { Button, message, Modal, Radio, RadioChangeEvent } from 'antd';
+import { Button, Input, message, Modal, Radio, RadioChangeEvent } from 'antd';
 import { AppSocial } from 'aa-conla-social-sdk';
 import { KEYRING_TYPE } from '@/constant';
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { AddressViewer } from '@/ui/component';
+import Wallet from 'ethereumjs-wallet';
+import { ethers } from 'ethers';
+export function deriveEthAddressFromKey(privateKey: string): string {
+  const wallet = Wallet.fromPrivateKey(Buffer.from(privateKey, 'hex'));
+  return '0x' + wallet.getAddress().toString('hex');
+}
 
 export const ConlaCustom = () => {
   const wallet = useWallet();
@@ -20,6 +27,8 @@ export const ConlaCustom = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPrivateKey, setSelectedPrivateKey] = useState('');
   const [privateKeys, setPrivateKeys] = useState<string[]>([]);
+  const [privateKeyImported, setPrivateKeyImported] = useState<string>('');
+
   const onChange = (e: RadioChangeEvent) => {
     console.log('radio checked', e.target.value);
     setSelectedPrivateKey(e.target.value);
@@ -40,8 +49,6 @@ export const ConlaCustom = () => {
       manual: true,
     }
   );
-
-  console.log('selectedPrivateKey', selectedPrivateKey);
 
   const [run, loading] = useWalletRequest(wallet.importPrivateKey, {
     async onSuccess(accounts) {
@@ -132,7 +139,7 @@ export const ConlaCustom = () => {
 
       const privateKey = await appSocial.user?.getPrivateKey(userOauth.idToken);
       setPrivateKeys([privateKey as string]);
-      
+    }
   };
 
   useEffect(() => {
@@ -158,30 +165,75 @@ export const ConlaCustom = () => {
         }}
         footer={null}
         visible={!!privateKeys.length}
-        title="Select private key to import"
+        title="Select private key"
       >
-        <div className="px-8 overflow-hidden">
-          <Radio.Group
-            className="options"
-            onChange={onChange}
-            value={selectedPrivateKey}
-          >
-            {privateKeys.map((key) => {
-              return (
-                <label className="option" key={key}>
-                  <div>{key}</div>
-                  <Radio style={{ backgroundColor: '#fff' }} value={key}>
-                    {key}
-                  </Radio>
-                </label>
-              );
-            })}
+        <div className="px-8 overflow-hidden w-full">
+          <Radio.Group className="options w-full" onChange={onChange}>
+            {privateKeys.length > 0 &&
+              privateKeys.map((key) => {
+                return (
+                  <div className="option p-4 w-full" key={key}>
+                    <Radio value={key}>
+                      <div className="flex flex-row gap-4 items-center">
+                        <div
+                          className="text-15 ml-6 mr-6 dashboard-name"
+                          title={'Private key'}
+                        >
+                          Private key
+                        </div>
+                        <div className="current-address">
+                          <AddressViewer
+                            address={ethers.utils.computeAddress(key)}
+                            showArrow={false}
+                            className={'text-12 opacity-60'}
+                          />
+                        </div>
+                      </div>
+                    </Radio>
+                  </div>
+                );
+              })}
+            <div className="p-4 w-full">
+              <Radio value={'sync'}>
+                <div className="flex flex-row gap-4 items-center">
+                  <div className="text-15 ml-6 mr-6" title={'Private key'}>
+                    Synchronize with existing key
+                  </div>
+                </div>
+              </Radio>
+              <Input
+                className="mt-4"
+                placeholder="Enter private key..."
+                disabled={selectedPrivateKey !== 'sync'}
+                onChange={(e) => setPrivateKeyImported(e.target.value)}
+              />
+            </div>
           </Radio.Group>
         </div>
-        <div className="flex justify-end mt-20">
+        <div className="flex justify-between mt-20">
+          <Button onClick={() => setPrivateKeys([])} type="default">
+            Cancel
+          </Button>
           <Button
             disabled={!selectedPrivateKey}
-            onClick={() => run(selectedPrivateKey)}
+            onClick={async () => {
+              try {
+                if (selectedPrivateKey === 'sync') {
+                  if (
+                    privateKeyImported.length < 32 ||
+                    !new ethers.Wallet(privateKeyImported)
+                  ) {
+                    message.error('Invalid private key');
+                    return;
+                  }
+                  run(privateKeyImported);
+                  return;
+                }
+                run(selectedPrivateKey);
+              } catch (e) {
+                message.error('Invalid private key');
+              }
+            }}
             type="primary"
           >
             Select

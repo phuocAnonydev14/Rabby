@@ -257,7 +257,10 @@ const AddAddressOptions = () => {
               content: 'Get key by Google account',
               brand: 'AddAddressFromCurrentSeed',
               onClick: () => {
-                window.open('http://localhost:3000/oauth/google', '_blank');
+                window.open(
+                  'https://conla-web.vercel.app/oauth/google',
+                  '_blank'
+                );
                 // handleRouter((history) => {
                 // history.push('/import/add-from-current-seed-phrase');
                 // });
