@@ -360,6 +360,7 @@ const AddressManagement = () => {
                 </div>
               }
               onClick={() => {
+                localStorage.removeItem('conlaAccount');
                 history.push(
                   `/settings/address-detail?${obj2query({
                     address: account.address,
