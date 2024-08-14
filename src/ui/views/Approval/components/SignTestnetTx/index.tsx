@@ -665,7 +665,7 @@ export const SignTestnetTx = ({ params, origin }: SignTxProps) => {
           }}
           isSpeedUp={isSpeedUp}
         />
-        {!conlaAcc && (
+        {!conlaAcc && !sendToEntryPoint && (
           <GasSelector
             disabled={false}
             isReady={isReady}

@@ -4,7 +4,7 @@ export interface UserOauth {
   user: {
     id: any;
     email: any;
-    encryptionKey: any;
+    encryptedKey: any;
     created_at: any;
     updatedAt: any;
   };

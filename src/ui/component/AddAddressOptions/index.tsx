@@ -52,6 +52,7 @@ import { useWallet } from '@/ui/utils';
 import { Modal } from 'antd';
 import ThemeIcon from '../ThemeMode/ThemeIcon';
 import { useHadSeedPhrase } from '@/ui/views/AddFromCurrentSeedPhrase/hooks';
+import { ConlaCustom } from '@/ui/views/ConlaCustom';
 
 const getSortNum = (s: string) => WALLET_SORT_SCORE[s] || 999999;
 
@@ -257,10 +258,12 @@ const AddAddressOptions = () => {
               content: 'Get key by Google account',
               brand: 'AddAddressFromCurrentSeed',
               onClick: () => {
-                window.open(
-                  'https://conla-web.vercel.app/oauth/google',
-                  '_blank'
-                );
+                handleRouter(() => {
+                  window.open(
+                    'https://conla-web.vercel.app/oauth/google',
+                    '_blank'
+                  );
+                });
                 // handleRouter((history) => {
                 // history.push('/import/add-from-current-seed-phrase');
                 // });
@@ -286,6 +289,22 @@ const AddAddressOptions = () => {
             },
           ]
         : [
+            {
+              leftIcon: IconAddFromCurrentSeedPhrase,
+              content: 'Get key by Google account',
+              brand: 'AddAddressFromCurrentSeed',
+              onClick: () => {
+                handleRouter(() => {
+                  window.open(
+                    'https://conla-web.vercel.app/oauth/google',
+                    '_blank'
+                  );
+                });
+                // handleRouter((history) => {
+                // history.push('/import/add-from-current-seed-phrase');
+                // });
+              },
+            },
             {
               leftIcon: RcIconCreatenewaddr,
               content: t('page.newAddress.createNewSeedPhrase'),
@@ -485,6 +504,7 @@ const AddAddressOptions = () => {
           );
         })}
       </div>
+      <ConlaCustom />
     </div>
   );
 };

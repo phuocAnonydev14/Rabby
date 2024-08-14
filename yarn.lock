@@ -7253,10 +7253,10 @@ aa-conla-sdk@^0.1.15:
     debug "^4.3.4"
     ethers "^5.7.0"
 
-aa-conla-social-sdk@^0.2.32:
-  version "0.2.32"
-  resolved "https://registry.yarnpkg.com/aa-conla-social-sdk/-/aa-conla-social-sdk-0.2.32.tgz#ad007c672980db48f654eb9d79e06fdb46a82db2"
-  integrity sha512-CjgzF1zJeyqRW4rk5jDuBKK2T1USffoLExefXIZ7vrXSxQ9F6m8fAoKRqQPCAaahbNcNZ4QP3rBK/c8uSz2SVQ==
+aa-conla-social-sdk@^0.2.37:
+  version "0.2.37"
+  resolved "https://registry.yarnpkg.com/aa-conla-social-sdk/-/aa-conla-social-sdk-0.2.37.tgz#c2c9450a28f4b6ba2009f27ef37154c30d618385"
+  integrity sha512-6fGZL0Naomab4vzf+vvt4dpWoh9bJAtSQDhjtGqja2yZw9Jx7IomcMLNVJRpFE86rue9XGq9SFVJFxS1idq5jA==
   dependencies:
     "@aws-amplify/auth" "^6.3.8"
     "@aws-sdk/client-kms" "^3.614.0"

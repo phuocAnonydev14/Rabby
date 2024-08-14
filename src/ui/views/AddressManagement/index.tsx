@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHistory, useLocation } from 'react-router-dom';
-import { VariableSizeList as VList, ListOnScrollProps } from 'react-window';
+import {
+  VariableSizeList as VList,
+  ListOnScrollProps,
+  ListChildComponentProps,
+} from 'react-window';
 import { PageHeader } from 'ui/component';
 import AddressItem from './AddressItem';
 import { ReactComponent as RcIconPinned } from 'ui/assets/icon-pinned.svg';
@@ -306,7 +310,9 @@ const AddressManagement = () => {
 
   const Row = useCallback(
     (
-      props: any //ListChildComponentProps<typeof accountsList[] | typeof accountsList>
+      props: ListChildComponentProps<
+        typeof accountsList[] | typeof accountsList
+      >
     ) => {
       const { data, index, style } = props;
       const account = data[index];

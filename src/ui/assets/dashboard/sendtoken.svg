@@ -1,11 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
-  <g clip-path="url(#clip0_77362_55146)">
-    <path d="M25.0823 2.91406L12.8906 15.1057" stroke="#7084FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M25.0807 2.92188L17.3224 25.0885L12.8891 15.1135L2.91406 10.6802L25.0807 2.92188Z" stroke="var(--r-neutral-title-1, #7084FF)" stroke-width="1.75" stroke-linejoin="round"/>
-  </g>
-  <defs>
-    <clipPath id="clip0_77362_55146">
-      <rect width="28" height="28" fill="white"/>
-    </clipPath>
-  </defs>
+
+<svg width="27" height="27" viewBox="0 0 27 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+<mask id="mask0_1_3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="28" height="28">
+<path d="M28 0H0V28H28V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_1_3)">
+<path d="M24.0823 1.91406L11.8906 14.1057" stroke="#FE9800" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.0807 1.92188L16.3224 24.0885L11.8891 14.1135L1.91406 9.6802L24.0807 1.92188Z" stroke="black" stroke-width="1.75" stroke-linejoin="round"/>
+</g>
 </svg>

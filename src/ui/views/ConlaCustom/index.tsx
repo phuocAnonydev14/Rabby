@@ -26,9 +26,10 @@ export const ConlaCustom = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPrivateKey, setSelectedPrivateKey] = useState('');
-  const [privateKeys, setPrivateKeys] = useState<string[]>([]);
+  const [privateKeys, setPrivateKeys] = useState<
+    { privateKey: string; name: string }[]
+  >([]);
   const [privateKeyImported, setPrivateKeyImported] = useState<string>('');
-
   const onChange = (e: RadioChangeEvent) => {
     console.log('radio checked', e.target.value);
     setSelectedPrivateKey(e.target.value);
@@ -82,9 +83,13 @@ export const ConlaCustom = () => {
   ) => {
     try {
       setIsLoading(true);
+      console.log('start generate');
+
       const privateKey = await appSocial.user?.generatePrivateKey(
+        undefined,
         userOauth.idToken
       );
+
       await run(privateKey);
       message.success('Generate successfully');
     } catch (e: any) {
@@ -107,40 +112,60 @@ export const ConlaCustom = () => {
         'http://localhost:3000'
       );
 
-      const {
+      const { email, id, encryptedKey, created_at, updatedAt } = userOauth.user;
+      appSocial.user?.setInformation(
         email,
         id,
-        encryptionKey,
-        created_at,
-        updatedAt,
-      } = userOauth.user;
-
-      const user = appSocial.user?.setInformation(
-        email,
-        id,
-        encryptionKey,
+        encryptedKey,
         created_at,
         updatedAt
       );
 
-      if (!userOauth.user.encryptionKey) {
+      if (
+        !userOauth.user.encryptedKey ||
+        userOauth?.user?.encryptedKey?.length <= 0
+      ) {
         return Modal.confirm({
-          title: "You account didn't have private key",
-          content: 'You will get one key for your account, generate now',
+          title: 'Generate private key',
+          content: (
+            <div
+              className="text-center flex flex-col"
+              style={{ height: 'max-content' }}
+            >
+              <span>Your account didn’t have private key.</span>{' '}
+              <span>Do you want to generate now?</span>{' '}
+            </div>
+          ),
           onOk: async () => {
-            handleGeneratePrivateKey(userOauth, appSocial);
+            await handleGeneratePrivateKey(userOauth, appSocial);
           },
           okButtonProps: {
             loading: isLoading,
+            disabled: isLoading,
           },
           okText: 'Generate',
         });
       }
 
       const privateKey = await appSocial.user?.getPrivateKey(userOauth.idToken);
-      setPrivateKeys([privateKey as string]);
+      if (privateKey) {
+        localStorage.setItem('privateKey', JSON.stringify(privateKey));
+      }
     }
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const privateKeyLocal = localStorage.getItem('privateKey');
+      if (!privateKeyLocal) return;
+      setPrivateKeys(JSON.parse(privateKeyLocal));
+      localStorage.removeItem('privateKey');
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -172,18 +197,20 @@ export const ConlaCustom = () => {
             {privateKeys.length > 0 &&
               privateKeys.map((key) => {
                 return (
-                  <div className="option p-4 w-full" key={key}>
-                    <Radio value={key}>
+                  <div className="option p-4 w-full" key={key.privateKey}>
+                    <Radio value={key.privateKey}>
                       <div className="flex flex-row gap-4 items-center">
                         <div
                           className="text-15 ml-6 mr-6 dashboard-name"
                           title={'Private key'}
                         >
-                          Private key
+                          {key.name}
                         </div>
                         <div className="current-address">
                           <AddressViewer
-                            address={ethers.utils.computeAddress(key)}
+                            address={ethers.utils.computeAddress(
+                              key.privateKey
+                            )}
                             showArrow={false}
                             className={'text-12 opacity-60'}
                           />
