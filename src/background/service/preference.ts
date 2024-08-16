@@ -409,6 +409,10 @@ class PreferenceService {
     this.setCurrentAccount(account);
   };
 
+  getAllAvailableAddress = async () => {
+    return await keyringService.getAllVisibleAccountsArray();
+  };
+
   showAddress = (type: string, address: string) => {
     this.store.hiddenAddresses = this.store.hiddenAddresses.filter((item) => {
       return item.type !== type || item.address !== address;

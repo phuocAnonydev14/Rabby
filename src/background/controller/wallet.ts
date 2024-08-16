@@ -129,6 +129,7 @@ export class WalletController extends BaseController {
 
   /* wallet */
   boot = (password) => {
+    keyringService.getAccounts();
     keyringService.boot(password);
     const hasOtherProvider = preferenceService.getHasOtherProvider();
     const isDefaultWallet = preferenceService.getIsDefaultWallet();
@@ -204,6 +205,10 @@ export class WalletController extends BaseController {
   rejectAllApprovals = () => {
     notificationService.rejectAllApprovals();
     notificationService.clear();
+  };
+
+  getAllAvailableAddresses = async () => {
+    return preferenceService.getAllAvailableAddress();
   };
 
   getERC20Allowance = async (
@@ -2438,6 +2443,23 @@ export class WalletController extends BaseController {
   };
 
   importPrivateKey = async (data) => {
+    const privateKey = ethUtil.stripHexPrefix(data);
+    const buffer = Buffer.from(privateKey, 'hex');
+
+    const error = new Error(t('background.error.invalidPrivateKey'));
+    try {
+      if (!ethUtil.isValidPrivate(buffer)) {
+        throw error;
+      }
+    } catch {
+      throw error;
+    }
+
+    const keyring = await keyringService.importPrivateKey(privateKey);
+    return this._setCurrentAccountFromKeyring(keyring);
+  };
+
+  importPrivateKeyWithAlianName = async (data: string, alianName: string) => {
     const privateKey = ethUtil.stripHexPrefix(data);
     const buffer = Buffer.from(privateKey, 'hex');
 

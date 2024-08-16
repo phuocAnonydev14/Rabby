@@ -60,6 +60,7 @@ import CreateMnemonics from './CreateMnemonics';
 import ImportHardware from './ImportHardware';
 import { CustomTestnet } from './CustomTestnet';
 import { AddFromCurrentSeedPhrase } from './AddFromCurrentSeedPhrase';
+import ImportedPrivateKey from './ImportedPrivateKey';
 
 declare global {
   interface Window {
@@ -153,6 +154,9 @@ const Main = () => {
         </PrivateRoute>
         <PrivateRoute exact path="/popup/import/success">
           <ImportSuccess isPopup />
+        </PrivateRoute>
+        <PrivateRoute exact path="/popup/import/oauth">
+          <ImportedPrivateKey isPopup />
         </PrivateRoute>
         <PrivateRoute exact path="/import/success">
           <ImportSuccess />

@@ -6,7 +6,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { Tooltip, Input } from 'antd';
+import { Tooltip, Input, Button } from 'antd';
 import clsx from 'clsx';
 import { useTranslation, Trans } from 'react-i18next';
 import { Account } from 'background/service/preference';
@@ -21,6 +21,8 @@ import {
 import IconEditPen from 'ui/assets/editpen.svg';
 import IconCorrect from 'ui/assets/dashboard/contacts/correct.png';
 import { useDebounce } from 'react-use';
+import { DeleteOutlined } from '@ant-design/icons';
+import { transform } from 'lodash';
 
 export interface AddressItemProps {
   account: {
@@ -215,18 +217,27 @@ const AddressItem = memo(
             )}
             <div className={clsx('address-info', { 'ml-0': !showImportIcon })}>
               {(showImportIcon || editing) && (
-                <div className="brand-name flex">
+                <div className="brand-name flex gap-4 justify-between items-center">
                   {!stopEditing && editing ? (
-                    <Input
-                      value={alianName}
-                      defaultValue={alianName}
-                      onChange={handleAlianNameChange}
-                      onPressEnter={alianNameConfirm}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus={!stopEditing}
-                      maxLength={50}
-                      min={0}
-                    />
+                    <div>
+                      <Input
+                        value={alianName}
+                        defaultValue={alianName}
+                        onChange={handleAlianNameChange}
+                        onPressEnter={alianNameConfirm}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus={!stopEditing}
+                        maxLength={50}
+                        min={0}
+                      />
+                      <Button
+                        style={{ transform: 'translateX(-50px)' }}
+                        icon={<DeleteOutlined />}
+                        type="text"
+                        danger
+                        shape="circle"
+                      />
+                    </div>
                   ) : (
                     <div className="display-name">{displayName}</div>
                   )}
