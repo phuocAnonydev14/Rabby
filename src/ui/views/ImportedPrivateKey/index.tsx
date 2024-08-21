@@ -9,9 +9,18 @@ import { useMedia } from 'react-use';
 import { connectStore, useRabbyDispatch } from '@/ui/store';
 import { Chain } from '@debank/common';
 import { AppSocial } from 'aa-conla-social-sdk';
-import { Button, Checkbox, Dropdown, Menu, message, Typography } from 'antd';
+import {
+  Button,
+  Checkbox,
+  Dropdown,
+  Menu,
+  message,
+  Modal,
+  Typography,
+} from 'antd';
 import { DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import { ethers } from 'ethers';
+import _ from 'lodash';
 
 const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
   const history = useHistory();
@@ -43,6 +52,7 @@ const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
     []
   );
   const [availableAddressres, setAvailableAddressres] = useState<any[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const wallet = useWallet();
   const [privateKeyState, setPrivateKeyState] = useState(privateKeys);
   const handleImport = async () => {
@@ -91,8 +101,6 @@ const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
     })();
   }, []);
 
-  console.log('availableAddressres', availableAddressres);
-
   return (
     <div className="w-full">
       <div className="p-40 bg-blue-light  mb-24">
@@ -135,8 +143,6 @@ const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
                           ethers.utils.computeAddress(privateKey).toLowerCase()
                         );
                       });
-                      console.log('isDuplicate', isDuplicate);
-
                       if (isDuplicate) {
                         message.error(t('Account already exists'));
                         e.stopPropagation();
@@ -168,21 +174,30 @@ const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
                                   key={'1'}
                                   onClick={() => {
                                     // handle delete
-                                    try {
-                                      appSocial.user?.deletePrivateKey(
-                                        id,
-                                        idToken
-                                      );
-                                      setPrivateKeyState((state) => {
-                                        return state.filter(
-                                          (item) => item.id !== id
-                                        );
-                                      });
-                                      message.success('Delete success');
-                                    } catch (e) {
-                                      console.log(e);
-                                      message.error('Delete failed');
-                                    }
+                                    Modal.confirm({
+                                      title:
+                                        'Are you sure you want to delete this account?',
+                                      okText: 'Delete',
+                                      content: 'This action cannot be undone.',
+                                      onOk: async () => {
+                                        try {
+                                          await appSocial.user?.deletePrivateKey(
+                                            id,
+                                            idToken
+                                          );
+                                          setPrivateKeyState((state) => {
+                                            return state.filter(
+                                              (item) => item.id !== id
+                                            );
+                                          });
+                                          message.success('Delete success');
+                                        } catch (e) {
+                                          console.log(e);
+                                          message.error('Delete failed');
+                                        }
+                                      },
+                                      cancelText: 'Cancel',
+                                    });
                                   }}
                                 >
                                   <DeleteOutlined className="text-red" /> Delete

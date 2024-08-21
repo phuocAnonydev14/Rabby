@@ -31,6 +31,7 @@ import IconPrivatekey, {
 } from 'ui/assets/import/privatekey-light.svg';
 
 import { ReactComponent as IconAddFromCurrentSeedPhrase } from 'ui/assets/address/add-from-current-seed-phrase.svg';
+import { ReactComponent as OauthGoogleConnect } from 'ui/assets/address/oauth-google.svg';
 
 import './style.less';
 
@@ -254,7 +255,7 @@ const AddAddressOptions = () => {
       hadSeedPhrase
         ? [
             {
-              leftIcon: IconAddFromCurrentSeedPhrase,
+              leftIcon: OauthGoogleConnect,
               content: 'Get key by Google account',
               brand: 'AddAddressFromCurrentSeed',
               onClick: () => {
@@ -290,7 +291,7 @@ const AddAddressOptions = () => {
           ]
         : [
             {
-              leftIcon: IconAddFromCurrentSeedPhrase,
+              leftIcon: OauthGoogleConnect,
               content: 'Get key by Google account',
               brand: 'AddAddressFromCurrentSeed',
               onClick: () => {
