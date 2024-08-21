@@ -34,7 +34,7 @@ export const SlippageItem = styled.div<{
   background: var(--r-neutral-card-2, #f2f4f7);
   border-radius: 4px;
   &:hover {
-    /* background: rgba(134, 151, 255, 0.2); */
+    /* background: rgb(245, 228, 203); */
     background: var(--r-neutral-card-3, #f7fafc);
   }
 `;

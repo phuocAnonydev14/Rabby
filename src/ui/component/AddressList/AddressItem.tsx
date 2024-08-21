@@ -230,13 +230,6 @@ const AddressItem = memo(
                         maxLength={50}
                         min={0}
                       />
-                      <Button
-                        style={{ transform: 'translateX(-50px)' }}
-                        icon={<DeleteOutlined />}
-                        type="text"
-                        danger
-                        shape="circle"
-                      />
                     </div>
                   ) : (
                     <div className="display-name">{displayName}</div>

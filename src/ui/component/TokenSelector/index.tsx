@@ -99,10 +99,10 @@ const TokenSelector = ({
       {
         id: rabbyNetworkName,
         chain: rabbyNetworkName,
-        name: 'BTC',
-        symbol: 'BTC',
+        name: 'tBTC',
+        symbol: 'tBTC',
         display_symbol: null,
-        optimized_symbol: 'BTC',
+        optimized_symbol: 'tBTC',
         decimals: 18,
         logo_url: '',
         price: 0,
@@ -133,10 +133,10 @@ const TokenSelector = ({
           {
             id: rabbyNetworkName,
             chain: rabbyNetworkName,
-            name: 'BTC',
-            symbol: 'BTC',
+            name: 'tBTC',
+            symbol: 'tBTC',
             display_symbol: null,
-            optimized_symbol: 'BTC',
+            optimized_symbol: 'tBTC',
             decimals: 18,
             logo_url: '',
             price: 0,
@@ -158,7 +158,7 @@ const TokenSelector = ({
           await wallet.addCustomTestnetToken({
             chainId: CONLA.id,
             id: query,
-            symbol: token!.symbol,
+            symbol: token!.symbol === 'BTC' ? 'tBTC' : token!.symbol,
             decimals: token!.decimals,
           });
         } catch (e) {
@@ -537,7 +537,9 @@ const TokenSelector = ({
                           className="text-r-neutral-title1 text-[13px] leading-[15px] font-medium"
                           title={getTokenSymbol(token)}
                         >
-                          {getTokenSymbol(token)}
+                          {getTokenSymbol(token) === 'BTC'
+                            ? 'tBTC'
+                            : getTokenSymbol(token)}
                         </div>
                       </div>
 

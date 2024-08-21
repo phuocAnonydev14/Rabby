@@ -316,10 +316,10 @@ const SendToken = () => {
   const [currentToken, setCurrentToken] = useState<TokenItem>({
     id: rabbyNetworkName,
     chain: rabbyNetworkName,
-    name: 'BTC',
-    symbol: 'BTC',
+    name: 'tBTC',
+    symbol: 'tBTC',
     display_symbol: null,
-    optimized_symbol: 'BTC',
+    optimized_symbol: 'tBTC',
     decimals: 18,
     logo_url: '',
     price: 0,

@@ -186,7 +186,7 @@ const TokenAmountInput = ({
       <div className="left" onClick={handleSelectToken}>
         <TokenWithChain token={token} hideConer />
         <span className="token-input__symbol" title={getTokenSymbol(token)}>
-          {getTokenSymbol(token)}
+          {getTokenSymbol(token) === 'BTC' ? 'tBTC' : getTokenSymbol(token)}
         </span>
         <img src={IconArrowDown} className="icon icon-arrow-down" />
       </div>

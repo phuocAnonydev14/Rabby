@@ -6,7 +6,7 @@ const CONLA: TestnetChainBase = {
   id: 11118,
   name: 'Conla',
   rpcUrl: CONLA_RPC,
-  nativeTokenSymbol: 'BTC',
+  nativeTokenSymbol: 'tBTC',
   scanLink: 'https://explorer.conla.com',
   // logo_url: 'https://i.imgur.com/OZGdsJ8.png',
   // logo: 'https://i.imgur.com/OZGdsJ8.png',

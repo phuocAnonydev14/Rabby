@@ -1,38 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { useTranslation, Trans } from 'react-i18next';
-import { matomoRequestEvent } from '@/utils/matomo-request';
-import { sortBy, transform } from 'lodash';
-import { StrayPageWithButton } from 'ui/component';
-import AddressItem from 'ui/component/AddressList/AddressItem';
-import { getUiType, useApproval, useWallet } from 'ui/utils';
+import { useTranslation } from 'react-i18next';
+import { useApproval, useWallet } from 'ui/utils';
 import { Account } from 'background/service/preference';
-import clsx from 'clsx';
-import stats from '@/stats';
-import {
-  KEYRING_ICONS,
-  WALLET_BRAND_CONTENT,
-  KEYRING_CLASS,
-  KEYRING_TYPE,
-} from 'consts';
-import { IconImportSuccess } from 'ui/assets';
-import SuccessLogo from 'ui/assets/success-logo.svg';
+import { KEYRING_TYPE } from 'consts';
 import './index.less';
 import { useMedia } from 'react-use';
 import { connectStore, useRabbyDispatch } from '@/ui/store';
 import { Chain } from '@debank/common';
 import { AppSocial } from 'aa-conla-social-sdk';
-import { UserOauth } from '@/types/conla-oauth';
-import {
-  Button,
-  Checkbox,
-  Dropdown,
-  Menu,
-  MenuProps,
-  message,
-  Typography,
-} from 'antd';
-import { DeleteFilled, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Dropdown, Menu, message, Typography } from 'antd';
+import { DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import { ethers } from 'ethers';
 
 const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
@@ -52,29 +30,6 @@ const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
     appSocial: AppSocial;
     privateKeys: { privateKey: string; name: string; id: string }[];
   }>();
-
-  const privateKeysMock = [
-    {
-      name: 'test',
-      privateKey: '0xf39bd7839c37FA8eAA3e58C3FCa42eF4A21bc876',
-    },
-    {
-      name: 'test1',
-      privateKey: '0xf39bd7839c37FA8eAA3e58C3FCa42eF4A21bc851',
-    },
-    {
-      name: 'test2',
-      privateKey: '0xf39bd7839c37FA8eAA3e58C3FCa42eF4A21bc841',
-    },
-    {
-      name: 'test3',
-      privateKey: '0xf39bd7839c37FA8eAA3e58C3FCa42eF4A21bc840',
-    },
-    {
-      name: 'test4',
-      privateKey: '0xf39bd7839c37FA8eAA3e58C3FCa42eF4A21bc812',
-    },
-  ];
 
   console.log('state', state);
 
@@ -137,45 +92,6 @@ const ImportedPrivateKey = ({ isPopup = false }: { isPopup?: boolean }) => {
   }, []);
 
   console.log('availableAddressres', availableAddressres);
-
-  const items: MenuProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.antgroup.com"
-        >
-          1st menu item
-        </a>
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.aliyun.com"
-        >
-          2nd menu item
-        </a>
-      ),
-    },
-    {
-      key: '3',
-      label: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.luohanacademy.com"
-        >
-          3rd menu item
-        </a>
-      ),
-    },
-  ];
 
   return (
     <div className="w-full">

@@ -129,7 +129,6 @@ export class WalletController extends BaseController {
 
   /* wallet */
   boot = (password) => {
-    keyringService.getAccounts();
     keyringService.boot(password);
     const hasOtherProvider = preferenceService.getHasOtherProvider();
     const isDefaultWallet = preferenceService.getIsDefaultWallet();

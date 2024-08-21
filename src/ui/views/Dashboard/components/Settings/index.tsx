@@ -977,9 +977,9 @@ const SettingsInner = ({
           <img
             className="inline-block cursor-pointer"
             src={LogoRabby}
-            alt="https://rabby.io"
+            alt="https://conla.com"
             onClick={() => {
-              openInTab('https://rabby.io', false);
+              openInTab('https://conla.com', false);
             }}
           />
         </div>

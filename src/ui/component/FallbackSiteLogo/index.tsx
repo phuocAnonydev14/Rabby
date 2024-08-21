@@ -4,6 +4,7 @@ import { getMainDomain } from '@/utils';
 import { getOriginName, hashCode } from 'ui/utils';
 import { EXTERNAL_RESOURCE_DOMAIN_BLACK_LIST } from '@/constant';
 import './style.less';
+import ConlaLogo from 'ui/assets/conla/conla-logo.png';
 
 const bgColorList = [
   '#F69373',
@@ -87,7 +88,7 @@ const FallbackImage = ({
       >
         {!loadFaild && (
           <img
-            src={logoUrl}
+            src={ConlaLogo}
             alt={origin}
             style={{
               width,

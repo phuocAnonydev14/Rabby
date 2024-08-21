@@ -6,23 +6,12 @@ import React from 'react';
 import { CONLA } from '@/utils/const';
 import browser from 'webextension-polyfill';
 import { UserOauth } from '@/types/conla-oauth';
-import {
-  Button,
-  Input,
-  MenuProps,
-  message,
-  Modal,
-  Radio,
-  RadioChangeEvent,
-  Tabs,
-} from 'antd';
+import { Button, Input, message, Modal, RadioChangeEvent } from 'antd';
 import { AppSocial } from 'aa-conla-social-sdk';
 import { KEYRING_TYPE } from '@/constant';
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AddressViewer } from '@/ui/component';
 import Wallet from 'ethereumjs-wallet';
-import { ethers } from 'ethers';
 import {
   FileAddOutlined,
   FileSyncOutlined,
@@ -30,6 +19,8 @@ import {
   LeftOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
+import { PrivateKey } from 'aa-conla-social-sdk/dist/src/types/social.type';
+import { jwtDecode } from 'jwt-decode';
 export function deriveEthAddressFromKey(privateKey: string): string {
   const wallet = Wallet.fromPrivateKey(Buffer.from(privateKey, 'hex'));
   return '0x' + wallet.getAddress().toString('hex');
@@ -41,19 +32,13 @@ export const ConlaCustom = () => {
   const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedPrivateKey, setSelectedPrivateKey] = useState('1');
-  const [privateKeys, setPrivateKeys] = useState<
-    { privateKey: string; name: string; id: string }[]
-  >([]);
+  const [privateKeys, setPrivateKeys] = useState<PrivateKey[]>([]);
   const [privateKeyImported, setPrivateKeyImported] = useState<string>('');
   const [userOauth, setUserOauth] = useState<UserOauth | null>(null);
   const [appSocial, setAppsocial] = useState<AppSocial | null>(null);
-  const onChange = (e: RadioChangeEvent) => {
-    console.log('radio checked', e.target.value);
-    setSelectedPrivateKey(e.target.value);
-  };
   const [openModal, setOpenModal] = useState(false);
   const [showSyncIcon, setShowSyncIcon] = useState(false);
+  const [fetchingKey, setFetchingKey] = useState(false);
 
   const { runAsync: runAddTestnet } = useRequest(
     (
@@ -161,64 +146,57 @@ export const ConlaCustom = () => {
   };
 
   const checkUserRedirectOauth = async () => {
-    const users = await browser.storage.local.get('user_oauth_google');
-    await browser.storage.local.remove('user_oauth_google');
-    if (users?.user_oauth_google) {
-      const userOauth: UserOauth = JSON.parse(users.user_oauth_google);
+    try {
+      const users = await browser.storage.local.get('user_oauth_google');
+      if (users?.user_oauth_google) {
+        setFetchingKey(true);
+        const userOauth: UserOauth = JSON.parse(users.user_oauth_google);
+        const decodedHeader = jwtDecode(userOauth.idToken);
+        if (decodedHeader.exp && Date.now() >= decodedHeader.exp * 1000) {
+          await handleClearCache();
+          return;
+        }
+        const appSocial = new AppSocial(
+          'http://localhost:3000/oauth',
+          'http://localhost:3000'
+        );
 
-      const appSocial = new AppSocial(
-        'http://localhost:3000/oauth',
-        'http://localhost:3000'
-      );
+        const {
+          email,
+          id,
+          encryptedKey,
+          created_at,
+          updatedAt,
+        } = userOauth.user;
+        appSocial.user?.setInformation(
+          email,
+          id,
+          encryptedKey,
+          created_at,
+          updatedAt
+        );
 
-      const { email, id, encryptedKey, created_at, updatedAt } = userOauth.user;
-      appSocial.user?.setInformation(
-        email,
-        id,
-        encryptedKey,
-        created_at,
-        updatedAt
-      );
+        localStorage.setItem('app_social', JSON.stringify(appSocial));
+        localStorage.setItem('user_oauth', JSON.stringify(userOauth));
 
-      localStorage.setItem('app_social', JSON.stringify(appSocial));
-      localStorage.setItem('user_oauth', JSON.stringify(userOauth));
+        setUserOauth(userOauth);
+        setAppsocial(appSocial);
+        setOpenModal(true);
 
-      setUserOauth(userOauth);
-      setAppsocial(appSocial);
-      setOpenModal(true);
+        const privateKey = await appSocial.user?.getPrivateKey(
+          userOauth.idToken
+        );
+        console.log('private key sdk', privateKey);
 
-      // if (
-      //   !userOauth.user.encryptedKey ||
-      //   userOauth?.user?.encryptedKey?.length <= 0
-      // ) {
-      //   return Modal.confirm({
-      //     title: 'Generate private key',
-      //     content: (
-      //       <div
-      //         className="text-center flex flex-col"
-      //         style={{ height: 'max-content' }}
-      //       >
-      //         <span>Your account didn’t have private key.</span>{' '}
-      //         <span>Do you want to generate now?</span>{' '}
-      //       </div>
-      //     ),
-      //     onOk: async () => {
-      //       await handleGeneratePrivateKey();
-      //     },
-      //     okButtonProps: {
-      //       loading: isLoading,
-      //       disabled: isLoading,
-      //     },
-      //     okText: 'Generate',
-      //   });
-      // }
-
-      const privateKey = await appSocial.user?.getPrivateKey(userOauth.idToken);
-      console.log('private key sdk', privateKey);
-
-      if (privateKey) {
-        localStorage.setItem('privateKey', JSON.stringify(privateKey));
+        if (privateKey) {
+          setPrivateKeys(privateKey);
+          localStorage.setItem('privateKey', JSON.stringify(privateKey));
+        }
       }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setFetchingKey(false);
     }
   };
 
@@ -254,14 +232,21 @@ export const ConlaCustom = () => {
     })();
   }, []);
 
+  const handleClearCache = async () => {
+    localStorage.removeItem('user_oauth');
+    localStorage.removeItem('app_social');
+    await browser.storage.local.remove('user_oauth_google');
+  };
+
   return (
     <>
       <Modal
-        onCancel={() => {
+        onCancel={async () => {
           setPrivateKeys([]);
           setOpenModal(false);
           localStorage.removeItem('user_oauth');
           localStorage.removeItem('app_social');
+          await browser.storage.local.remove('user_oauth_google');
         }}
         footer={null}
         visible={openModal}
@@ -272,19 +257,24 @@ export const ConlaCustom = () => {
           {!showSyncIcon ? (
             <div className="flex flex-col gap-14">
               <div
-                className="flex gap-6 hover:underline font-medium cursor-pointer items-center text-15"
-                onClick={() => {
+                className={`flex gap-6 hover:underline font-medium cursor-${
+                  fetchingKey ? 'auto' : 'pointer'
+                } ${
+                  fetchingKey ? 'text-gray-content' : ''
+                } items-center text-15`}
+                onClick={async () => {
                   if (privateKeys.length <= 0) {
                     message.error("You don't have private key yet");
                     return;
                   }
-                  localStorage.removeItem('user_oauth');
-                  localStorage.removeItem('app_social');
+                  await handleClearCache();
+
                   handleImportKey();
                 }}
               >
                 <ImportOutlined />
                 Import private key from account
+                {fetchingKey && <LoadingOutlined />}
               </div>
               <div
                 onClick={() => setShowSyncIcon(true)}
@@ -294,14 +284,15 @@ export const ConlaCustom = () => {
                 Synconize with existing private key
               </div>
               <div
-                onClick={() => {
+                onClick={async () => {
                   if (isLoading) return;
-                  localStorage.removeItem('user_oauth');
-                  localStorage.removeItem('app_social');
-                  handleGeneratePrivateKey();
+                  await handleClearCache();
+                  await handleGeneratePrivateKey();
                 }}
                 style={{ cursor: isLoading ? 'none' : 'pointer' }}
-                className="flex gap-6 hover:underline font-medium cursor-pointer items-center text-15"
+                className={`cursor-${isLoading ? 'auto' : 'pointer'} ${
+                  isLoading ? 'text-gray-content' : ''
+                } flex gap-6 hover:underline font-medium cursor-pointer items-center text-15`}
               >
                 <FileAddOutlined />
                 Generate new private key
@@ -312,98 +303,16 @@ export const ConlaCustom = () => {
             <SyncKey
               onBack={() => setShowSyncIcon(false)}
               setPrivateKeyImported={setPrivateKeyImported}
-              handleSync={() => {
+              handleSync={async () => {
                 localStorage.removeItem('user_oauth');
                 localStorage.removeItem('app_social');
+                await browser.storage.local.remove('user_oauth_google');
+
                 run(privateKeyImported);
               }}
             />
           )}
-          {/* <Tabs
-            defaultActiveKey="1"
-            size={'middle'}
-            onChange={(key) => setSelectedPrivateKey(key)}
-          >
-            <Tabs.TabPane tab="Import" key="1">
-              <ul>
-                {privateKeys.length > 0 &&
-                  privateKeys.map((key) => {
-                    return (
-                      <li>
-                        <div className="option p-4 w-full" key={key.privateKey}>
-                          <div className="flex flex-row gap-4 items-center">
-                            <div
-                              className="text-15 ml-6 mr-6 dashboard-name"
-                              title={'Private key'}
-                            >
-                              {key.name}
-                            </div>
-                            <div className="current-address">
-                              <AddressViewer
-                                address={ethers.utils.computeAddress(
-                                  key.privateKey
-                                )}
-                                showArrow={false}
-                                className={'text-12 opacity-60'}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-              </ul>
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="Synconize" key="2">
-              
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="Add new" key="3">
-              <div>
-                <p>Generate new private key</p>
-              </div>
-            </Tabs.TabPane>
-          </Tabs> */}
         </div>
-        {/* <div className="flex justify-between mt-20">
-          <Button onClick={() => setPrivateKeys([])} type="default">
-            Cancel
-          </Button>
-          <Button
-            disabled={!selectedPrivateKey}
-            onClick={async () => {
-              try {
-                switch (selectedPrivateKey) {
-                  case '1': {
-                    await handleImportKey(
-                      privateKeys.map((key) => key.privateKey)
-                    );
-                    break;
-                  }
-                  case '2': {
-                    if (
-                      privateKeyImported.length < 32 ||
-                      !new ethers.Wallet(privateKeyImported)
-                    ) {
-                      message.error('Invalid private key');
-                      return;
-                    }
-                    run(privateKeyImported);
-                    return;
-                  }
-                  case '3': {
-                    await handleGeneratePrivateKey();
-                    return;
-                  }
-                }
-              } catch (e) {
-                message.error('Invalid private key');
-              }
-            }}
-            type="primary"
-          >
-            {btnSubmitContent}
-          </Button>
-        </div> */}
       </Modal>
     </>
   );
@@ -436,7 +345,7 @@ const SyncKey = ({
       />
       <Button
         block
-        className="mt-4"
+        className="mt-10"
         type="primary"
         onClick={handleSync}
         disabled={!setPrivateKeyImported}

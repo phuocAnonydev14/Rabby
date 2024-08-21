@@ -1,6 +1,6 @@
 {
   "name": "Conla",
-  "version": "0.1.1",
+  "version": "0.1.4 ",
   "description": "A extension browser plugin for DeFi users",
   "scripts": {
     "clean": "",
@@ -104,6 +104,7 @@
     "human-standard-token-abi": "2.0.0",
     "immer": "9.0.21",
     "interval-promise": "1.4.0",
+    "jwt-decode": "^4.0.0",
     "koa-compose": "4.1.0",
     "lodash": "4.17.21",
     "loglevel": "1.7.1",

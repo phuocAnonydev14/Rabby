@@ -55,7 +55,7 @@ import { useGnosisPendingTxs } from '@/ui/hooks/useGnosisPendingTxs';
 import { CommonSignal } from '@/ui/component/ConnectStatus/CommonSignal';
 import { useHomeBalanceViewOuterPrefetch } from './components/BalanceView/useHomeBalanceView';
 import { ConlaCustom } from 'ui/views/ConlaCustom';
-
+// rgba(134, 151, 255, 0.2)
 const Dashboard = () => {
   const history = useHistory();
   const wallet = useWallet();
