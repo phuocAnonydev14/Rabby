@@ -1,4 +1,8 @@
-import { TxDisplayItem, TxHistoryItem } from '@/background/service/openapi';
+import {
+  TokenItem,
+  TxDisplayItem,
+  TxHistoryItem,
+} from '@/background/service/openapi';
 import NFTAvatar from '@/ui/views/Dashboard/components/NFT/NFTAvatar';
 import React from 'react';
 import IconUnknown from 'ui/assets/token-default.svg';
@@ -11,15 +15,15 @@ type TokenChangeProps = {
   data: TxDisplayItem | TxHistoryItem;
   canClickToken?: boolean;
   onClose?: () => void;
-} & Pick<TxDisplayItem, 'tokenDict'>;
+  token: TokenItem;
+};
 
 export const TokenChange = ({
   data: info,
-  tokenDict,
+  token,
   canClickToken = true,
   onClose,
 }: TokenChangeProps) => {
-  const tokens = tokenDict || {};
   const { t } = useTranslation();
 
   if (!info.sends?.length && !info.receives?.length) {
@@ -31,7 +35,6 @@ export const TokenChange = ({
       {info.sends?.map((v) => {
         const tokenId = v.token_id;
         const tokenUUID = `${info.chain}_token:${tokenId}`;
-        const token = tokens[tokenId] || tokens[tokenUUID];
         const isNft = v.token_id?.length === 32;
         const symbol = getTokenSymbol(token);
         const name = isNft
@@ -83,10 +86,6 @@ export const TokenChange = ({
         );
       })}
       {info.receives?.map((v) => {
-        const tokenId = v.token_id;
-        const tokenUUID = `${info.chain}_token:${tokenId}`;
-
-        const token = tokens[tokenId] || tokens[tokenUUID];
         const isNft = v.token_id?.length === 32;
         const symbol = getTokenSymbol(token);
         const name = isNft

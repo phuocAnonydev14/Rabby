@@ -10,8 +10,181 @@ import { Empty, Modal } from 'ui/component';
 import { useWallet } from 'ui/utils';
 import { HistoryItem, HistoryItemActionContext } from './HistoryItem';
 import { Loading } from './Loading';
+import { CONLA } from '@/utils/const';
+import { TokenItem, TxHistoryItem } from '@rabby-wallet/rabby-api/dist/types';
 
 const PAGE_COUNT = 10;
+
+const mockTxs: TxHistoryItem[] = [
+  {
+    cate_id: null,
+    chain: CONLA.id.toString(),
+    debt_liquidated: null,
+    id: 'tx1',
+    is_scam: false,
+    other_addr: '0xOtherAddress1',
+    project_id: null,
+    receives: [
+      {
+        amount: 50,
+        from_addr: '0xAddress1',
+        token_id: '',
+      },
+    ],
+    sends: [],
+    time_at: 1693500000000,
+    token_approve: {
+      spender: '0xSpender1',
+      token_id: 'ETH',
+      value: 100,
+    },
+    tx: {
+      eth_gas_fee: 0.01,
+      from_addr: '0xAddress1',
+      name: 'Transfer',
+      params: ['param1', 'param2'],
+      status: 1,
+      to_addr: '0xAddress2',
+      usd_gas_fee: 0.5,
+      value: 50,
+      message: null,
+    },
+  },
+  {
+    cate_id: 'category2',
+    chain: 'Binance Smart Chain',
+    debt_liquidated: null,
+    id: 'tx2',
+    is_scam: true,
+    other_addr: '0xOtherAddress2',
+    project_id: 'project1',
+    receives: [],
+    sends: [
+      {
+        amount: 50,
+        to_addr: '0xAddress4',
+        token_id: 'BNB',
+      },
+    ],
+    time_at: 1693600000000,
+    token_approve: null,
+    tx: {
+      eth_gas_fee: 0.02,
+      from_addr: '0xAddress3',
+      name: 'Approval',
+      params: ['param1'],
+      status: 0,
+      to_addr: '0xAddress4',
+      usd_gas_fee: 1.0,
+      value: 100,
+      message: 'Failed transaction',
+    },
+  },
+  {
+    cate_id: 'category3',
+    chain: 'Polygon',
+    debt_liquidated: null,
+    id: 'tx3',
+    is_scam: false,
+    other_addr: '0xOtherAddress3',
+    project_id: null,
+    receives: [],
+    sends: [
+      {
+        amount: 150,
+        to_addr: '0xAddress6',
+        token_id: 'MATIC',
+      },
+    ],
+    time_at: 1693700000000,
+    token_approve: {
+      spender: '0xSpender2',
+      token_id: 'MATIC',
+      value: 300,
+    },
+    tx: {
+      eth_gas_fee: 0.005,
+      from_addr: '0xAddress5',
+      name: 'Transfer',
+      params: ['param1', 'param2', 'param3'],
+      status: 1,
+      to_addr: '0xAddress6',
+      usd_gas_fee: 0.25,
+      value: 200,
+      message: 'Transaction successful',
+    },
+  },
+  {
+    cate_id: null,
+    chain: 'Avalanche',
+    debt_liquidated: null,
+    id: 'tx4',
+    is_scam: false,
+    other_addr: '0xOtherAddress4',
+    project_id: 'project2',
+    receives: [],
+    sends: [
+      {
+        amount: 200,
+        to_addr: '0xAddress8',
+        token_id: 'AVAX',
+      },
+    ],
+    time_at: 1693800000000,
+    token_approve: {
+      spender: '0xSpender3',
+      token_id: 'AVAX',
+      value: 400,
+    },
+    tx: {
+      eth_gas_fee: 0.015,
+      from_addr: '0xAddress7',
+      name: 'Transfer',
+      params: ['param1', 'param2'],
+      status: 1,
+      to_addr: '0xAddress8',
+      usd_gas_fee: 0.75,
+      value: 300,
+      message: 'Transaction processed',
+    },
+  },
+  {
+    cate_id: 'category5',
+    chain: 'Solana',
+    debt_liquidated: null,
+    id: 'tx5',
+    is_scam: true,
+    other_addr: '0xOtherAddress5',
+    project_id: 'project3',
+    receives: [
+      {
+        amount: 500,
+        from_addr: '0xAddress9',
+        token_id: 'SOL',
+      },
+    ],
+    sends: [
+      {
+        amount: 450,
+        to_addr: '0xAddress10',
+        token_id: 'SOL',
+      },
+    ],
+    time_at: 1693900000000,
+    token_approve: null,
+    tx: {
+      eth_gas_fee: 0.01,
+      from_addr: '0xAddress9',
+      name: 'Transfer',
+      params: [],
+      status: 0,
+      to_addr: '0xAddress10',
+      usd_gas_fee: 0.5,
+      value: 500,
+      message: 'Scam detected',
+    },
+  },
+];
 
 export const HistoryList = ({
   isFilterScam = false,
@@ -122,7 +295,7 @@ export const HistoryList = ({
         </div>
       ) : (
         <>
-          {isEmpty ? (
+          {/* {isEmpty ? (
             <Empty
               title={t('page.transactions.empty.title')}
               desc={
@@ -137,35 +310,35 @@ export const HistoryList = ({
               }
               className="pt-[108px]"
             ></Empty>
-          ) : (
-            <Virtuoso
-              style={{
-                height: '100%',
-              }}
-              data={data?.list || []}
-              itemContent={(_, item) => {
-                return (
-                  <HistoryItem
-                    data={item}
-                    projectDict={item.projectDict}
-                    cateDict={item.cateDict}
-                    tokenDict={item.tokenDict || item.tokenUUIDDict || {}}
-                    key={item.id}
-                    onViewInputData={setFocusingHistoryItem}
-                  />
-                );
-              }}
-              endReached={loadMore}
-              components={{
-                Footer: () => {
-                  if (loadingMore) {
-                    return <Loading count={4} active />;
-                  }
-                  return null;
-                },
-              }}
-            ></Virtuoso>
-          )}
+          ) : ( */}
+          <Virtuoso
+            style={{
+              height: '100%',
+            }}
+            data={mockTxs}
+            itemContent={(_, item) => {
+              return (
+                <HistoryItem
+                  data={item as TxHistoryItem}
+                  // projectDict={item.projectDict}
+                  // cateDict={item.cateDict}
+                  // tokenDict={item.tokenDict || item.tokenUUIDDict || {}}
+                  key={item.id}
+                  onViewInputData={setFocusingHistoryItem}
+                />
+              );
+            }}
+            endReached={loadMore}
+            components={{
+              Footer: () => {
+                if (loadingMore) {
+                  return <Loading count={4} active />;
+                }
+                return null;
+              },
+            }}
+          ></Virtuoso>
+          {/* )} */}
         </>
       )}
     </div>

@@ -5,7 +5,7 @@ import {
 } from '@/background/service/openapi';
 import { sinceTime, useWallet } from 'ui/utils';
 import clsx from 'clsx';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getChain } from '@/utils';
 import { numberWithCommasIsLtOne } from 'ui/utils';
 import { TokenChange, TxId, TxInterAddressExplain } from '@/ui/component';
@@ -24,6 +24,7 @@ import {
 import { formatTxInputDataOnERC20 } from '@/ui/utils/transaction';
 import { findChainByServerID } from '@/utils/chain';
 import { TooltipWithMagnetArrow } from '@/ui/component/Tooltip/TooltipWithMagnetArrow';
+import { CONLA } from '@/utils/const';
 
 export type HistoryItemActionContext = {
   parsedInputData: string;
@@ -226,28 +227,40 @@ type HistoryItemProps = {
   data: TxDisplayItem | TxHistoryItem;
   onViewInputData?: (ctx: HistoryItemActionContext) => void;
   isTestnet?: boolean;
-} & Pick<TxDisplayItem, 'cateDict' | 'projectDict' | 'tokenDict'>;
+};
 
 export const HistoryItem = ({
   data,
-  cateDict,
-  projectDict,
-  tokenDict,
   onViewInputData,
   isTestnet,
 }: HistoryItemProps) => {
   const chainItem = getChain(data.chain);
   const isFailed = data.tx?.status === 0;
   const isScam = data.is_scam;
-
+  const wallet = useWallet();
   const { addressType } = useCheckAddressType(data.tx?.to_addr, chainItem);
+  const [conlaToken, setConlaToken] = useState<TokenItem | null>(null);
 
   const { t } = useTranslation();
   const account = useRabbySelector((state) => state.account.currentAccount);
 
-  if (!chainItem) {
-    return null;
-  }
+  // if (!chainItem) {
+  //   return null;
+  // }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await wallet.getCustomTestnetToken({
+          chainId: CONLA.id,
+          address: account?.address || '',
+        });
+        setConlaToken((token as unknown) as TokenItem);
+      } catch (err) {
+        console.log('err', err);
+      }
+    })();
+  });
 
   return (
     <div className={clsx('txs-history-card')}>
@@ -279,30 +292,26 @@ export const HistoryItem = ({
                 isTestnet={isTestnet}
               />
             )} */}
-            {addressType === AddressType.EOA && !data.is_scam && (
+            {/* {addressType === AddressType.EOA && !data.is_scam && (
               <ViewMessageTriggerForEoa
                 userAddress={account?.address || ''}
                 txInputData={data.tx?.message || ''}
                 chainItem={chainItem}
                 onViewInputData={onViewInputData}
               />
-            )}
+            )} */}
           </div>
         </div>
       </div>
       <div
         className={clsx(
           'txs-history-card-body',
+          'txs-history-card-body',
           (isScam || isFailed) && 'opacity-50'
         )}
       >
-        <TxInterAddressExplain
-          data={data}
-          projectDict={projectDict}
-          tokenDict={tokenDict}
-          cateDict={cateDict}
-        />
-        <TokenChange data={data} tokenDict={tokenDict} />
+        <TxInterAddressExplain data={data} />
+        <TokenChange data={data} token={conlaToken!} />
       </div>
       {(data.tx && data.tx?.eth_gas_fee) || isFailed ? (
         <div
