@@ -1337,7 +1337,7 @@ export const formatSecurityEngineCtx = ({
           ? data.onTransferWhitelist
           : false,
       },
-    };
+    } as any;
   }
   if (actionData.sendNFT) {
     const data = requireData as SendRequireData;
@@ -1364,7 +1364,7 @@ export const formatSecurityEngineCtx = ({
           ? data.onTransferWhitelist
           : false,
       },
-    };
+    } as any;
   }
   if (actionData.approveToken) {
     const data = requireData as ApproveTokenRequireData;
@@ -1465,7 +1465,7 @@ export const formatSecurityEngineCtx = ({
         receiver: receiver || '',
         chainId,
         id: data.id,
-      },
+      } as any,
     };
   }
   if (actionData.contractCall) {

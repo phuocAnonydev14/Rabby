@@ -774,7 +774,7 @@ class ProviderController extends BaseController {
               req_id: preReqId || '',
               origin,
               is_gasless: isGasLess,
-            });
+            } as any);
             hash = res.req.tx_id || undefined;
             reqId = res.req.id || undefined;
             if (res.req.push_status === 'failed') {

@@ -760,7 +760,7 @@ export class WalletController extends BaseController {
     const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
     // create instance wallet
-    return new ethers.Wallet(privateKeyHex).connect(provider);
+    return new ethers.Wallet(privateKeyHex).connect(provider as any);
   };
 
   getAccountContract = async () => {
@@ -777,8 +777,8 @@ export class WalletController extends BaseController {
     const privateKeyHex = ethers.utils.hexlify(privateKeyBuffer);
 
     // create instance wallet
-    const sender = new ethers.Wallet(privateKeyHex).connect(provider);
-    const dep = new DeterministicDeployer(provider, sender);
+    const sender = new ethers.Wallet(privateKeyHex).connect(provider as any);
+    const dep = new DeterministicDeployer(provider, sender as any);
 
     let factoryAddress = DeterministicDeployer.getAddress(
       new SimpleAccountFactory__factory(),
@@ -797,7 +797,7 @@ export class WalletController extends BaseController {
     const accountAPI = new SimpleAccountAPI({
       provider,
       entryPointAddress: entryPointAddr,
-      owner: sender,
+      owner: sender as any,
       factoryAddress,
       paymasterAPI,
     });
@@ -809,7 +809,7 @@ export class WalletController extends BaseController {
     const provider = new JsonRpcProvider(CONLA_RPC);
     const sender = await this.getCurrentWallet();
 
-    const dep = new DeterministicDeployer(provider, sender);
+    const dep = new DeterministicDeployer(provider, sender as any);
 
     const factoryAddress = DeterministicDeployer.getAddress(
       new SimpleAccountFactory__factory(),
@@ -847,7 +847,7 @@ export class WalletController extends BaseController {
     const accountAPI = new SimpleAccountAPI({
       provider,
       entryPointAddress: entryPointAddr,
-      owner: sender,
+      owner: sender as any,
       factoryAddress,
       paymasterAPI,
     });
@@ -886,7 +886,7 @@ export class WalletController extends BaseController {
     const wallet = await this.getCurrentWallet();
     const provider = new JsonRpcProvider(CONLA_RPC);
 
-    const detDeployer = new DeterministicDeployer(provider, wallet);
+    const detDeployer = new DeterministicDeployer(provider, wallet as any);
     return detDeployer.deterministicDeploy(
       new SimpleAccountFactory__factory(),
       0,
@@ -922,7 +922,11 @@ export class WalletController extends BaseController {
       return balance;
     }
     // check balance erc20 contract
-    const erc20Contract = new ethers.Contract(tokenAddr, ERC20_ABI, provider);
+    const erc20Contract = new ethers.Contract(
+      tokenAddr,
+      ERC20_ABI,
+      provider as any
+    );
     const erc20Balance = await erc20Contract.balanceOf(accountContractAdress);
     return erc20Balance;
   };
@@ -951,7 +955,11 @@ export class WalletController extends BaseController {
       paymasterAPI,
     };
     console.log('come here', paymasterAPI);
-    const aaProvider = (await wrapProvider(provider, config, sender)) as any;
+    const aaProvider = (await wrapProvider(
+      provider,
+      config,
+      sender as any
+    )) as any;
     console.log('come here', aaProvider);
 
     console.log(token, amount, userTo);

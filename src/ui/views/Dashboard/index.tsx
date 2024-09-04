@@ -538,6 +538,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="qrcode-container">
+              {/* @ts-expect-error: props error */}
               <QRCode value={currentAccount?.address} size={100} />
             </div>
           </div>

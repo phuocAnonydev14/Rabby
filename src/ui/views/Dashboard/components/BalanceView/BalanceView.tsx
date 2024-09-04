@@ -182,6 +182,7 @@ const BalanceView = ({
 
   useEffect(() => {
     handleCheckDeployed().finally();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAccount]);
 
   // const refreshTimerlegacy = useRef<NodeJS.Timeout>();
