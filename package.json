@@ -1,13 +1,13 @@
 {
   "name": "Conla",
-  "version": "0.1.4 ",
+  "version": "0.1.5",
   "description": "A extension browser plugin for DeFi users",
   "scripts": {
     "clean": "",
     "make-theme": "node ./scripts/make-theme.js",
     "build:dev:default": "npm run clean && npm run make-theme && cross-env TAILWIND_MODE=watch NODE_OPTIONS=--max-old-space-size=8192 webpack --progress --env config=dev",
-    "build:pro:default": "npm run clean && npm run make-theme && webpack --progress --env config=pro",
-    "build:debug:default": "npm run clean && npm run make-theme && webpack --progress --env config=debug",
+    "build:pro:default": "npm run clean && npm run make-theme && NODE_OPTIONS=--max-old-space-size=8192 webpack --progress --env config=pro ",
+    "build:debug:default": "npm run clean && npm run make-theme && webpack --progress --env config=debug ",
     "build:dev:mv2": "npm run build:dev:default",
     "build:pro:mv2": "npm run build:pro:default",
     "build:debug:mv2": "npm run build:debug:default",
