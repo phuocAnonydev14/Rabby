@@ -1111,7 +1111,7 @@ export const formatSecurityEngineCtx = async ({
           ? data.onTransferWhitelist
           : false,
       },
-    };
+    } as any;
   }
   if (actionData?.assetOrder) {
     const { takers, receiver } = actionData.assetOrder;
@@ -1124,7 +1124,7 @@ export const formatSecurityEngineCtx = async ({
         chainId: chain?.serverId,
         id: data.id,
       },
-    };
+    } as any;
   }
   if (actionData?.contractCall && actionData?.contractId && chain) {
     return {

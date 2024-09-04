@@ -624,7 +624,7 @@ const SignTx = ({ params, origin }: SignTxProps) => {
       estimated_gas_cost_value: 0,
       estimated_gas_used: 0,
       estimated_seconds: 0,
-    },
+    } as any,
     pre_exec: {
       success: true,
       error: null,

@@ -1090,6 +1090,7 @@ const SendToken = () => {
         conlaAcc || currentAccount!.address
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inited]);
 
   const getAlianName = async () => {
