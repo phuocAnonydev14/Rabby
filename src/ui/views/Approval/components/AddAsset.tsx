@@ -389,14 +389,7 @@ const AddAsset = ({ params }: { params: AddAssetProps }) => {
                   </div>
                 )}
                 {tokenHistory.map((item) => (
-                  <HistoryItem
-                    data={item}
-                    projectDict={item.projectDict}
-                    cateDict={item.cateDict}
-                    tokenDict={item.tokenDict}
-                    canClickToken={false}
-                    key={item.id}
-                  />
+                  <HistoryItem data={item} key={item.id} />
                 ))}
               </div>
             </>

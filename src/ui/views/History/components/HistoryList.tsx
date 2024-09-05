@@ -20,7 +20,7 @@ const mockTxs: TxHistoryItem[] = [
     cate_id: null,
     chain: CONLA.id.toString(),
     debt_liquidated: null,
-    id: 'tx1',
+    id: '0xjasdhhh2j312jkh32131231',
     is_scam: false,
     other_addr: '0xOtherAddress1',
     project_id: null,

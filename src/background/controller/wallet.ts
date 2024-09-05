@@ -780,7 +780,7 @@ export class WalletController extends BaseController {
     const sender = new ethers.Wallet(privateKeyHex).connect(provider as any);
     const dep = new DeterministicDeployer(provider, sender as any);
 
-    let factoryAddress = DeterministicDeployer.getAddress(
+    const factoryAddress = DeterministicDeployer.getAddress(
       new SimpleAccountFactory__factory(),
       0,
       [entryPointAddr]

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="810773e7-5b34-40b4-9803-6f0046927b51" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/background/controller/wallet.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/background/controller/wallet.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/views/Approval/components/AddAsset.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/views/Approval/components/AddAsset.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/views/Dashboard/components/TokenDetailPopup/HistoryItem.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/views/Dashboard/components/TokenDetailPopup/HistoryItem.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/views/Dashboard/components/TokenDetailPopup/TokenDetail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/views/Dashboard/components/TokenDetailPopup/TokenDetail.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/views/Unlock/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/views/Unlock/index.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="feat/deploy-ac" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitToolBoxStore">
+    <option name="recentBranches">
+      <RecentBranches>
+        <option name="branchesForRepo">
+          <list>
+            <RecentBranchesForRepo>
+              <option name="branches">
+                <list>
+                  <RecentBranch>
+                    <option name="branchName" value="feat/tx-histories" />
+                    <option name="lastUsedInstant" value="1725436443" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="feat/deploy-ac" />
+                    <option name="lastUsedInstant" value="1725436442" />
+                  </RecentBranch>
+                </list>
+              </option>
+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+            </RecentBranchesForRepo>
+          </list>
+        </option>
+      </RecentBranches>
+    </option>
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 8
+}]]></component>
+  <component name="ProjectId" id="2lbOQk614aNVUVSHVTPJDsTQDTO" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "feat/tx-histories",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.standard": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.standard": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "yarn",
+    "prettierjs.PrettierConfiguration.Package": "/home/phuoc/Icetea/Rabby-old/node_modules/prettier",
+    "settings.editor.selected.configurable": "settings.javascript.prettier",
+    "ts.external.directory.path": "/home/phuoc/Icetea/Rabby-old/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-7c0b70fcd90d-JavaScript-WS-242.21829.149" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="810773e7-5b34-40b4-9803-6f0046927b51" name="Changes" comment="" />
+      <created>1725445296079</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1725445296079</updated>
+      <workItem from="1725445298132" duration="5000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="LAST_COMMIT_MESSAGE" value="" />
+  </component>
+</project>

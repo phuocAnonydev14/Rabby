@@ -145,9 +145,9 @@ const NameAndAddress = ({
         <ThemeIcon
           src={iconCopySrc}
           onClick={
-            __internalRestrainClickEventOnCopyIcon
-              ? handleClickCopyIcon
-              : handleCopyContractAddress
+            // __internalRestrainClickEventOnCopyIcon
+            handleClickCopyIcon
+            // : handleCopyContractAddress
           }
           width={16}
           height={16}

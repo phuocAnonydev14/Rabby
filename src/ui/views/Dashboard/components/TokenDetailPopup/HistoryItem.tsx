@@ -79,18 +79,18 @@ export const HistoryItem = ({
           (isScam || isFailed) && 'opacity-50'
         )}
       >
-        <TxInterAddressExplain
-          data={data}
-          projectDict={projectDict}
-          tokenDict={tokenDict}
-          cateDict={cateDict}
-        ></TxInterAddressExplain>
-        <TokenChange
-          data={data}
-          tokenDict={tokenDict}
-          canClickToken={canClickToken}
-          onClose={onClose}
-        />
+        {/*<TxInterAddressExplain*/}
+        {/*  data={data}*/}
+        {/*  projectDict={projectDict}*/}
+        {/*  tokenDict={tokenDict}*/}
+        {/*  cateDict={cateDict}*/}
+        {/*></TxInterAddressExplain>*/}
+        {/*<TokenChange*/}
+        {/*  data={data}*/}
+        {/*  tokenDict={tokenDict}*/}
+        {/*  canClickToken={canClickToken}*/}
+        {/*  onClose={onClose}*/}
+        {/*/>*/}
       </div>
     </div>
   );

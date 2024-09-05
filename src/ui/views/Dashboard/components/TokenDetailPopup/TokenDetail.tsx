@@ -306,15 +306,7 @@ const TokenDetail = ({
           </div>
         )}
         {data?.list.map((item) => (
-          <HistoryItem
-            data={item}
-            projectDict={item.projectDict}
-            cateDict={item.cateDict}
-            tokenDict={item.tokenDict}
-            key={item.id}
-            onClose={onClose}
-            canClickToken={canClickToken}
-          ></HistoryItem>
+          <HistoryItem data={item} key={item.id}></HistoryItem>
         ))}
         {(loadingMore || loading) && <Loading count={5} active />}
         {isEmpty && (
