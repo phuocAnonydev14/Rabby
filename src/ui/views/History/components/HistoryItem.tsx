@@ -1,4 +1,5 @@
 import {
+  ConlaTxHistoryItem,
   TokenItem,
   TxDisplayItem,
   TxHistoryItem,
@@ -179,7 +180,7 @@ function useClientParseTx({
       !!chainItem?.nativeTokenSymbol &&
       data.cate_id &&
       ['send', 'receive'].includes(data.cate_id) &&
-      ((!data.receives.length && !data.receives.length) ||
+      ((!data.receives?.length && !data.receives?.length) ||
         data.receives?.filter((v) => {
           const tokenId = v.token_id;
           const tokenUUID = `${data.chain}_token:${tokenId}`;
@@ -223,8 +224,14 @@ function useClientParseTx({
   }, [isTxNeedInputData, data.id, chainItem?.serverId]);
 }
 
+export enum TxStatus {
+  SEND = 'SEND',
+  RECEIVE = 'RECEIVE',
+  DEPLOY = 'DEPLOY',
+}
+
 type HistoryItemProps = {
-  data: TxDisplayItem | TxHistoryItem;
+  data: ConlaTxHistoryItem;
   onViewInputData?: (ctx: HistoryItemActionContext) => void;
   isTestnet?: boolean;
 };
@@ -234,15 +241,13 @@ export const HistoryItem = ({
   onViewInputData,
   isTestnet,
 }: HistoryItemProps) => {
-  const chainItem = getChain(data.chain);
-  const isFailed = data.tx?.status === 0;
-  const isScam = data.is_scam;
+  const chainItem = getChain(CONLA.id.toString());
   const wallet = useWallet();
-  const { addressType } = useCheckAddressType(data.tx?.to_addr, chainItem);
   const [conlaToken, setConlaToken] = useState<TokenItem | null>(null);
 
   const { t } = useTranslation();
   const account = useRabbySelector((state) => state.account.currentAccount);
+  const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.RECEIVE);
 
   // if (!chainItem) {
   //   return null;
@@ -251,10 +256,20 @@ export const HistoryItem = ({
   useEffect(() => {
     (async () => {
       try {
+        if (!data.value) {
+          setTxStatus(TxStatus.DEPLOY);
+        } else if (data.from === account?.address) {
+          setTxStatus(TxStatus.SEND);
+        } else {
+          setTxStatus(TxStatus.RECEIVE);
+        }
+
         const token = await wallet.getCustomTestnetToken({
           chainId: CONLA.id,
           address: account?.address || '',
         });
+        console.log('token', token);
+
         setConlaToken((token as unknown) as TokenItem);
       } catch (err) {
         console.log('err', err);
@@ -262,26 +277,17 @@ export const HistoryItem = ({
     })();
   });
 
+  console.log('conlaToken', conlaToken);
+
   return (
     <div className={clsx('txs-history-card')}>
       <div className="txs-history-card-header">
-        {isScam && (
-          <TooltipWithMagnetArrow
-            title={t('page.transactions.txHistory.scamToolTip')}
-            className="rectangle w-[max-content] max-w-[340px]"
-          >
-            <div className="tag-scam opacity-50">{t('global.scamTx')}</div>
-          </TooltipWithMagnetArrow>
-        )}
-        <div
-          className={clsx(
-            'txs-history-card-header-inner text-12',
-            (isScam || isFailed) && 'opacity-50'
-          )}
-        >
-          <div className="time">{sinceTime(data.time_at)}</div>
+        <div className={clsx('txs-history-card-header-inner text-12')}>
+          <div className="time">
+            {sinceTime(new Date(data.timestamp).getTime() / 1000)}
+          </div>
           <div className="txs-history-card-header-right flex items-center justify-end flex-shrink-1 w-[100%]">
-            <TxId chain={data.chain} id={data.id} />
+            <TxId chain={CONLA.id.toString()} id={data.hash} />
             {/* {addressType === AddressType.CONTRACT && !data.is_scam && (
               <ViewMessageTriggerForContract
                 contractAddress={data.other_addr}
@@ -303,34 +309,22 @@ export const HistoryItem = ({
           </div>
         </div>
       </div>
-      <div
-        className={clsx(
-          'txs-history-card-body',
-          'txs-history-card-body',
-          (isScam || isFailed) && 'opacity-50'
-        )}
-      >
+      <div className={clsx('txs-history-card-body', 'txs-history-card-body')}>
         <TxInterAddressExplain data={data} />
-        <TokenChange data={data} token={conlaToken!} />
+        <TokenChange data={data} token={conlaToken!} txStatus={txStatus} />
       </div>
-      {(data.tx && data.tx?.eth_gas_fee) || isFailed ? (
-        <div
-          className={clsx(
-            'txs-history-card-footer text-12',
-            (isScam || isFailed) && 'opacity-50'
-          )}
-        >
-          {data.tx && data.tx?.eth_gas_fee ? (
+      {data.gasPrice ? (
+        <div className={clsx('txs-history-card-footer text-12')}>
+          {data.gasPrice ? (
             <div>
-              {t('global.gas')}:{' '}
-              {numberWithCommasIsLtOne(data.tx?.eth_gas_fee, 2)}{' '}
+              {t('global.gas')}: {numberWithCommasIsLtOne(data.gasPrice, 2)}{' '}
               {chainItem?.nativeTokenSymbol} ($
-              {numberWithCommasIsLtOne(data.tx?.usd_gas_fee ?? 0, 2)})
+              {numberWithCommasIsLtOne(data.gasPrice ?? 0, 2)})
             </div>
           ) : null}
-          {isFailed && (
+          {/* {isFailed && (
             <span className="tx-status is-failed">{t('global.failed')}</span>
-          )}
+          )} */}
         </div>
       ) : null}
     </div>

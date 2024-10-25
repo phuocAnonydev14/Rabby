@@ -9,8 +9,8 @@
   --rabby-light-blue-light1: rgba(254, 152, 0, 0.1);
   --rabby-light-blue-light-1: rgba(254, 152, 0, 0.1);
   --rabby-light-blue-light2: rgba(222, 227, 252, 1);
-  --rabby-light-blue-light-2: rgb(245, 228, 203);
-  --rabby-light-blue-disable: rgb(250, 230, 200);
+  --rabby-light-blue-light-2: rgba(222, 227, 252, 1);
+  --rabby-light-blue-disable: rgba(219, 224, 255, 1);
   --rabby-light-green-default: rgba(42, 187, 127, 1);
   --rabby-light-green-light: rgba(216, 242, 231, 1);
   --rabby-light-orange-default: rgba(255, 176, 32, 1);

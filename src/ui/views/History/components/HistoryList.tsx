@@ -11,7 +11,11 @@ import { useWallet } from 'ui/utils';
 import { HistoryItem, HistoryItemActionContext } from './HistoryItem';
 import { Loading } from './Loading';
 import { CONLA } from '@/utils/const';
-import { TokenItem, TxHistoryItem } from '@rabby-wallet/rabby-api/dist/types';
+import {
+  ConlaTxHistoryItem,
+  TokenItem,
+  TxHistoryItem,
+} from '@rabby-wallet/rabby-api/dist/types';
 
 const PAGE_COUNT = 10;
 
@@ -186,6 +190,23 @@ const mockTxs: TxHistoryItem[] = [
   },
 ];
 
+export const conlaHisToryList: ConlaTxHistoryItem[] = [
+  {
+    hash: '0x1a546f8e8df87d2c91e9795b86d6fe2c61f338cd053c665ea977ad758103fa2a',
+    value: '50000000000000000',
+    gas: 0,
+    gasPrice: 0,
+    nonce: 0,
+    data: '',
+    from: '0xc635e930d2af544eebc7421f3c20563505ca065e',
+    to: '0x2a92533f2ffbe783fd484cd58a52d24531b2e4ed',
+    timestamp: '2024-08-27T17:10:27.204114+07:00',
+    blockNumber: 0,
+    createdAt: '0001-01-01T00:00:00Z',
+    updatedAt: '0001-01-01T00:00:00Z',
+  },
+];
+
 export const HistoryList = ({
   isFilterScam = false,
 }: {
@@ -315,15 +336,15 @@ export const HistoryList = ({
             style={{
               height: '100%',
             }}
-            data={mockTxs}
+            data={conlaHisToryList}
             itemContent={(_, item) => {
               return (
                 <HistoryItem
-                  data={item as TxHistoryItem}
+                  data={item}
                   // projectDict={item.projectDict}
                   // cateDict={item.cateDict}
                   // tokenDict={item.tokenDict || item.tokenUUIDDict || {}}
-                  key={item.id}
+                  key={item.hash}
                   onViewInputData={setFocusingHistoryItem}
                 />
               );

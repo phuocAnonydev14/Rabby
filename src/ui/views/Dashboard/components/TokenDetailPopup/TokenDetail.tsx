@@ -305,9 +305,9 @@ const TokenDetail = ({
             </Button>
           </div>
         )}
-        {data?.list.map((item) => (
+        {/* {data?.list.map((item) => (
           <HistoryItem data={item} key={item.id}></HistoryItem>
-        ))}
+        ))} */}
         {(loadingMore || loading) && <Loading count={5} active />}
         {isEmpty && (
           <div className="token-txs-history__empty mt-60">

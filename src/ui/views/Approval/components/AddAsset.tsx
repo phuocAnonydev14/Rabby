@@ -388,9 +388,9 @@ const AddAsset = ({ params }: { params: AddAssetProps }) => {
                     </p>
                   </div>
                 )}
-                {tokenHistory.map((item) => (
+                {/* {tokenHistory.map((item) => (
                   <HistoryItem data={item} key={item.id} />
-                ))}
+                ))} */}
               </div>
             </>
           )}

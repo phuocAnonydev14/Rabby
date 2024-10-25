@@ -1,4 +1,8 @@
-import { TxDisplayItem, TxHistoryItem } from '@/background/service/openapi';
+import {
+  ConlaTxHistoryItem,
+  TxDisplayItem,
+  TxHistoryItem,
+} from '@/background/service/openapi';
 import React from 'react';
 import { NameAndAddress } from '..';
 import { getTokenSymbol } from 'ui/utils/token';
@@ -6,12 +10,10 @@ import { TxAvatar } from './TxAvatar';
 import { useTranslation } from 'react-i18next';
 
 type TxInterAddressExplainProps = {
-  data: TxDisplayItem | TxHistoryItem;
+  data: ConlaTxHistoryItem;
 };
 
 export const TxInterAddressExplain = ({ data }: TxInterAddressExplainProps) => {
-  const isCancel = data.cate_id === 'cancel';
-  const isApprove = data.cate_id === 'approve';
   const { t } = useTranslation();
 
   // if (isCancel) {
@@ -41,7 +43,7 @@ export const TxInterAddressExplain = ({ data }: TxInterAddressExplainProps) => {
         Send
       </div>
       <div className="tx-explain-desc">
-        <NameAndAddress address={data.other_addr} copyIcon={!data.is_scam} />
+        <NameAndAddress address={data.from} copyIcon />
       </div>
     </>
   );
@@ -53,7 +55,6 @@ export const TxInterAddressExplain = ({ data }: TxInterAddressExplainProps) => {
         src={
           'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg?size=626&ext=jpg&ga=GA1.1.1566160876.1724917417&semt=ais_hybrid'
         }
-        cateId={data.cate_id}
         className="tx-icon"
       ></TxAvatar>
       <div className="tx-explain-body">{interAddressExplain}</div>
